@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  background: #fff7e6;
+  color: #24324b;
+  font-family:
+    "Arial Rounded MT Bold", "Avenir Next", "Trebuchet MS", "PingFang SC",
+    ui-rounded, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #fff7e6;
+  margin: 0;
+}
