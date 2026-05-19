@@ -1,0 +1,10 @@
+node_modules/
+remotion-svg-primitives/node_modules/
+remotion-svg-primitives/out/
+remotion-svg-primitives/build/
+
+.DS_Store
+*.log
+
+.env
+.env.local
