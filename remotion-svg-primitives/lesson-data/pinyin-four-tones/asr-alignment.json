@@ -1,0 +1,387 @@
+{
+  "fps": 30,
+  "lessonId": "pinyin-four-tones",
+  "asrAssets": {
+    "decoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/decoder-epoch-99-avg-1.onnx",
+    "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
+    "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
+    "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
+  },
+  "recording": "public/audio/pinyin-four-tones-voice.wav",
+  "source": "local sherpa-onnx streaming ASR",
+  "status": "asr-derived",
+  "transcript": {
+    "duration": 23.63,
+    "segments": [
+      {
+        "end": 5.25,
+        "start": 0.2,
+        "text": "今天我们来听拼音的四个声调 SIL一声",
+        "tokens": [
+          "今",
+          "天",
+          "我",
+          "们",
+          "来",
+          "听",
+          "拼",
+          "音",
+          "的",
+          "四",
+          "个",
+          "声",
+          "调",
+          "一",
+          "声"
+        ]
+      },
+      {
+        "end": 9.4,
+        "start": 8.2,
+        "text": "二声",
+        "tokens": [
+          "二",
+          "声"
+        ]
+      },
+      {
+        "end": 15.8,
+        "start": 12.65,
+        "text": "三声先低再起来",
+        "tokens": [
+          "三",
+          "声",
+          "先",
+          "低",
+          "再",
+          "起",
+          "来"
+        ]
+      },
+      {
+        "end": 18.05,
+        "start": 15.85,
+        "text": "马四声",
+        "tokens": [
+          "马",
+          "四",
+          "声"
+        ]
+      },
+      {
+        "end": 23.63,
+        "start": 21.3,
+        "text": "看声调就能独转拼音",
+        "tokens": [
+          "看",
+          "声",
+          "调",
+          "就",
+          "能",
+          "独",
+          "转",
+          "拼",
+          "音"
+        ]
+      }
+    ],
+    "tokenEvents": [
+      {
+        "time": 0.45,
+        "token": "今"
+      },
+      {
+        "time": 0.75,
+        "token": "天"
+      },
+      {
+        "time": 1.05,
+        "token": "我"
+      },
+      {
+        "time": 1.05,
+        "token": "们"
+      },
+      {
+        "time": 1.4,
+        "token": "来"
+      },
+      {
+        "time": 1.7,
+        "token": "听"
+      },
+      {
+        "time": 2.05,
+        "token": "拼"
+      },
+      {
+        "time": 2.05,
+        "token": "音"
+      },
+      {
+        "time": 2.35,
+        "token": "的"
+      },
+      {
+        "time": 2.35,
+        "token": "四"
+      },
+      {
+        "time": 2.65,
+        "token": "个"
+      },
+      {
+        "time": 3.0,
+        "token": "声"
+      },
+      {
+        "time": 3.0,
+        "token": "调"
+      },
+      {
+        "time": 4.25,
+        "token": "一"
+      },
+      {
+        "time": 4.25,
+        "token": "声"
+      },
+      {
+        "time": 8.45,
+        "token": "二"
+      },
+      {
+        "time": 8.45,
+        "token": "声"
+      },
+      {
+        "time": 12.9,
+        "token": "三"
+      },
+      {
+        "time": 12.9,
+        "token": "声"
+      },
+      {
+        "time": 13.85,
+        "token": "先"
+      },
+      {
+        "time": 14.2,
+        "token": "低"
+      },
+      {
+        "time": 14.5,
+        "token": "再"
+      },
+      {
+        "time": 14.85,
+        "token": "起"
+      },
+      {
+        "time": 14.85,
+        "token": "来"
+      },
+      {
+        "time": 16.1,
+        "token": "马"
+      },
+      {
+        "time": 17.05,
+        "token": "四"
+      },
+      {
+        "time": 17.4,
+        "token": "声"
+      },
+      {
+        "time": 21.55,
+        "token": "看"
+      },
+      {
+        "time": 21.85,
+        "token": "声"
+      },
+      {
+        "time": 21.85,
+        "token": "调"
+      },
+      {
+        "time": 22.5,
+        "token": "就"
+      },
+      {
+        "time": 22.5,
+        "token": "能"
+      },
+      {
+        "time": 23.15,
+        "token": "独"
+      },
+      {
+        "time": 23.15,
+        "token": "转"
+      },
+      {
+        "time": 23.45,
+        "token": "拼"
+      },
+      {
+        "time": 23.45,
+        "token": "音"
+      }
+    ]
+  },
+  "cues": [
+    {
+      "asrText": "今 天 我 们 来 听 拼 音 的 四 个 声 调 一 声 二 声",
+      "caption": "今天我们来听拼音的四个声调。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 94,
+      "endSeconds": 3.12,
+      "id": "opening",
+      "matchScore": 1.0,
+      "matchText": "今 天 我 们 来 听 拼 音 的 四 个 声 调",
+      "phrase": "今天我们来听拼音的四个声调",
+      "startFrame": 8,
+      "startSeconds": 0.25,
+      "targetTokens": [
+        "今",
+        "天",
+        "我",
+        "们",
+        "来",
+        "听",
+        "拼",
+        "音",
+        "的",
+        "四",
+        "个",
+        "声",
+        "调"
+      ]
+    },
+    {
+      "asrText": "四 个 声 调 一 声 二 声 三 声 先 低 再 起 来 马 四",
+      "caption": "一声，声音平平的：mā。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 246,
+      "endSeconds": 8.2,
+      "id": "first-tone",
+      "matchScore": 0.605,
+      "matchText": "一 声 二 声 三 声 先 低 再",
+      "phrase": "一声声音平平的妈",
+      "startFrame": 122,
+      "startSeconds": 4.05,
+      "targetTokens": [
+        "一",
+        "声",
+        "声",
+        "音",
+        "平",
+        "平",
+        "的",
+        "妈"
+      ]
+    },
+    {
+      "asrText": "声 调 一 声 二 声 三 声 先 低 再 起 来 马 四 声 看",
+      "caption": "二声，声音往上扬：má。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 379,
+      "endSeconds": 12.65,
+      "id": "second-tone",
+      "matchScore": 0.605,
+      "matchText": "二 声 三 声 先 低 再 起 来",
+      "phrase": "二声声音往上扬麻",
+      "startFrame": 248,
+      "startSeconds": 8.25,
+      "targetTokens": [
+        "二",
+        "声",
+        "声",
+        "音",
+        "往",
+        "上",
+        "扬",
+        "麻"
+      ]
+    },
+    {
+      "asrText": "一 声 二 声 三 声 先 低 再 起 来 马 四 声 看 声",
+      "caption": "三声，先低再起来：mǎ。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 487,
+      "endSeconds": 16.22,
+      "id": "third-tone",
+      "matchScore": 1.0,
+      "matchText": "三 声 先 低 再 起 来 马",
+      "phrase": "三声先低再起来马",
+      "startFrame": 381,
+      "startSeconds": 12.7,
+      "targetTokens": [
+        "三",
+        "声",
+        "先",
+        "低",
+        "再",
+        "起",
+        "来",
+        "马"
+      ]
+    },
+    {
+      "asrText": "再 起 来 马 四 声 看 声 调 就 能 独 转 拼 音",
+      "caption": "四声，声音往下落：mà。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 639,
+      "endSeconds": 21.3,
+      "id": "fourth-tone",
+      "matchScore": 0.605,
+      "matchText": "四 声 看 声 调 就 能 独 转",
+      "phrase": "四声声音往下落骂",
+      "startFrame": 506,
+      "startSeconds": 16.85,
+      "targetTokens": [
+        "四",
+        "声",
+        "声",
+        "音",
+        "往",
+        "下",
+        "落",
+        "骂"
+      ]
+    },
+    {
+      "asrText": "来 马 四 声 看 声 调 就 能 独 转 拼 音",
+      "caption": "看声调，就能读准拼音。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 707,
+      "endSeconds": 23.57,
+      "id": "recap",
+      "matchScore": 0.882,
+      "matchText": "看 声 调 就 能 独 转 拼 音",
+      "phrase": "看声调就能读准拼音",
+      "startFrame": 640,
+      "startSeconds": 21.35,
+      "targetTokens": [
+        "看",
+        "声",
+        "调",
+        "就",
+        "能",
+        "读",
+        "准",
+        "拼",
+        "音"
+      ]
+    }
+  ]
+}

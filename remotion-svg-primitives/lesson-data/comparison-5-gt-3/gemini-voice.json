@@ -1,0 +1,12 @@
+{
+  "chunkCount": 71,
+  "durationSeconds": 14.62,
+  "model": "gemini-3.1-flash-live-preview",
+  "output": "public/audio/comparison-5-gt-3-voice.wav",
+  "sampleRate": 24000,
+  "script": "我们来比一比。\n左边有五个星星，\n右边有三个积木。\n先一一配对。\n配完以后，左边还剩两个。\n所以，五大于三。",
+  "source": "Gemini Live API",
+  "transcriptText": "我们来比一比。\n左边有五个星星，\n右边有三个积木。\n先一一配对。\n配完以后，左边还剩两个。\n所以，五大于三。",
+  "voiceName": "Aoede",
+  "wavBytes": 701808
+}

@@ -1,0 +1,14 @@
+{
+  "chunkCount": 141,
+  "durationSeconds": 23.63,
+  "generationMode": "perCue",
+  "maxClipSeconds": 4.2,
+  "model": "gemini-3.1-flash-live-preview",
+  "output": "public/audio/pinyin-four-tones-voice.wav",
+  "sampleRate": 24000,
+  "script": "今天我们来听拼音的四个声调。\n一声，声音平平的，妈。\n二声，声音往上扬，麻。\n三声，先低再起来，马。\n四声，声音往下落，骂。\n看声调，就能读准拼音。",
+  "source": "Gemini Live API",
+  "transcriptText": "今天我们来听拼音的四个声调。\n一声，声一声，声音平平的，妈。\n二声，声音\n三声，先低再起来，马。\n四声，\n看声调，就能读准拼音。",
+  "voiceName": "Aoede",
+  "wavBytes": 1134292
+}

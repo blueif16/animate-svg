@@ -1,0 +1,33 @@
+{
+  "lessonId": "comparison-5-gt-3",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteComparisonLesson",
+  "cuePlan": "lesson-data/comparison-5-gt-3/script-cues.json",
+  "output": "out/complete-comparison-lesson/complete-comparison-lesson.mp4",
+  "voice": {
+    "out": "public/audio/comparison-5-gt-3-voice.wav",
+    "metaOut": "lesson-data/comparison-5-gt-3/gemini-voice.json",
+    "alignOutJson": "lesson-data/comparison-5-gt-3/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/comparisonLessonTiming.ts",
+    "apiKeyEnvFile": "/Users/tk/Desktop/Omniscience/.env.local",
+    "asrScript": "scripts/asr-align-lesson.py",
+    "constPrefix": "comparisonLesson",
+    "generationMode": "single",
+    "genaiEntry": "/Users/tk/Desktop/Omniscience/node_modules/@google/genai/dist/node/index.mjs",
+    "model": "gemini-3.1-flash-live-preview",
+    "promptTemplate": "Read the following teacher narration exactly. Do not add any greeting, explanation, translation, numbering, or closing. Do not omit, repeat, or rearrange words.\\n\\n{{script}}",
+    "scriptField": "caption",
+    "sherpaPython": "/Users/tk/Desktop/Omniscience/agent/.venv/bin/python",
+    "voiceName": "Aoede",
+    "asr": {
+      "decoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/decoder-epoch-99-avg-1.onnx",
+      "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
+      "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
+      "sampleRate": 16000,
+      "timingImportPath": "../timingTypes",
+      "tokenPattern": "[\\u3400-\\u9fff]",
+      "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
+    }
+  }
+}

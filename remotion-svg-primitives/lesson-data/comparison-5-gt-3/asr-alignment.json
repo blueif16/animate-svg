@@ -1,0 +1,380 @@
+{
+  "fps": 30,
+  "lessonId": "comparison-5-gt-3",
+  "modelDir": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr",
+  "recording": "public/audio/comparison-5-gt-3-voice.wav",
+  "source": "sherpa-onnx streaming Zipformer bilingual zh-en via Omniscience ASR model",
+  "status": "asr-derived",
+  "transcript": {
+    "duration": 14.62,
+    "segments": [
+      {
+        "end": 2.35,
+        "start": 0.2,
+        "text": "我们来比一比",
+        "tokens": [
+          "我",
+          "们",
+          "来",
+          "比",
+          "一",
+          "比"
+        ]
+      },
+      {
+        "end": 7.45,
+        "start": 2.4,
+        "text": "左边有五个星星右边有三个积木",
+        "tokens": [
+          "左",
+          "边",
+          "有",
+          "五",
+          "个",
+          "星",
+          "星",
+          "右",
+          "边",
+          "有",
+          "三",
+          "个",
+          "积",
+          "木"
+        ]
+      },
+      {
+        "end": 14.62,
+        "start": 7.55,
+        "text": "先一一配对配完以后左边还剩两个所以五大于三",
+        "tokens": [
+          "先",
+          "一",
+          "一",
+          "配",
+          "对",
+          "配",
+          "完",
+          "以",
+          "后",
+          "左",
+          "边",
+          "还",
+          "剩",
+          "两",
+          "个",
+          "所",
+          "以",
+          "五",
+          "大",
+          "于",
+          "三"
+        ]
+      }
+    ],
+    "tokenEvents": [
+      {
+        "time": 0.45,
+        "token": "我"
+      },
+      {
+        "time": 0.45,
+        "token": "们"
+      },
+      {
+        "time": 0.75,
+        "token": "来"
+      },
+      {
+        "time": 1.4,
+        "token": "比"
+      },
+      {
+        "time": 1.4,
+        "token": "一"
+      },
+      {
+        "time": 1.7,
+        "token": "比"
+      },
+      {
+        "time": 2.65,
+        "token": "左"
+      },
+      {
+        "time": 3.0,
+        "token": "边"
+      },
+      {
+        "time": 3.3,
+        "token": "有"
+      },
+      {
+        "time": 3.65,
+        "token": "五"
+      },
+      {
+        "time": 3.65,
+        "token": "个"
+      },
+      {
+        "time": 3.95,
+        "token": "星"
+      },
+      {
+        "time": 3.95,
+        "token": "星"
+      },
+      {
+        "time": 4.9,
+        "token": "右"
+      },
+      {
+        "time": 5.25,
+        "token": "边"
+      },
+      {
+        "time": 5.55,
+        "token": "有"
+      },
+      {
+        "time": 5.85,
+        "token": "三"
+      },
+      {
+        "time": 6.2,
+        "token": "个"
+      },
+      {
+        "time": 6.2,
+        "token": "积"
+      },
+      {
+        "time": 6.5,
+        "token": "木"
+      },
+      {
+        "time": 7.8,
+        "token": "先"
+      },
+      {
+        "time": 8.1,
+        "token": "一"
+      },
+      {
+        "time": 8.1,
+        "token": "一"
+      },
+      {
+        "time": 8.45,
+        "token": "配"
+      },
+      {
+        "time": 8.45,
+        "token": "对"
+      },
+      {
+        "time": 9.4,
+        "token": "配"
+      },
+      {
+        "time": 9.7,
+        "token": "完"
+      },
+      {
+        "time": 9.7,
+        "token": "以"
+      },
+      {
+        "time": 9.7,
+        "token": "后"
+      },
+      {
+        "time": 10.65,
+        "token": "左"
+      },
+      {
+        "time": 10.65,
+        "token": "边"
+      },
+      {
+        "time": 11.0,
+        "token": "还"
+      },
+      {
+        "time": 11.3,
+        "token": "剩"
+      },
+      {
+        "time": 11.65,
+        "token": "两"
+      },
+      {
+        "time": 11.65,
+        "token": "个"
+      },
+      {
+        "time": 12.6,
+        "token": "所"
+      },
+      {
+        "time": 12.6,
+        "token": "以"
+      },
+      {
+        "time": 13.55,
+        "token": "五"
+      },
+      {
+        "time": 14.2,
+        "token": "大"
+      },
+      {
+        "time": 14.2,
+        "token": "于"
+      },
+      {
+        "time": 14.5,
+        "token": "三"
+      }
+    ]
+  },
+  "cues": [
+    {
+      "asrText": "我 们 来 比 一 比 左 边 有 五",
+      "caption": "我们来比一比。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 55,
+      "endSeconds": 1.82,
+      "id": "opening",
+      "matchScore": 1.0,
+      "matchText": "我 们 来 比 一 比",
+      "phrase": "我们来比一比",
+      "startFrame": 8,
+      "startSeconds": 0.25,
+      "targetTokens": [
+        "我",
+        "们",
+        "来",
+        "比",
+        "一",
+        "比"
+      ]
+    },
+    {
+      "asrText": "来 比 一 比 左 边 有 五 个 星 星 右 边 有 三",
+      "caption": "左边有五个星星，",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 122,
+      "endSeconds": 4.07,
+      "id": "left-five",
+      "matchScore": 1.0,
+      "matchText": "左 边 有 五 个 星 星",
+      "phrase": "左边有五个星星",
+      "startFrame": 74,
+      "startSeconds": 2.45,
+      "targetTokens": [
+        "左",
+        "边",
+        "有",
+        "五",
+        "个",
+        "星",
+        "星"
+      ]
+    },
+    {
+      "asrText": "五 个 星 星 右 边 有 三 个 积 木 先 一 一 配",
+      "caption": "右边有三个积木。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 199,
+      "endSeconds": 6.62,
+      "id": "right-three",
+      "matchScore": 1.0,
+      "matchText": "右 边 有 三 个 积 木",
+      "phrase": "右边有三个积木",
+      "startFrame": 141,
+      "startSeconds": 4.7,
+      "targetTokens": [
+        "右",
+        "边",
+        "有",
+        "三",
+        "个",
+        "积",
+        "木"
+      ]
+    },
+    {
+      "asrText": "三 个 积 木 先 一 一 配 对 配 完 以 后",
+      "caption": "先一一配对。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 257,
+      "endSeconds": 8.57,
+      "id": "pairing",
+      "matchScore": 1.0,
+      "matchText": "先 一 一 配 对",
+      "phrase": "先一一配对",
+      "startFrame": 228,
+      "startSeconds": 7.6,
+      "targetTokens": [
+        "先",
+        "一",
+        "一",
+        "配",
+        "对"
+      ]
+    },
+    {
+      "asrText": "一 一 配 对 配 完 以 后 左 边 还 剩 两 个 所 以 五 大",
+      "caption": "配完以后，左边还剩两个。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 353,
+      "endSeconds": 11.77,
+      "id": "leftover",
+      "matchScore": 1.0,
+      "matchText": "配 完 以 后 左 边 还 剩 两 个",
+      "phrase": "配完以后左边还剩两个",
+      "startFrame": 276,
+      "startSeconds": 9.2,
+      "targetTokens": [
+        "配",
+        "完",
+        "以",
+        "后",
+        "左",
+        "边",
+        "还",
+        "剩",
+        "两",
+        "个"
+      ]
+    },
+    {
+      "asrText": "还 剩 两 个 所 以 五 大 于 三",
+      "caption": "所以，五大于三。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 439,
+      "endSeconds": 14.62,
+      "id": "result",
+      "matchScore": 1.0,
+      "matchText": "所 以 五 大 于 三",
+      "phrase": "所以五大于三",
+      "startFrame": 372,
+      "startSeconds": 12.4,
+      "targetTokens": [
+        "所",
+        "以",
+        "五",
+        "大",
+        "于",
+        "三"
+      ]
+    }
+  ]
+}
