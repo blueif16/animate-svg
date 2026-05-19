@@ -1,0 +1,35 @@
+{
+  "lessonId": "make-10-6-and-4",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteMakeTenLesson",
+  "cuePlan": "lesson-data/make-10-6-and-4/script-cues.json",
+  "output": "out/complete-make-ten-lesson/complete-make-ten-lesson.mp4",
+  "voice": {
+    "out": "public/audio/make-10-6-and-4-voice.wav",
+    "metaOut": "lesson-data/make-10-6-and-4/gemini-voice.json",
+    "alignOutJson": "lesson-data/make-10-6-and-4/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/makeTenLessonTiming.ts",
+    "apiKeyEnvFile": "/Users/tk/Desktop/Omniscience/.env.local",
+    "asrScript": "scripts/asr-align-lesson.py",
+    "constPrefix": "makeTenLesson",
+    "gapSeconds": 0.25,
+    "generationMode": "perCue",
+    "genaiEntry": "/Users/tk/Desktop/Omniscience/node_modules/@google/genai/dist/node/index.mjs",
+    "maxClipSeconds": 4.2,
+    "model": "gemini-3.1-flash-live-preview",
+    "promptTemplate": "只朗读下面这一句教师旁白。不要添加开场白、解释、编号、翻译或结尾。不要重复。只读一遍。\\n\\n{{script}}",
+    "scriptField": "narration",
+    "sherpaPython": "/Users/tk/Desktop/Omniscience/agent/.venv/bin/python",
+    "voiceName": "Aoede",
+    "asr": {
+      "decoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/decoder-epoch-99-avg-1.onnx",
+      "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
+      "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
+      "sampleRate": 16000,
+      "timingImportPath": "../timingTypes",
+      "tokenPattern": "[\\u3400-\\u9fff]",
+      "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "lessonId": "make-10-6-and-4",
+  "cues": [
+    {
+      "id": "opening",
+      "narration": "今天我们来凑十。",
+      "phrase": "今天我们来凑十",
+      "caption": "今天我们来凑十。"
+    },
+    {
+      "id": "show-six",
+      "narration": "先放六个。",
+      "phrase": "先放六个",
+      "caption": "先放六个。"
+    },
+    {
+      "id": "find-four",
+      "narration": "看看，还空着四个格子。",
+      "phrase": "看看还空着四个格子",
+      "caption": "看看，还空着四个格子。"
+    },
+    {
+      "id": "add-four",
+      "narration": "我们把四个放进去。",
+      "phrase": "我们把四个放进去",
+      "caption": "我们把四个放进去。"
+    },
+    {
+      "id": "make-ten",
+      "narration": "六和四合起来，正好是十。",
+      "phrase": "六和四合起来正好是十",
+      "caption": "六和四合起来，正好是十。",
+      "emphasis": true
+    },
+    {
+      "id": "equation",
+      "narration": "所以，六加四等于十。",
+      "phrase": "所以六加四等于十",
+      "caption": "所以，六加四等于十。",
+      "emphasis": true
+    }
+  ]
+}

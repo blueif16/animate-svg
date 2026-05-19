@@ -1,0 +1,14 @@
+{
+  "chunkCount": 110,
+  "durationSeconds": 15.91,
+  "generationMode": "perCue",
+  "maxClipSeconds": 4.2,
+  "model": "gemini-3.1-flash-live-preview",
+  "output": "public/audio/make-10-6-and-4-voice.wav",
+  "sampleRate": 24000,
+  "script": "今天我们来凑十。\n先放六个。\n看看，还空着四个格子。\n我们把四个放进去。\n六和四合起来，正好是十。\n所以，六加四等于十。",
+  "source": "Gemini Live API",
+  "transcriptText": "今天我们来凑十。\n先放六个。\n看看，还空着四个格子。\n我们把四个放进去。\n六和四合起来，正好是十。\n所以，六加四等于十。",
+  "voiceName": "Aoede",
+  "wavBytes": 763742
+}

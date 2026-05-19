@@ -1,0 +1,42 @@
+{
+  "lessonId": "pinyin-four-tones",
+  "cues": [
+    {
+      "id": "opening",
+      "narration": "今天我们来听拼音的四个声调。",
+      "phrase": "今天我们来听拼音的四个声调",
+      "caption": "今天我们来听拼音的四个声调。"
+    },
+    {
+      "id": "first-tone",
+      "narration": "一声，声音平平的，妈。",
+      "phrase": "一声声音平平的妈",
+      "caption": "一声，声音平平的：mā。"
+    },
+    {
+      "id": "second-tone",
+      "narration": "二声，声音往上扬，麻。",
+      "phrase": "二声声音往上扬麻",
+      "caption": "二声，声音往上扬：má。"
+    },
+    {
+      "id": "third-tone",
+      "narration": "三声，先低再起来，马。",
+      "phrase": "三声先低再起来马",
+      "caption": "三声，先低再起来：mǎ。"
+    },
+    {
+      "id": "fourth-tone",
+      "narration": "四声，声音往下落，骂。",
+      "phrase": "四声声音往下落骂",
+      "caption": "四声，声音往下落：mà。"
+    },
+    {
+      "id": "recap",
+      "narration": "看声调，就能读准拼音。",
+      "phrase": "看声调就能读准拼音",
+      "caption": "看声调，就能读准拼音。",
+      "emphasis": true
+    }
+  ]
+}
