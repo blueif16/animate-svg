@@ -50,6 +50,11 @@ flowchart TD
 
     MP4([Final MP4])
 
+    subgraph W6["Wave 6 — Feedback loop (only if user reports issues)"]
+        Review([user reviews MP4])
+        TR[triage sub<br/>skill: lesson-debugger]
+    end
+
     Idea --> SB
     SB --> VD
     SB --> AC
@@ -65,11 +70,20 @@ flowchart TD
     CO --> Scene
     Scene --> Cfg
     Cfg --> V --> A --> ASR --> Fix --> L --> B --> R --> VS --> MP4
+    MP4 --> Review
+    Review -. feedback .-> TR
+    TR -.-> SB
+    TR -.-> VD
+    TR -.-> AC
+    TR -.-> SK
+    TR -.-> PB
+    TR -.-> CO
+    TR -.-> Cfg
 
     classDef sub fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
     classDef art fill:#fef3c7,stroke:#b45309,color:#78350f
     classDef step fill:#dcfce7,stroke:#15803d,color:#14532d
-    class SB,VD,AC,SK,PB,CO,VS sub
+    class SB,VD,AC,SK,PB,CO,VS,TR sub
     class Cues,Cfg,ASR,Scene art
     class V,A,L,B,R,Fix step
 ```
@@ -87,6 +101,7 @@ The main agent loads `complete-video-pipeline` as its orchestrator overview. Eac
 | 3    | primitive builder | (none — design rule)           | visual-design (via gap scan)     | `src/shape-primitives/` + focused demos | new prop-driven primitives                   |
 | 4    | composer          | `remotion-lesson-composer`     | all Wave 1–3 artifacts           | `src/lessons/<Lesson>*.tsx` + timeline  | composed scene, timing from cues             |
 | 5    | verification      | `lesson-verification`          | rendered MP4                     | (read-only review)                      | render-readiness report                      |
+| 6    | triage (feedback) | `lesson-debugger`              | user feedback on rendered MP4    | (planning only)                         | smallest fix + re-spawn target               |
 
 The main agent itself owns: `lesson-data/<id>/pipeline.json`, the primitive gap-scan decision, ASR cue-timing corrections, and merging subagent artifacts into `script-cues.json`.
 

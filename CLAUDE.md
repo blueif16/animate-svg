@@ -39,6 +39,13 @@ Use the matching skill at each step:
 - `sketch-explainer-layer` — Excalidraw-style teacher marks over scenes
 - `remotion-lesson-composer` — compose the lesson scene from approved artifacts
 - `lesson-verification` — final check on rendered output
+- `lesson-debugger` — invoked only after render, when the user reports feedback
+
+## Feedback & Debugging Loop
+
+After render, when the user reviews the MP4 and reports an issue, invoke the `lesson-debugger` skill for triage. Do not load it during waves 1–4.
+
+Structural changes — new skill, new wave, reordered waves, or changed subagent contracts — require user approval before edits. Spec edits inside existing skills do not.
 
 ## Dev
 
