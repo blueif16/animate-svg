@@ -4,32 +4,37 @@ A Remotion-based pipeline for early-childhood lesson videos. The main agent orch
 
 ## End-to-End Flow
 
+Planning runs in **waves**, not as a single parallel fan-out. Each downstream subagent gets concrete inputs instead of guessing, so the main agent does less reconciliation. Primitive-gap-scan and primitive-builder overlap with `sketch-layer` for latency.
+
 ```mermaid
 flowchart TD
     Idea([Lesson idea])
 
-    subgraph Plan["Phase A — Planning (parallel subagents)"]
+    subgraph W1["Wave 1 — Foundation"]
         SB[storyboard sub<br/>skill: lesson-storyboard]
+    end
+
+    subgraph W2["Wave 2 — Parallel pair"]
         VD[visual-design sub<br/>skill: early-childhood-visual-taste]
         AC[audio/caption sub<br/>skill: lesson-audio-captions]
+    end
+
+    subgraph W3["Wave 3 — Overlap: sketch ∥ primitive build"]
         SK[sketch-layer sub<br/>skill: sketch-explainer-layer]
+        Gap{Gap vs<br/>src/shape-primitives/?}
+        PB[primitive-builder sub<br/>owns: src/shape-primitives/]
     end
 
     Cues[/lesson-data/&lt;id&gt;/script-cues.json/]
 
-    subgraph Prims["Phase B — Primitives"]
-        Gap{Gap in<br/>src/shape-primitives/?}
-        PB[primitive-builder sub<br/>owns: src/shape-primitives/]
-    end
-
-    subgraph Comp["Phase C — Composition"]
+    subgraph W4["Wave 4 — Composition"]
         CO[composer sub<br/>skill: remotion-lesson-composer]
         Scene[/src/lessons/&lt;Lesson&gt;Scene.tsx + timeline/]
     end
 
     Cfg[/lesson-data/&lt;id&gt;/pipeline.json/]
 
-    subgraph Pipe["Phase D — npm run lesson:render"]
+    subgraph Pipe["Render — npm run lesson:render"]
         V[voice gen<br/>generate-gemini-voice.mjs]
         A[ASR align<br/>asr-align-lesson.py]
         ASR[/asr-alignment.json/]
@@ -39,20 +44,24 @@ flowchart TD
         R[render MP4]
     end
 
-    subgraph Ver["Phase E — Verification"]
+    subgraph W5["Wave 5 — Verification"]
         VS[verification sub<br/>skill: lesson-verification]
     end
 
     MP4([Final MP4])
 
-    Idea --> Plan
-    SB --> Cues
-    VD --> Cues
-    AC --> Cues
-    SK --> Cues
-    Cues --> Gap
-    Gap -- yes --> PB --> CO
+    Idea --> SB
+    SB --> VD
+    SB --> AC
+    VD --> SK
+    AC --> SK
+    VD --> Gap
+    Gap -- yes --> PB
     Gap -- no --> CO
+    PB --> CO
+    SK --> Cues
+    AC --> Cues
+    Cues --> CO
     CO --> Scene
     Scene --> Cfg
     Cfg --> V --> A --> ASR --> Fix --> L --> B --> R --> VS --> MP4
@@ -67,19 +76,19 @@ flowchart TD
 
 ## Skill ↔ Subagent Map
 
-The main agent loads `complete-video-pipeline` as its orchestrator overview. Each subagent is spawned with one focused skill:
+The main agent loads `complete-video-pipeline` as its orchestrator overview. Each subagent is spawned with one focused skill and waits on declared upstream inputs.
 
-| Phase | Subagent          | Skill                          | Owns                                       | Output                                       |
-| ----- | ----------------- | ------------------------------ | ------------------------------------------ | -------------------------------------------- |
-| A     | storyboard        | `lesson-storyboard`            | (planning only)                            | cue IDs, narration beats, required visuals   |
-| A     | visual design     | `early-childhood-visual-taste` | (planning only)                            | object choices, layout, tone, clarity risks  |
-| A     | audio / captions  | `lesson-audio-captions`        | (planning only)                            | teacher script, caption text, cue boundaries |
-| A     | sketch layer      | `sketch-explainer-layer`       | (planning only)                            | teacher-mark / pointer plan                  |
-| B     | primitive builder | (none — design rule)           | `src/shape-primitives/` + focused demos    | new prop-driven primitives                   |
-| C     | composer          | `remotion-lesson-composer`     | `src/lessons/<Lesson>*.tsx` + timeline     | composed scene, timing from cues             |
-| E     | verification      | `lesson-verification`          | (read-only review)                         | render-readiness report                      |
+| Wave | Subagent          | Skill                          | Depends on                       | Owns                                    | Output                                       |
+| ---- | ----------------- | ------------------------------ | -------------------------------- | --------------------------------------- | -------------------------------------------- |
+| 1    | storyboard        | `lesson-storyboard`            | lesson idea                      | (planning only)                         | cue IDs, narration beats, required visuals   |
+| 2    | visual design     | `early-childhood-visual-taste` | storyboard                       | (planning only)                         | object choices, layout, tone, clarity risks  |
+| 2    | audio / captions  | `lesson-audio-captions`        | storyboard                       | (planning only)                         | teacher script, caption text, cue boundaries |
+| 3    | sketch layer      | `sketch-explainer-layer`       | visual-design + audio/captions   | (planning only)                         | teacher-mark / pointer plan                  |
+| 3    | primitive builder | (none — design rule)           | visual-design (via gap scan)     | `src/shape-primitives/` + focused demos | new prop-driven primitives                   |
+| 4    | composer          | `remotion-lesson-composer`     | all Wave 1–3 artifacts           | `src/lessons/<Lesson>*.tsx` + timeline  | composed scene, timing from cues             |
+| 5    | verification      | `lesson-verification`          | rendered MP4                     | (read-only review)                      | render-readiness report                      |
 
-The main agent itself owns: `lesson-data/<id>/pipeline.json`, ASR cue-timing corrections, and merging subagent artifacts.
+The main agent itself owns: `lesson-data/<id>/pipeline.json`, the primitive gap-scan decision, ASR cue-timing corrections, and merging subagent artifacts into `script-cues.json`.
 
 ## Per-Lesson Artifacts
 
