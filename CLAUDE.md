@@ -16,7 +16,15 @@ ASR alignment is an owned production artifact, not a pass/fail gate. Inspect the
 
 ## Subagent Workflow
 
-For a non-trivial lesson, the main agent orchestrates and does not implement directly. Split work by artifact: storyboard → visual design → audio/captions → primitive gap scan → primitive build (if gaps) → composition → verification. Each subagent prompt must state input, output artifact, owned paths, and the lesson-agnostic rule.
+For a non-trivial lesson, the main agent orchestrates and does not implement directly. Work flows in waves so each subagent gets concrete inputs:
+
+1. **storyboard** alone — defines cue IDs, narration beats, required visuals.
+2. **visual-design** ∥ **audio/captions** — both depend on storyboard, run in parallel.
+3. **sketch-layer** (needs visual-design + audio cue boundaries) ∥ **primitive-gap-scan → primitive-builder** (needs visual-design only). Sketch and primitive build overlap.
+4. **composer** — integrates all upstream artifacts into the lesson scene.
+5. **verification** — reviews the rendered MP4 post-render.
+
+Every subagent prompt must state input, output artifact, owned paths, and the lesson-agnostic rule.
 
 Primitives live in `remotion-svg-primitives/src/shape-primitives/` (prop-driven, reusable). The composer consumes existing primitives and generated timing — it does not create one-off SVG art inside lesson scenes.
 
