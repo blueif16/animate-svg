@@ -1,5 +1,4 @@
-import { Html5Audio, interpolate, Sequence } from "remotion";
-import { mediaSrc } from "./mediaSrc";
+import { AudioLayer } from "@studio/narration-kit";
 
 type VoiceoverSpan = [number, number];
 
@@ -14,80 +13,27 @@ type Props = {
   voiceoverSpans: VoiceoverSpan[];
 };
 
-const volumeAtFrame = (
-  frame: number,
-  spans: VoiceoverSpan[],
-  baseVolume: number,
-  duckedVolume: number,
-) => {
-  const fadeFrames = 8;
-
-  for (const [start, end] of spans) {
-    if (frame >= start && frame <= end) {
-      return duckedVolume;
-    }
-
-    if (frame >= start - fadeFrames && frame < start) {
-      return interpolate(
-        frame,
-        [start - fadeFrames, start],
-        [baseVolume, duckedVolume],
-        {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        },
-      );
-    }
-
-    if (frame > end && frame <= end + fadeFrames) {
-      return interpolate(
-        frame,
-        [end, end + fadeFrames],
-        [duckedVolume, baseVolume],
-        {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        },
-      );
-    }
-  }
-
-  return baseVolume;
-};
-
+// Thin wrapper around the kit's AudioLayer. Keeps the animation-test API
+// (teacherAudioSrc / teacherDurationInFrames / teacherFromFrame /
+// teacherAudioVolume) so existing lesson scenes do not have to change.
 export const LessonAudioLayer = ({
   bgmSrc,
-  bgmVolume = 0.14,
-  duckedBgmVolume = 0.04,
+  bgmVolume,
+  duckedBgmVolume,
   teacherAudioSrc,
-  teacherAudioVolume = 1,
+  teacherAudioVolume,
   teacherDurationInFrames,
-  teacherFromFrame = 0,
+  teacherFromFrame,
   voiceoverSpans,
-}: Props) => {
-  return (
-    <>
-      {bgmSrc ? (
-        <Html5Audio
-          loop
-          src={mediaSrc(bgmSrc)}
-          volume={(frame) =>
-            volumeAtFrame(frame, voiceoverSpans, bgmVolume, duckedBgmVolume)
-          }
-        />
-      ) : null}
-
-      {teacherAudioSrc ? (
-        <Sequence
-          durationInFrames={teacherDurationInFrames}
-          from={teacherFromFrame}
-        >
-          <Html5Audio
-            src={mediaSrc(teacherAudioSrc)}
-            volume={teacherAudioVolume}
-          />
-        </Sequence>
-      ) : null}
-    </>
-  );
-};
+}: Props) => (
+  <AudioLayer
+    bgmSrc={bgmSrc}
+    bgmVolume={bgmVolume}
+    duckedBgmVolume={duckedBgmVolume}
+    voiceSrc={teacherAudioSrc}
+    voiceVolume={teacherAudioVolume}
+    voiceDurationInFrames={teacherDurationInFrames}
+    voiceFromFrame={teacherFromFrame}
+    voiceoverSpans={voiceoverSpans}
+  />
+);
