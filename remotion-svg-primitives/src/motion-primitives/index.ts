@@ -3,6 +3,9 @@ export { FollowPath } from "./FollowPath";
 export { PopIn } from "./PopIn";
 export { PulseCircle } from "./PulseCircle";
 export { SparkleBurst } from "./SparkleBurst";
+export { Smear } from "./Smear";
+export { Drag } from "./Drag";
+export * from "./curves";
 export type {
   CubicPath,
   FollowPathSpec,
