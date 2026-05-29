@@ -1,0 +1,8 @@
+{
+  "lessonId": "comparison-5-gt-3",
+  "bed": "math-calm-68-cmaj",
+  "outro": { "resolve": true },
+  "sfx": [
+    { "cue": "result", "event": "reward", "sound": "ta-da" }
+  ]
+}
