@@ -14,3 +14,8 @@ remotion-svg-primitives/build/
 # public/audio/_SOURCING.md; voice via `npm run lesson:voice`.
 remotion-svg-primitives/public/audio/_beds/*.wav
 remotion-svg-primitives/public/audio/*-voice.wav
+
+# Generated per-lesson render artifacts — derivable from the pipeline, kept
+# out of git. Authored .md/.json inputs under lesson-data/ stay tracked.
+remotion-svg-primitives/lesson-data/**/*.mp4
+remotion-svg-primitives/lesson-data/**/*.png
