@@ -6,12 +6,18 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@remotion/cli": "4.0.462",
+    "@remotion/tailwind-v4": "4.0.462",
+    "@remotion/three": "^4.0.462",
+    "@studio/narration-kit": "file:../../shared-narration",
+    "@studio/three-effects": "file:../../shared-3d",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.462",
-    "@remotion/tailwind-v4": "4.0.462",
-    "tailwindcss": "4.0.0"
+    "tailwindcss": "4.0.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.462",
@@ -19,6 +25,8 @@
     "@types/web": "0.0.166",
     "eslint": "9.19.0",
     "prettier": "3.8.1",
+    "sharp": "^0.34.5",
+    "tsx": "^4.22.3",
     "typescript": "5.9.3"
   },
   "scripts": {
@@ -27,7 +35,12 @@
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
     "lesson:render": "node scripts/render-complete-lesson.mjs",
-    "voice:lesson": "node scripts/generate-gemini-voice.mjs"
+    "lesson:scaffold": "node scripts/scaffold-lesson.mjs",
+    "lesson:voice": "node node_modules/@studio/narration-kit/bin/generate-voice.mjs --align",
+    "lesson:check": "node scripts/lesson-check.mjs",
+    "lesson:contact-sheet": "node scripts/make-contact-sheet.mjs",
+    "lesson:animatic": "node scripts/lesson-animatic.mjs",
+    "voice:lesson": "node node_modules/@studio/narration-kit/bin/generate-voice.mjs"
   },
   "sideEffects": [
     "*.css"
