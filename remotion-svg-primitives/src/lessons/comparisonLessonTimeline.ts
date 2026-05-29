@@ -1,8 +1,10 @@
 import type { CaptionCue } from "../lesson-media/LessonCaptionLayer";
+import { spokenSpansFromSilences } from "../lesson-media/audioMix";
 import {
   comparisonLessonAlignedCues,
   comparisonLessonAlignedDuration,
 } from "./generated/comparisonLessonTiming";
+import { comparisonLessonSilences } from "./generated/comparisonLessonSilences";
 import { cueToCaption } from "./timingTypes";
 
 export const completeComparisonLessonDuration = comparisonLessonAlignedDuration;
@@ -13,15 +15,16 @@ export const comparisonLessonAudioDefaults = {
   teacherAudioSrc: string | null;
 };
 
+// Per-utterance spoken windows (overall narration range minus ASR silence
+// gaps) so the bed ducks during speech and rises back up between utterances.
 export const comparisonLessonVoiceoverSpans: Array<[number, number]> =
   comparisonLessonAlignedCues.length > 0
-    ? [
-        [
-          comparisonLessonAlignedCues[0].startFrame,
-          comparisonLessonAlignedCues[comparisonLessonAlignedCues.length - 1]
-            .endFrame,
-        ],
-      ]
+    ? spokenSpansFromSilences(
+        comparisonLessonAlignedCues[0].startFrame,
+        comparisonLessonAlignedCues[comparisonLessonAlignedCues.length - 1]
+          .endFrame,
+        comparisonLessonSilences,
+      )
     : [];
 
 export const comparisonLessonTeacherScript = [
