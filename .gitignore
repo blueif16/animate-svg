@@ -8,3 +8,9 @@ remotion-svg-primitives/build/
 
 .env
 .env.local
+
+# Heavy / generated audio media — keep out of git (small SFX + stings + the
+# JSON/license manifests stay tracked). Regenerate beds per
+# public/audio/_SOURCING.md; voice via `npm run lesson:voice`.
+remotion-svg-primitives/public/audio/_beds/*.wav
+remotion-svg-primitives/public/audio/*-voice.wav

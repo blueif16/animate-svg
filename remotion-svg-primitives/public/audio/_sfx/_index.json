@@ -1,0 +1,32 @@
+[
+  {
+    "name": "pop",
+    "file": "pop.wav",
+    "license": "PLACEHOLDER (locally synthesized, CC0)",
+    "lengthSeconds": 0.12
+  },
+  {
+    "name": "chime",
+    "file": "chime.wav",
+    "license": "PLACEHOLDER (locally synthesized, CC0)",
+    "lengthSeconds": 0.6
+  },
+  {
+    "name": "whoosh",
+    "file": "whoosh.wav",
+    "license": "PLACEHOLDER (locally synthesized, CC0)",
+    "lengthSeconds": 0.4
+  },
+  {
+    "name": "tick",
+    "file": "tick.wav",
+    "license": "PLACEHOLDER (locally synthesized, CC0)",
+    "lengthSeconds": 0.06
+  },
+  {
+    "name": "ta-da",
+    "file": "ta-da.wav",
+    "license": "PLACEHOLDER (locally synthesized, CC0)",
+    "lengthSeconds": 0.6
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "lessonId": "pinyin-four-tones",
+  "bed": "tone-safe-pad",
+  "toneSafe": true,
+  "outro": { "resolve": true },
+  "sfx": []
+}
