@@ -1,0 +1,49 @@
+{
+  "lessonId": "kp2-counting-by-tens",
+  "cues": [
+    {
+      "id": "bundle-recall",
+      "narration": "看，这是我们的一个十。",
+      "phrase": "看这是我们的一个十",
+      "caption": "看，这是我们的一个十。"
+    },
+    {
+      "id": "untie-reveal",
+      "narration": "把它打开，里面有十根。",
+      "phrase": "把它打开里面有十根",
+      "caption": "把它打开，里面有十根。"
+    },
+    {
+      "id": "slow-count-ones",
+      "narration": "一根一根地数，要数十次。",
+      "phrase": "一根一根地数要数十次",
+      "caption": "一根一根地数，要数十次。"
+    },
+    {
+      "id": "fast-vs-slow",
+      "narration": "捆起来，只要数一次。",
+      "phrase": "捆起来只要数一次",
+      "caption": "捆起来，只要数一次。",
+      "emphasis": true
+    },
+    {
+      "id": "two-tens",
+      "narration": "再加一捆，就是两个十。",
+      "phrase": "再加一捆就是两个十",
+      "caption": "再加一捆，就是两个十。"
+    },
+    {
+      "id": "three-tens",
+      "narration": "再加一捆，就是三个十。",
+      "phrase": "再加一捆就是三个十",
+      "caption": "再加一捆，就是三个十。"
+    },
+    {
+      "id": "recap",
+      "narration": "一捆一捆地数，更快。",
+      "phrase": "一捆一捆地数更快",
+      "caption": "一捆一捆地数，更快。",
+      "emphasis": true
+    }
+  ]
+}

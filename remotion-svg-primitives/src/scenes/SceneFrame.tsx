@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { useStyle, useStylePalette } from "../styles";
 import { colors, typography, video } from "../theme";
 
 type SceneFrameProps = {
@@ -16,6 +17,10 @@ export const SceneFrame: React.FC<SceneFrameProps> = ({
   children,
 }) => {
   const frame = useCurrentFrame();
+  const palette = useStylePalette();
+  const { activeStyle } = useStyle();
+  const bg = palette.background ?? colors.cream;
+  const text = palette.textNavy ?? colors.textNavy;
   const titleY = interpolate(frame, [0, 18], [-18, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -28,34 +33,36 @@ export const SceneFrame: React.FC<SceneFrameProps> = ({
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: colors.cream,
-        color: colors.textNavy,
+        backgroundColor: bg,
+        color: text,
         fontFamily: typography.fontFamily,
         overflow: "hidden",
       }}
     >
-      <svg
-        aria-hidden="true"
-        height={video.height}
-        style={{ position: "absolute", inset: 0 }}
-        viewBox={`0 0 ${video.width} ${video.height}`}
-        width={video.width}
-      >
-        <circle cx={96} cy={118} fill={colors.sunshine} opacity={0.4} r={58} />
-        <circle cx={1164} cy={112} fill={colors.mint} opacity={0.45} r={68} />
-        <circle cx={1132} cy={618} fill={colors.sky} opacity={0.25} r={118} />
-        <circle cx={102} cy={626} fill={colors.coral} opacity={0.22} r={92} />
-        {Array.from({ length: 13 }, (_, index) => (
-          <circle
-            cx={175 + index * 80}
-            cy={84 + (index % 2) * 18}
-            fill={index % 3 === 0 ? colors.lavender : colors.reward}
-            key={index}
-            opacity={0.24}
-            r={7}
-          />
-        ))}
-      </svg>
+      {activeStyle === "default" ? (
+        <svg
+          aria-hidden="true"
+          height={video.height}
+          style={{ position: "absolute", inset: 0 }}
+          viewBox={`0 0 ${video.width} ${video.height}`}
+          width={video.width}
+        >
+          <circle cx={96} cy={118} fill={colors.sunshine} opacity={0.4} r={58} />
+          <circle cx={1164} cy={112} fill={colors.mint} opacity={0.45} r={68} />
+          <circle cx={1132} cy={618} fill={colors.sky} opacity={0.25} r={118} />
+          <circle cx={102} cy={626} fill={colors.coral} opacity={0.22} r={92} />
+          {Array.from({ length: 13 }, (_, index) => (
+            <circle
+              cx={175 + index * 80}
+              cy={84 + (index % 2) * 18}
+              fill={index % 3 === 0 ? colors.lavender : colors.reward}
+              key={index}
+              opacity={0.24}
+              r={7}
+            />
+          ))}
+        </svg>
+      ) : null}
 
       <div
         style={{

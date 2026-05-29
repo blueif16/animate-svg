@@ -1,0 +1,16 @@
+{
+  "lessonId": "fen-yu-he",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteFenYuHeLesson",
+  "cuePlan": "lesson-data/fen-yu-he/script-cues.json",
+  "output": "out/fen-yu-he/fen-yu-he.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/fen-yu-he-voice.wav",
+    "metaOut": "out/fen-yu-he/gemini-voice.json",
+    "alignOutJson": "out/fen-yu-he/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/fenYuHeTiming.ts",
+    "constPrefix": "fenYuHe"
+  }
+}

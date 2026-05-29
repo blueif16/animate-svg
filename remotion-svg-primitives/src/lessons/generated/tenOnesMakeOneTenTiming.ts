@@ -1,0 +1,220 @@
+import type { AlignedLessonCue } from "../timingTypes";
+
+export const tenOnesMakeOneTenAlignedDuration = 1120;
+
+export const tenOnesMakeOneTenAlignedCues = [
+  {
+    "asrText": "看 这 里 有 许 多 小 棒 我 们 一 根",
+    "caption": "看，这里有许多小棒。",
+    "confidence": "asr-derived",
+    "endFrame": 113,
+    "endSeconds": 3.77,
+    "id": "opening",
+    "matchScore": 1.0,
+    "matchText": "看 这 里 有 许 多 小 棒",
+    "phrase": "看这里有许多小棒",
+    "startFrame": 8,
+    "startSeconds": 0.25,
+    "targetTokens": [
+      "看",
+      "这",
+      "里",
+      "有",
+      "许",
+      "多",
+      "小",
+      "棒"
+    ]
+  },
+  {
+    "asrText": "许 多 小 棒 我 们 一 根 根 的 数 请 慢 慢 数",
+    "caption": "我们一根一根地数。",
+    "confidence": "asr-derived",
+    "endFrame": 238,
+    "endSeconds": 7.92,
+    "id": "count-one-by-one",
+    "matchScore": 0.837,
+    "matchText": "我 们 一 根 根 的 数",
+    "phrase": "我们一根一根地数",
+    "startFrame": 132,
+    "startSeconds": 4.4,
+    "targetTokens": [
+      "我",
+      "们",
+      "一",
+      "根",
+      "一",
+      "根",
+      "地",
+      "数"
+    ]
+  },
+  {
+    "asrText": "根 根 的 数 请 慢 慢 数 完 每 根 小 棒 数 了 十 次",
+    "caption": "请慢慢数完每根小棒。",
+    "confidence": "asr-derived",
+    "endFrame": 353,
+    "endSeconds": 11.77,
+    "id": "count-to-ten",
+    "matchScore": 1.0,
+    "matchText": "请 慢 慢 数 完 每 根 小 棒",
+    "phrase": "请慢慢数完每根小棒",
+    "startFrame": 276,
+    "startSeconds": 9.2,
+    "targetTokens": [
+      "请",
+      "慢",
+      "慢",
+      "数",
+      "完",
+      "每",
+      "根",
+      "小",
+      "棒"
+    ]
+  },
+  {
+    "asrText": "每 根 小 棒 数 了 十 次 才 数 完 我 们 把 这",
+    "caption": "数了十次，才数完。",
+    "confidence": "asr-derived",
+    "endFrame": 478,
+    "endSeconds": 15.92,
+    "id": "feels-slow",
+    "matchScore": 1.0,
+    "matchText": "数 了 十 次 才 数 完",
+    "phrase": "数了十次才数完",
+    "startFrame": 381,
+    "startSeconds": 12.7,
+    "targetTokens": [
+      "数",
+      "了",
+      "十",
+      "次",
+      "才",
+      "数",
+      "完"
+    ]
+  },
+  {
+    "asrText": "次 才 数 完 我 们 把 这 十 根 捆 在 一 起 这 一 捆 就",
+    "caption": "我们把这十根捆在一起。",
+    "confidence": "asr-derived",
+    "emphasis": true,
+    "endFrame": 574,
+    "endSeconds": 19.12,
+    "id": "bundle-action",
+    "matchScore": 1.0,
+    "matchText": "我 们 把 这 十 根 捆 在 一 起",
+    "phrase": "我们把这十根捆在一起",
+    "startFrame": 496,
+    "startSeconds": 16.55,
+    "targetTokens": [
+      "我",
+      "们",
+      "把",
+      "这",
+      "十",
+      "根",
+      "捆",
+      "在",
+      "一",
+      "起"
+    ]
+  },
+  {
+    "asrText": "捆 在 一 起 这 一 捆 就 叫 一 个 十 捆 里 还 是",
+    "caption": "这一捆，就叫一个十。",
+    "confidence": "asr-derived",
+    "endFrame": 718,
+    "endSeconds": 23.92,
+    "id": "rename-bundle",
+    "matchScore": 1.0,
+    "matchText": "这 一 捆 就 叫 一 个 十",
+    "phrase": "这一捆就叫一个十",
+    "startFrame": 612,
+    "startSeconds": 20.4,
+    "targetTokens": [
+      "这",
+      "一",
+      "捆",
+      "就",
+      "叫",
+      "一",
+      "个",
+      "十"
+    ]
+  },
+  {
+    "asrText": "叫 一 个 十 捆 里 还 是 十 根 小 棒 哦 现 在 数 一",
+    "caption": "捆里还是十根小棒哦。",
+    "confidence": "asr-derived",
+    "endFrame": 833,
+    "endSeconds": 27.77,
+    "id": "still-ten-ones",
+    "matchScore": 1.0,
+    "matchText": "捆 里 还 是 十 根 小 棒 哦",
+    "phrase": "捆里还是十根小棒哦",
+    "startFrame": 736,
+    "startSeconds": 24.55,
+    "targetTokens": [
+      "捆",
+      "里",
+      "还",
+      "是",
+      "十",
+      "根",
+      "小",
+      "棒",
+      "哦"
+    ]
+  },
+  {
+    "asrText": "根 小 棒 哦 现 在 数 一 捆 只 要 属 于 一 个 一 就 是",
+    "caption": "现在数一捆，只要数一次。",
+    "confidence": "asr-derived",
+    "endFrame": 966,
+    "endSeconds": 32.2,
+    "id": "faster-count",
+    "matchScore": 0.842,
+    "matchText": "现 在 数 一 捆 只 要 属 于 一",
+    "phrase": "现在数一捆只要数一次",
+    "startFrame": 861,
+    "startSeconds": 28.7,
+    "targetTokens": [
+      "现",
+      "在",
+      "数",
+      "一",
+      "捆",
+      "只",
+      "要",
+      "数",
+      "一",
+      "次"
+    ]
+  },
+  {
+    "asrText": "只 要 属 于 一 个 一 就 是 一 个 十",
+    "caption": "十个一，就是一个十。",
+    "confidence": "asr-derived",
+    "emphasis": true,
+    "endFrame": 1102,
+    "endSeconds": 36.72,
+    "id": "recap",
+    "matchScore": 0.933,
+    "matchText": "一 个 一 就 是 一 个 十",
+    "phrase": "十个一就是一个十",
+    "startFrame": 968,
+    "startSeconds": 32.25,
+    "targetTokens": [
+      "十",
+      "个",
+      "一",
+      "就",
+      "是",
+      "一",
+      "个",
+      "十"
+    ]
+  }
+] satisfies AlignedLessonCue[];

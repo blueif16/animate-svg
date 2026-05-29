@@ -1,10 +1,16 @@
 import "./index.css";
 import { Composition } from "remotion";
+import { InkWashDemo } from "./scenes/InkWashDemo";
 import {
   CountingDemo,
   CompleteComparisonLesson,
+  CompleteFenYuHeLesson,
+  CompleteKp1FenYuHeIntroLesson,
+  CompleteKp2CountingByTensLesson,
+  CompleteKp2v2CountingByTensLesson,
   CompleteMakeTenLesson,
   CompletePinyinToneLesson,
+  CompleteTenOnesMakeOneTenLesson,
   EducationShapeShowcase,
   FishCountingLesson,
   HanziMatchLesson,
@@ -13,14 +19,31 @@ import {
   OneToOneCompareLesson,
   PathFollowDemo,
   PinyinToneLesson,
+  PrimitiveCheckKp1FenHeDiagramHardest,
+  PrimitiveCheckKp1FenHeDiagramMigration,
+  PrimitiveCheckKp1FenHeDiagramMultiplicity,
+  PrimitiveCheckTenOnesMakeOneTenBundleWrap,
+  PrimitiveCheckTenOnesMakeOneTenStickRow,
   ShapePrimitiveGallery,
   StrokeTraceDemo,
+  primitiveCheckKp1FenHeDuration,
+  primitiveCheckTenOnesMakeOneTenDuration,
   completeComparisonLessonDefaultProps,
   completeComparisonLessonDuration,
+  completeFenYuHeLessonDefaultProps,
+  completeFenYuHeLessonDuration,
+  completeKp1FenYuHeIntroLessonDefaultProps,
+  completeKp1FenYuHeIntroLessonDuration,
+  completeKp2CountingByTensLessonDefaultProps,
+  completeKp2CountingByTensLessonDuration,
+  completeKp2v2CountingByTensLessonDefaultProps,
+  completeKp2v2CountingByTensLessonDuration,
   completeMakeTenLessonDefaultProps,
   completeMakeTenLessonDuration,
   completePinyinToneLessonDefaultProps,
   completePinyinToneLessonDuration,
+  completeTenOnesMakeOneTenLessonDefaultProps,
+  completeTenOnesMakeOneTenLessonDuration,
   educationSceneDuration,
   educationShowcaseDuration,
   hybridSketchMotionDuration,
@@ -98,6 +121,13 @@ export const RemotionRoot: React.FC = () => {
         {...compositionDefaults}
       />
       <Composition
+        id="CompleteFenYuHeLesson"
+        component={CompleteFenYuHeLesson}
+        durationInFrames={completeFenYuHeLessonDuration}
+        defaultProps={completeFenYuHeLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
         id="CompleteMakeTenLesson"
         component={CompleteMakeTenLesson}
         durationInFrames={completeMakeTenLessonDuration}
@@ -112,6 +142,64 @@ export const RemotionRoot: React.FC = () => {
         {...compositionDefaults}
       />
       <Composition
+        id="CompleteTenOnesMakeOneTenLesson"
+        component={CompleteTenOnesMakeOneTenLesson}
+        durationInFrames={completeTenOnesMakeOneTenLessonDuration}
+        defaultProps={completeTenOnesMakeOneTenLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="CompleteKp1FenYuHeIntroLesson"
+        component={CompleteKp1FenYuHeIntroLesson}
+        durationInFrames={completeKp1FenYuHeIntroLessonDuration}
+        defaultProps={completeKp1FenYuHeIntroLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="CompleteKp2CountingByTensLesson"
+        component={CompleteKp2CountingByTensLesson}
+        durationInFrames={completeKp2CountingByTensLessonDuration}
+        defaultProps={completeKp2CountingByTensLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="CompleteKp2v2CountingByTensLesson"
+        component={CompleteKp2v2CountingByTensLesson}
+        durationInFrames={completeKp2v2CountingByTensLessonDuration}
+        defaultProps={completeKp2v2CountingByTensLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckTenOnesMakeOneTenBundleWrap"
+        component={PrimitiveCheckTenOnesMakeOneTenBundleWrap}
+        durationInFrames={primitiveCheckTenOnesMakeOneTenDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckTenOnesMakeOneTenStickRow"
+        component={PrimitiveCheckTenOnesMakeOneTenStickRow}
+        durationInFrames={primitiveCheckTenOnesMakeOneTenDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckKp1FenHeDiagramHardest"
+        component={PrimitiveCheckKp1FenHeDiagramHardest}
+        durationInFrames={primitiveCheckKp1FenHeDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckKp1FenHeDiagramMultiplicity"
+        component={PrimitiveCheckKp1FenHeDiagramMultiplicity}
+        durationInFrames={primitiveCheckKp1FenHeDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckKp1FenHeDiagramMigration"
+        component={PrimitiveCheckKp1FenHeDiagramMigration}
+        durationInFrames={primitiveCheckKp1FenHeDuration}
+        {...compositionDefaults}
+      />
+      <Composition
         id="PinyinToneLesson"
         component={PinyinToneLesson}
         durationInFrames={educationSceneDuration}
@@ -121,6 +209,12 @@ export const RemotionRoot: React.FC = () => {
         id="HanziMatchLesson"
         component={HanziMatchLesson}
         durationInFrames={educationSceneDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="InkWashDemo"
+        component={InkWashDemo}
+        durationInFrames={90}
         {...compositionDefaults}
       />
     </>

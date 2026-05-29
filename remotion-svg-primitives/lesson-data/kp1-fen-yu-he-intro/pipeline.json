@@ -1,0 +1,16 @@
+{
+  "lessonId": "kp1-fen-yu-he-intro",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKp1FenYuHeIntroLesson",
+  "cuePlan": "lesson-data/kp1-fen-yu-he-intro/script-cues.json",
+  "output": "out/kp1-fen-yu-he-intro/kp1-fen-yu-he-intro.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kp1-fen-yu-he-intro-voice.wav",
+    "metaOut": "out/kp1-fen-yu-he-intro/gemini-voice.json",
+    "alignOutJson": "out/kp1-fen-yu-he-intro/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kp1FenYuHeIntroTiming.ts",
+    "constPrefix": "kp1FenYuHeIntro"
+  }
+}

@@ -1,0 +1,451 @@
+{
+  "lesson": "ten-ones-make-one-ten",
+  "fps": 30,
+  "generatedAt": "2026-05-27T18:35:15.429Z",
+  "keyFrames": [
+    {
+      "id": "opening:hold",
+      "frame": 88,
+      "cueId": "opening",
+      "offset": 80,
+      "label": "scatter of 10 sticks settled in zone-objects; no badges, no tally",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            451,
+            171,
+            378,
+            318
+          ],
+          "opacity": 1
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "count-to-ten:mid",
+      "frame": 306,
+      "cueId": "count-to-ten",
+      "offset": 30,
+      "label": "row of 10 sticks with some count badges revealed above",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            307,
+            270,
+            666,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "count-badges",
+          "zone": "badges",
+          "bbox": [
+            291,
+            105,
+            698,
+            50
+          ],
+          "opacity": 1
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "feels-slow:hold",
+      "frame": 441,
+      "cueId": "feels-slow",
+      "offset": 60,
+      "label": "row of 10, full badge row, 10步 tally pill, feels-slow underline drawn",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            307,
+            270,
+            666,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "count-badges",
+          "zone": "badges",
+          "bbox": [
+            291,
+            105,
+            698,
+            50
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "tally-10",
+          "zone": "tally",
+          "bbox": [
+            576.4528,
+            466,
+            127.09440000000001,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "mark-feels-slow-underline",
+          "zone": "marks",
+          "bbox": [
+            335,
+            415,
+            610,
+            10
+          ],
+          "opacity": 0.92
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "bundle-action:climax",
+      "frame": 536,
+      "cueId": "bundle-action",
+      "offset": 40,
+      "label": "sticks compressed, rope partly wrapped; badges/tally faded out",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            550,
+            270,
+            180,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-wrap",
+          "zone": "objects",
+          "bbox": [
+            544,
+            219.40799999999996,
+            192,
+            147.456
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "mark-bundle-wrap-arc",
+          "zone": "marks",
+          "bbox": [
+            558,
+            287,
+            164,
+            50
+          ],
+          "opacity": 0.92
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "bundle-action:post",
+      "frame": 566,
+      "cueId": "bundle-action",
+      "offset": 70,
+      "label": "bundle tied with bow on top of rope; sparkle popping; arc traced over",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            550,
+            270,
+            180,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-wrap",
+          "zone": "objects",
+          "bbox": [
+            544,
+            219.40799999999996,
+            192,
+            147.456
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "mark-bundle-wrap-arc",
+          "zone": "marks",
+          "bbox": [
+            558,
+            287,
+            164,
+            50
+          ],
+          "opacity": 0.23
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "rename-bundle:hold",
+      "frame": 682,
+      "cueId": "rename-bundle",
+      "offset": 70,
+      "label": "bundle centered with 一个十 label below in zone-labels; arrow drawn",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            550,
+            270,
+            180,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-wrap",
+          "zone": "objects",
+          "bbox": [
+            544,
+            219.40799999999996,
+            192,
+            147.456
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "label-yigeshi",
+          "zone": "labels",
+          "bbox": [
+            580.48,
+            506.6,
+            119.03999999999999,
+            76.8
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "mark-rename-arrow",
+          "zone": "marks",
+          "bbox": [
+            620,
+            420,
+            40,
+            100
+          ],
+          "opacity": 0.92
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "still-ten-ones:peek",
+      "frame": 786,
+      "cueId": "still-ten-ones",
+      "offset": 50,
+      "label": "bundle dimmed to 0.35; peek '10' label visible in zone-labels upper",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            550,
+            270,
+            180,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-wrap",
+          "zone": "objects",
+          "bbox": [
+            544,
+            219.40799999999996,
+            192,
+            147.456
+          ],
+          "opacity": 0.35
+        },
+        {
+          "id": "label-yigeshi",
+          "zone": "labels",
+          "bbox": [
+            580.48,
+            506.6,
+            119.03999999999999,
+            76.8
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "label-peek-10",
+          "zone": "labels",
+          "bbox": [
+            615.2,
+            491,
+            49.6,
+            48
+          ],
+          "opacity": 1
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "faster-count:contrast",
+      "frame": 941,
+      "cueId": "faster-count",
+      "offset": 80,
+      "label": "left ghost row of 10 + 10步 ghost tally vs right bundle + 1 badge + 1步 tally",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            819,
+            276,
+            162,
+            108
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-wrap",
+          "zone": "objects",
+          "bbox": [
+            813.6,
+            230.46720000000002,
+            172.8,
+            132.7104
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "tally-1",
+          "zone": "tally",
+          "bbox": [
+            845.6784,
+            466,
+            108.64320000000001,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "tally-10-ghost",
+          "zone": "tally",
+          "bbox": [
+            343.39904,
+            388.8,
+            73.20191999999999,
+            26.4
+          ],
+          "opacity": 0.55
+        },
+        {
+          "id": "badge-one",
+          "zone": "badges",
+          "bbox": [
+            872,
+            102,
+            56,
+            56
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "mark-faster-vs",
+          "zone": "marks",
+          "bbox": [
+            620,
+            340,
+            40,
+            40
+          ],
+          "opacity": 0.92
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "recap:takeaway",
+      "frame": 1068,
+      "cueId": "recap",
+      "offset": 100,
+      "label": "bundle back at center; takeaway sentence 十个一 = 一个十 with underline",
+      "elements": [
+        {
+          "id": "sticks-row",
+          "zone": "objects",
+          "bbox": [
+            550,
+            270,
+            180,
+            120
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-wrap",
+          "zone": "objects",
+          "bbox": [
+            544,
+            219.40799999999996,
+            192,
+            147.456
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "label-takeaway",
+          "zone": "labels",
+          "bbox": [
+            461.44,
+            506.6,
+            357.12,
+            76.8
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "mark-recap-underline",
+          "zone": "marks",
+          "bbox": [
+            674,
+            594,
+            132,
+            12
+          ],
+          "opacity": 0.92
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    }
+  ],
+  "summary": {
+    "collisionCount": 0,
+    "keyFramesScanned": 9
+  }
+}

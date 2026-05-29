@@ -1,0 +1,14 @@
+{
+  "chunkCount": 145,
+  "durationSeconds": 24.98,
+  "generationMode": "perCue",
+  "maxClipSeconds": 6.5,
+  "model": "gemini-3.1-flash-live-preview",
+  "output": "public/audio/kp2v2-counting-by-tens-voice.wav",
+  "sampleRate": 24000,
+  "script": "我们一根一根地数……十根，走了十步。\n这十根，捆成一捆，就是一个十。\n再来一捆，就是两个十。\n再加一捆，就是三个十。\n数一，要走十步；数十，只走三步。",
+  "source": "Gemini Live API",
+  "transcriptText": "我们一根一根地数……十根，走了十步。\n这十根，捆成一捆，就是一个十。\n再来一捆，就是两个十。\n再加一捆，就是三个十。\n数一，要走十步；数十，只走三步。",
+  "voiceName": "Aoede",
+  "wavBytes": 1199098
+}

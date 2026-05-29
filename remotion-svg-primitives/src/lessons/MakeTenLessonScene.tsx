@@ -1,11 +1,10 @@
 import {
-  Easing,
   interpolate,
   spring,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { PulseCircle, SparkleBurst } from "../motion-primitives";
+import { EASE, PulseCircle, SparkleBurst, SPRING } from "../motion-primitives";
 import {
   EquationStrip,
   NumberCard,
@@ -71,7 +70,7 @@ const progress = (frame: number, start: number, end: number) =>
 
 const reveal = (frame: number, start: number, duration: number) =>
   interpolate(frame, [start, start + duration], [0, 1], {
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
+    easing: EASE.enter,
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -111,7 +110,7 @@ export const MakeTenLessonScene = () => {
   const equationOpacity = reveal(frame, equationStart, 14);
   const sideNumberOpacity = 1 - reveal(frame, equationStart, 10);
   const totalEntrance = spring({
-    config: { damping: 14, mass: 0.55, stiffness: 180 },
+    config: SPRING.snappy,
     fps,
     frame: frame - makeTenStart,
   });

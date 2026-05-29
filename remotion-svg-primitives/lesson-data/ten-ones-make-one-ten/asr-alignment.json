@@ -1,0 +1,688 @@
+{
+  "fps": 30,
+  "lessonId": "ten-ones-make-one-ten",
+  "asrAssets": {
+    "decoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/decoder-epoch-99-avg-1.onnx",
+    "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
+    "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
+    "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
+  },
+  "recording": "public/audio/ten-ones-make-one-ten-voice.wav",
+  "source": "local sherpa-onnx streaming ASR",
+  "status": "asr-derived",
+  "transcript": {
+    "duration": 36.871,
+    "segments": [
+      {
+        "end": 1.05,
+        "start": 0.2,
+        "text": "看",
+        "tokens": [
+          "看"
+        ]
+      },
+      {
+        "end": 5.55,
+        "start": 1.15,
+        "text": "这里有许多小棒我们",
+        "tokens": [
+          "这",
+          "里",
+          "有",
+          "许",
+          "多",
+          "小",
+          "棒",
+          "我",
+          "们"
+        ]
+      },
+      {
+        "end": 8.75,
+        "start": 5.6,
+        "text": "一根 SIL根的数",
+        "tokens": [
+          "一",
+          "根",
+          "根",
+          "的",
+          "数"
+        ]
+      },
+      {
+        "end": 12.6,
+        "start": 9.15,
+        "text": "请慢慢数完每根小棒",
+        "tokens": [
+          "请",
+          "慢",
+          "慢",
+          "数",
+          "完",
+          "每",
+          "根",
+          "小",
+          "棒"
+        ]
+      },
+      {
+        "end": 15.15,
+        "start": 12.65,
+        "text": "数了十次",
+        "tokens": [
+          "数",
+          "了",
+          "十",
+          "次"
+        ]
+      },
+      {
+        "end": 19.95,
+        "start": 15.2,
+        "text": "才数完我们把这十根捆在一起",
+        "tokens": [
+          "才",
+          "数",
+          "完",
+          "我",
+          "们",
+          "把",
+          "这",
+          "十",
+          "根",
+          "捆",
+          "在",
+          "一",
+          "起"
+        ]
+      },
+      {
+        "end": 22.85,
+        "start": 20.35,
+        "text": "这一捆就叫",
+        "tokens": [
+          "这",
+          "一",
+          "捆",
+          "就",
+          "叫"
+        ]
+      },
+      {
+        "end": 28.6,
+        "start": 22.9,
+        "text": "一个十捆里还是十根小棒哦",
+        "tokens": [
+          "一",
+          "个",
+          "十",
+          "捆",
+          "里",
+          "还",
+          "是",
+          "十",
+          "根",
+          "小",
+          "棒",
+          "哦"
+        ]
+      },
+      {
+        "end": 33.4,
+        "start": 28.65,
+        "text": "现在数一捆 SIL只要属于一",
+        "tokens": [
+          "现",
+          "在",
+          "数",
+          "一",
+          "捆",
+          "只",
+          "要",
+          "属",
+          "于",
+          "一"
+        ]
+      },
+      {
+        "end": 36.87,
+        "start": 33.45,
+        "text": "个一就是一个十",
+        "tokens": [
+          "个",
+          "一",
+          "就",
+          "是",
+          "一",
+          "个",
+          "十"
+        ]
+      }
+    ],
+    "tokenEvents": [
+      {
+        "time": 0.45,
+        "token": "看"
+      },
+      {
+        "time": 1.4,
+        "token": "这"
+      },
+      {
+        "time": 1.7,
+        "token": "里"
+      },
+      {
+        "time": 2.35,
+        "token": "有"
+      },
+      {
+        "time": 2.65,
+        "token": "许"
+      },
+      {
+        "time": 2.65,
+        "token": "多"
+      },
+      {
+        "time": 3.3,
+        "token": "小"
+      },
+      {
+        "time": 3.65,
+        "token": "棒"
+      },
+      {
+        "time": 4.6,
+        "token": "我"
+      },
+      {
+        "time": 4.6,
+        "token": "们"
+      },
+      {
+        "time": 5.85,
+        "token": "一"
+      },
+      {
+        "time": 6.2,
+        "token": "根"
+      },
+      {
+        "time": 7.15,
+        "token": "根"
+      },
+      {
+        "time": 7.45,
+        "token": "的"
+      },
+      {
+        "time": 7.8,
+        "token": "数"
+      },
+      {
+        "time": 9.4,
+        "token": "请"
+      },
+      {
+        "time": 9.7,
+        "token": "慢"
+      },
+      {
+        "time": 10.05,
+        "token": "慢"
+      },
+      {
+        "time": 10.35,
+        "token": "数"
+      },
+      {
+        "time": 10.65,
+        "token": "完"
+      },
+      {
+        "time": 11.0,
+        "token": "每"
+      },
+      {
+        "time": 11.3,
+        "token": "根"
+      },
+      {
+        "time": 11.65,
+        "token": "小"
+      },
+      {
+        "time": 11.65,
+        "token": "棒"
+      },
+      {
+        "time": 12.9,
+        "token": "数"
+      },
+      {
+        "time": 13.55,
+        "token": "了"
+      },
+      {
+        "time": 13.85,
+        "token": "十"
+      },
+      {
+        "time": 14.2,
+        "token": "次"
+      },
+      {
+        "time": 15.45,
+        "token": "才"
+      },
+      {
+        "time": 15.45,
+        "token": "数"
+      },
+      {
+        "time": 15.8,
+        "token": "完"
+      },
+      {
+        "time": 16.75,
+        "token": "我"
+      },
+      {
+        "time": 16.75,
+        "token": "们"
+      },
+      {
+        "time": 17.05,
+        "token": "把"
+      },
+      {
+        "time": 17.4,
+        "token": "这"
+      },
+      {
+        "time": 17.7,
+        "token": "十"
+      },
+      {
+        "time": 18.05,
+        "token": "根"
+      },
+      {
+        "time": 18.65,
+        "token": "捆"
+      },
+      {
+        "time": 18.65,
+        "token": "在"
+      },
+      {
+        "time": 19.0,
+        "token": "一"
+      },
+      {
+        "time": 19.0,
+        "token": "起"
+      },
+      {
+        "time": 20.6,
+        "token": "这"
+      },
+      {
+        "time": 20.6,
+        "token": "一"
+      },
+      {
+        "time": 20.9,
+        "token": "捆"
+      },
+      {
+        "time": 21.85,
+        "token": "就"
+      },
+      {
+        "time": 22.2,
+        "token": "叫"
+      },
+      {
+        "time": 23.15,
+        "token": "一"
+      },
+      {
+        "time": 23.15,
+        "token": "个"
+      },
+      {
+        "time": 23.8,
+        "token": "十"
+      },
+      {
+        "time": 24.75,
+        "token": "捆"
+      },
+      {
+        "time": 25.05,
+        "token": "里"
+      },
+      {
+        "time": 26.05,
+        "token": "还"
+      },
+      {
+        "time": 26.05,
+        "token": "是"
+      },
+      {
+        "time": 27.0,
+        "token": "十"
+      },
+      {
+        "time": 27.0,
+        "token": "根"
+      },
+      {
+        "time": 27.3,
+        "token": "小"
+      },
+      {
+        "time": 27.65,
+        "token": "棒"
+      },
+      {
+        "time": 27.65,
+        "token": "哦"
+      },
+      {
+        "time": 28.9,
+        "token": "现"
+      },
+      {
+        "time": 28.9,
+        "token": "在"
+      },
+      {
+        "time": 29.85,
+        "token": "数"
+      },
+      {
+        "time": 30.2,
+        "token": "一"
+      },
+      {
+        "time": 30.2,
+        "token": "捆"
+      },
+      {
+        "time": 31.45,
+        "token": "只"
+      },
+      {
+        "time": 31.45,
+        "token": "要"
+      },
+      {
+        "time": 32.1,
+        "token": "属"
+      },
+      {
+        "time": 32.1,
+        "token": "于"
+      },
+      {
+        "time": 32.45,
+        "token": "一"
+      },
+      {
+        "time": 33.7,
+        "token": "个"
+      },
+      {
+        "time": 34.35,
+        "token": "一"
+      },
+      {
+        "time": 35.3,
+        "token": "就"
+      },
+      {
+        "time": 35.3,
+        "token": "是"
+      },
+      {
+        "time": 35.95,
+        "token": "一"
+      },
+      {
+        "time": 35.95,
+        "token": "个"
+      },
+      {
+        "time": 36.6,
+        "token": "十"
+      }
+    ]
+  },
+  "cues": [
+    {
+      "asrText": "看 这 里 有 许 多 小 棒 我 们 一 根",
+      "caption": "看，这里有许多小棒。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 113,
+      "endSeconds": 3.77,
+      "id": "opening",
+      "matchScore": 1.0,
+      "matchText": "看 这 里 有 许 多 小 棒",
+      "phrase": "看这里有许多小棒",
+      "startFrame": 8,
+      "startSeconds": 0.25,
+      "targetTokens": [
+        "看",
+        "这",
+        "里",
+        "有",
+        "许",
+        "多",
+        "小",
+        "棒"
+      ]
+    },
+    {
+      "asrText": "许 多 小 棒 我 们 一 根 根 的 数 请 慢 慢 数",
+      "caption": "我们一根一根地数。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 238,
+      "endSeconds": 7.92,
+      "id": "count-one-by-one",
+      "matchScore": 0.837,
+      "matchText": "我 们 一 根 根 的 数",
+      "phrase": "我们一根一根地数",
+      "startFrame": 132,
+      "startSeconds": 4.4,
+      "targetTokens": [
+        "我",
+        "们",
+        "一",
+        "根",
+        "一",
+        "根",
+        "地",
+        "数"
+      ]
+    },
+    {
+      "asrText": "根 根 的 数 请 慢 慢 数 完 每 根 小 棒 数 了 十 次",
+      "caption": "请慢慢数完每根小棒。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 353,
+      "endSeconds": 11.77,
+      "id": "count-to-ten",
+      "matchScore": 1.0,
+      "matchText": "请 慢 慢 数 完 每 根 小 棒",
+      "phrase": "请慢慢数完每根小棒",
+      "startFrame": 276,
+      "startSeconds": 9.2,
+      "targetTokens": [
+        "请",
+        "慢",
+        "慢",
+        "数",
+        "完",
+        "每",
+        "根",
+        "小",
+        "棒"
+      ]
+    },
+    {
+      "asrText": "每 根 小 棒 数 了 十 次 才 数 完 我 们 把 这",
+      "caption": "数了十次，才数完。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 478,
+      "endSeconds": 15.92,
+      "id": "feels-slow",
+      "matchScore": 1.0,
+      "matchText": "数 了 十 次 才 数 完",
+      "phrase": "数了十次才数完",
+      "startFrame": 381,
+      "startSeconds": 12.7,
+      "targetTokens": [
+        "数",
+        "了",
+        "十",
+        "次",
+        "才",
+        "数",
+        "完"
+      ]
+    },
+    {
+      "asrText": "次 才 数 完 我 们 把 这 十 根 捆 在 一 起 这 一 捆 就",
+      "caption": "我们把这十根捆在一起。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 574,
+      "endSeconds": 19.12,
+      "id": "bundle-action",
+      "matchScore": 1.0,
+      "matchText": "我 们 把 这 十 根 捆 在 一 起",
+      "phrase": "我们把这十根捆在一起",
+      "startFrame": 496,
+      "startSeconds": 16.55,
+      "targetTokens": [
+        "我",
+        "们",
+        "把",
+        "这",
+        "十",
+        "根",
+        "捆",
+        "在",
+        "一",
+        "起"
+      ]
+    },
+    {
+      "asrText": "捆 在 一 起 这 一 捆 就 叫 一 个 十 捆 里 还 是",
+      "caption": "这一捆，就叫一个十。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 718,
+      "endSeconds": 23.92,
+      "id": "rename-bundle",
+      "matchScore": 1.0,
+      "matchText": "这 一 捆 就 叫 一 个 十",
+      "phrase": "这一捆就叫一个十",
+      "startFrame": 612,
+      "startSeconds": 20.4,
+      "targetTokens": [
+        "这",
+        "一",
+        "捆",
+        "就",
+        "叫",
+        "一",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "叫 一 个 十 捆 里 还 是 十 根 小 棒 哦 现 在 数 一",
+      "caption": "捆里还是十根小棒哦。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 833,
+      "endSeconds": 27.77,
+      "id": "still-ten-ones",
+      "matchScore": 1.0,
+      "matchText": "捆 里 还 是 十 根 小 棒 哦",
+      "phrase": "捆里还是十根小棒哦",
+      "startFrame": 736,
+      "startSeconds": 24.55,
+      "targetTokens": [
+        "捆",
+        "里",
+        "还",
+        "是",
+        "十",
+        "根",
+        "小",
+        "棒",
+        "哦"
+      ]
+    },
+    {
+      "asrText": "根 小 棒 哦 现 在 数 一 捆 只 要 属 于 一 个 一 就 是",
+      "caption": "现在数一捆，只要数一次。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 966,
+      "endSeconds": 32.2,
+      "id": "faster-count",
+      "matchScore": 0.842,
+      "matchText": "现 在 数 一 捆 只 要 属 于 一",
+      "phrase": "现在数一捆只要数一次",
+      "startFrame": 861,
+      "startSeconds": 28.7,
+      "targetTokens": [
+        "现",
+        "在",
+        "数",
+        "一",
+        "捆",
+        "只",
+        "要",
+        "数",
+        "一",
+        "次"
+      ]
+    },
+    {
+      "asrText": "只 要 属 于 一 个 一 就 是 一 个 十",
+      "caption": "十个一，就是一个十。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 1102,
+      "endSeconds": 36.72,
+      "id": "recap",
+      "matchScore": 0.933,
+      "matchText": "一 个 一 就 是 一 个 十",
+      "phrase": "十个一就是一个十",
+      "startFrame": 968,
+      "startSeconds": 32.25,
+      "targetTokens": [
+        "十",
+        "个",
+        "一",
+        "就",
+        "是",
+        "一",
+        "个",
+        "十"
+      ]
+    }
+  ]
+}

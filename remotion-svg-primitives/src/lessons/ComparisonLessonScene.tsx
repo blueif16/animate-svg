@@ -1,5 +1,5 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { PopIn, PulseCircle, SparkleBurst } from "../motion-primitives";
+import { PopIn, PulseCircle, SparkleBurst, SPRING } from "../motion-primitives";
 import {
   ComparisonSymbol,
   CountableObject,
@@ -52,7 +52,7 @@ export const ComparisonLessonScene = () => {
   const resultStart = cues.result.startFrame;
   const pairingProgress = progress(frame, pairingStart, pairingEnd);
   const symbolEntrance = spring({
-    config: { damping: 13, mass: 0.55, stiffness: 180 },
+    config: SPRING.snappy,
     fps,
     frame: frame - resultStart,
   });
