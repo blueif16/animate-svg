@@ -1,0 +1,16 @@
+{
+  "lessonId": "ten-ones-make-one-ten",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteTenOnesMakeOneTenLesson",
+  "cuePlan": "lesson-data/ten-ones-make-one-ten/script-cues.json",
+  "output": "out/ten-ones-make-one-ten/ten-ones-make-one-ten.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/ten-ones-make-one-ten-voice.wav",
+    "metaOut": "lesson-data/ten-ones-make-one-ten/gemini-voice.json",
+    "alignOutJson": "lesson-data/ten-ones-make-one-ten/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/tenOnesMakeOneTenTiming.ts",
+    "constPrefix": "tenOnesMakeOneTen"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "chunkCount": 171,
+  "durationSeconds": 25.93,
+  "generationMode": "perCue",
+  "maxClipSeconds": 6.5,
+  "model": "gemini-3.1-flash-live-preview",
+  "output": "public/audio/kp2-counting-by-tens-voice.wav",
+  "sampleRate": 24000,
+  "script": "看，这是我们的一个十。\n把它打开，里面有十根。\n一根一根地数，要数十次。\n捆起来，只要数一次。\n再加一捆，就是两个十。\n再加一捆，就是三个十。\n一捆一捆地数，更快。",
+  "source": "Gemini Live API",
+  "transcriptText": "看，这是我们的一个十。\n把它打开，里面有十根。\n一根一根地数，要数十次。\n捆起来，只要数一次。\n再加一捆，就是两个十。\n再加一捆，就是三个十。\n一捆一捆地数，更快。",
+  "voiceName": "Aoede",
+  "wavBytes": 1244708
+}

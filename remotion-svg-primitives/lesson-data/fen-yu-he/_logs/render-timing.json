@@ -1,0 +1,19 @@
+{
+  "lessonId": "fen-yu-he",
+  "generatedAt": "2026-05-29T08:54:21.492Z",
+  "totalMs": 26121,
+  "steps": [
+    {
+      "step": "Silence detection",
+      "ms": 439
+    },
+    {
+      "step": "Render MP4",
+      "ms": 17907
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 7775
+    }
+  ]
+}

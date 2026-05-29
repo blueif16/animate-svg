@@ -1,0 +1,16 @@
+{
+  "lessonId": "{{lessonId}}",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "{{compositionName}}",
+  "cuePlan": "lesson-data/{{lessonId}}/script-cues.json",
+  "output": "out/{{lessonId}}/{{lessonId}}.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/{{lessonId}}-voice.wav",
+    "metaOut": "out/{{lessonId}}/gemini-voice.json",
+    "alignOutJson": "out/{{lessonId}}/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/{{camelLessonId}}Timing.ts",
+    "constPrefix": "{{camelLessonId}}"
+  }
+}

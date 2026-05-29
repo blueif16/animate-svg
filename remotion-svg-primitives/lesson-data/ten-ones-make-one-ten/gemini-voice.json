@@ -1,0 +1,14 @@
+{
+  "chunkCount": 255,
+  "durationSeconds": 36.871,
+  "generationMode": "perCue",
+  "maxClipSeconds": 6.5,
+  "model": "gemini-3.1-flash-live-preview",
+  "output": "public/audio/ten-ones-make-one-ten-voice.wav",
+  "sampleRate": 24000,
+  "script": "看，这里有许多小棒。\n我们一根一根地数。\n请慢慢数完每根小棒。\n数了十次，才数完。\n我们把这十根捆在一起。\n这一捆，就叫一个十。\n捆里还是十根小棒哦。\n现在数一捆，只要数一次。\n十个一，就是一个十。",
+  "source": "Gemini Live API",
+  "transcriptText": "看，这里有许多小棒。\n我们一根一根地数。\n请慢慢数完每根小棒。\n数了十次，才数完。\n我们把这十根捆在一起。\n这一捆，就叫一个十。\n捆里还是十根小棒哦。\n现在数一捆，只要数一次。\n十个一，就是一个十。",
+  "voiceName": "Aoede",
+  "wavBytes": 1769836
+}

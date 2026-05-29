@@ -1,0 +1,64 @@
+{
+  "lessonId": "kp2-counting-by-tens",
+  "contactSheet": "kp2-counting-by-tens-contact.png",
+  "fps": 30,
+  "columns": 2,
+  "tiles": [
+    {
+      "index": 0,
+      "row": 0,
+      "col": 0,
+      "cueId": "bundle-recall",
+      "midFrame": 65,
+      "midSeconds": 2.17
+    },
+    {
+      "index": 1,
+      "row": 0,
+      "col": 1,
+      "cueId": "untie-reveal",
+      "midFrame": 170,
+      "midSeconds": 5.67
+    },
+    {
+      "index": 2,
+      "row": 1,
+      "col": 0,
+      "cueId": "slow-count-ones",
+      "midFrame": 290,
+      "midSeconds": 9.67
+    },
+    {
+      "index": 3,
+      "row": 1,
+      "col": 1,
+      "cueId": "fast-vs-slow",
+      "midFrame": 415,
+      "midSeconds": 13.83
+    },
+    {
+      "index": 4,
+      "row": 2,
+      "col": 0,
+      "cueId": "two-tens",
+      "midFrame": 575,
+      "midSeconds": 19.17
+    },
+    {
+      "index": 5,
+      "row": 2,
+      "col": 1,
+      "cueId": "three-tens",
+      "midFrame": 636,
+      "midSeconds": 21.2
+    },
+    {
+      "index": 6,
+      "row": 3,
+      "col": 0,
+      "cueId": "recap",
+      "midFrame": 737,
+      "midSeconds": 24.57
+    }
+  ]
+}

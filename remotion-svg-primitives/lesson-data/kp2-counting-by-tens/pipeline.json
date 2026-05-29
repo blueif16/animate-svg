@@ -1,0 +1,16 @@
+{
+  "lessonId": "kp2-counting-by-tens",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKp2CountingByTensLesson",
+  "cuePlan": "lesson-data/kp2-counting-by-tens/script-cues.json",
+  "output": "lesson-data/kp2-counting-by-tens/kp2-counting-by-tens.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kp2-counting-by-tens-voice.wav",
+    "metaOut": "lesson-data/kp2-counting-by-tens/gemini-voice.json",
+    "alignOutJson": "lesson-data/kp2-counting-by-tens/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kp2CountingByTensTiming.ts",
+    "constPrefix": "kp2CountingByTens"
+  }
+}

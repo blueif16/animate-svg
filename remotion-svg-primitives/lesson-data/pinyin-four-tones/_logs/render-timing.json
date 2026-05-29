@@ -1,0 +1,27 @@
+{
+  "lessonId": "pinyin-four-tones",
+  "generatedAt": "2026-05-29T18:55:53.036Z",
+  "totalMs": 13236,
+  "steps": [
+    {
+      "step": "Silence detection",
+      "ms": 306
+    },
+    {
+      "step": "Bundle",
+      "ms": 2297
+    },
+    {
+      "step": "Render MP4",
+      "ms": 9142
+    },
+    {
+      "step": "Loudnorm (-16 LUFS / -1 dBTP)",
+      "ms": 1092
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 399
+    }
+  ]
+}

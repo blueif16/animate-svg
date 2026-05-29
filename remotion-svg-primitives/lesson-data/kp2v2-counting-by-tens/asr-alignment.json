@@ -1,0 +1,454 @@
+{
+  "fps": 30,
+  "lessonId": "kp2v2-counting-by-tens",
+  "asrAssets": {
+    "decoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/decoder-epoch-99-avg-1.onnx",
+    "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
+    "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
+    "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
+  },
+  "recording": "public/audio/kp2v2-counting-by-tens-voice.wav",
+  "source": "local sherpa-onnx streaming ASR",
+  "status": "asr-derived",
+  "transcript": {
+    "duration": 24.98,
+    "segments": [
+      {
+        "end": 15.8,
+        "start": 0.2,
+        "text": "我们 SIL一根一根的数 SIL十根 SIL走了 SIL十步这十根 SIL捆成一捆 SIL是一个十 SIL再来一捆就是两个十",
+        "tokens": [
+          "我",
+          "们",
+          "一",
+          "根",
+          "一",
+          "根",
+          "的",
+          "数",
+          "十",
+          "根",
+          "走",
+          "了",
+          "十",
+          "步",
+          "这",
+          "十",
+          "根",
+          "捆",
+          "成",
+          "一",
+          "捆",
+          "是",
+          "一",
+          "个",
+          "十",
+          "再",
+          "来",
+          "一",
+          "捆",
+          "就",
+          "是",
+          "两",
+          "个",
+          "十"
+        ]
+      },
+      {
+        "end": 19.3,
+        "start": 15.85,
+        "text": "再加一捆就是三个十",
+        "tokens": [
+          "再",
+          "加",
+          "一",
+          "捆",
+          "就",
+          "是",
+          "三",
+          "个",
+          "十"
+        ]
+      },
+      {
+        "end": 24.98,
+        "start": 19.4,
+        "text": "数一要走十步 SIL属实 SIL制奏三步",
+        "tokens": [
+          "数",
+          "一",
+          "要",
+          "走",
+          "十",
+          "步",
+          "属",
+          "实",
+          "制",
+          "奏",
+          "三",
+          "步"
+        ]
+      }
+    ],
+    "tokenEvents": [
+      {
+        "time": 0.45,
+        "token": "我"
+      },
+      {
+        "time": 0.75,
+        "token": "们"
+      },
+      {
+        "time": 1.7,
+        "token": "一"
+      },
+      {
+        "time": 2.05,
+        "token": "根"
+      },
+      {
+        "time": 2.35,
+        "token": "一"
+      },
+      {
+        "time": 2.35,
+        "token": "根"
+      },
+      {
+        "time": 3.0,
+        "token": "的"
+      },
+      {
+        "time": 3.0,
+        "token": "数"
+      },
+      {
+        "time": 4.6,
+        "token": "十"
+      },
+      {
+        "time": 4.6,
+        "token": "根"
+      },
+      {
+        "time": 5.85,
+        "token": "走"
+      },
+      {
+        "time": 5.85,
+        "token": "了"
+      },
+      {
+        "time": 6.85,
+        "token": "十"
+      },
+      {
+        "time": 6.85,
+        "token": "步"
+      },
+      {
+        "time": 7.45,
+        "token": "这"
+      },
+      {
+        "time": 7.8,
+        "token": "十"
+      },
+      {
+        "time": 7.8,
+        "token": "根"
+      },
+      {
+        "time": 8.75,
+        "token": "捆"
+      },
+      {
+        "time": 8.75,
+        "token": "成"
+      },
+      {
+        "time": 9.05,
+        "token": "一"
+      },
+      {
+        "time": 9.05,
+        "token": "捆"
+      },
+      {
+        "time": 10.35,
+        "token": "是"
+      },
+      {
+        "time": 10.35,
+        "token": "一"
+      },
+      {
+        "time": 10.65,
+        "token": "个"
+      },
+      {
+        "time": 11.0,
+        "token": "十"
+      },
+      {
+        "time": 12.25,
+        "token": "再"
+      },
+      {
+        "time": 12.25,
+        "token": "来"
+      },
+      {
+        "time": 12.25,
+        "token": "一"
+      },
+      {
+        "time": 12.6,
+        "token": "捆"
+      },
+      {
+        "time": 13.55,
+        "token": "就"
+      },
+      {
+        "time": 13.55,
+        "token": "是"
+      },
+      {
+        "time": 14.2,
+        "token": "两"
+      },
+      {
+        "time": 14.2,
+        "token": "个"
+      },
+      {
+        "time": 14.85,
+        "token": "十"
+      },
+      {
+        "time": 16.1,
+        "token": "再"
+      },
+      {
+        "time": 16.1,
+        "token": "加"
+      },
+      {
+        "time": 16.1,
+        "token": "一"
+      },
+      {
+        "time": 16.45,
+        "token": "捆"
+      },
+      {
+        "time": 17.05,
+        "token": "就"
+      },
+      {
+        "time": 17.4,
+        "token": "是"
+      },
+      {
+        "time": 18.05,
+        "token": "三"
+      },
+      {
+        "time": 18.05,
+        "token": "个"
+      },
+      {
+        "time": 18.35,
+        "token": "十"
+      },
+      {
+        "time": 19.65,
+        "token": "数"
+      },
+      {
+        "time": 19.95,
+        "token": "一"
+      },
+      {
+        "time": 20.6,
+        "token": "要"
+      },
+      {
+        "time": 21.25,
+        "token": "走"
+      },
+      {
+        "time": 21.55,
+        "token": "十"
+      },
+      {
+        "time": 21.55,
+        "token": "步"
+      },
+      {
+        "time": 23.15,
+        "token": "属"
+      },
+      {
+        "time": 23.15,
+        "token": "实"
+      },
+      {
+        "time": 24.1,
+        "token": "制"
+      },
+      {
+        "time": 24.45,
+        "token": "奏"
+      },
+      {
+        "time": 24.75,
+        "token": "三"
+      },
+      {
+        "time": 24.75,
+        "token": "步"
+      }
+    ]
+  },
+  "cues": [
+    {
+      "asrText": "我 们 一 根 一 根 的 数 十 根 走 了 十 步 这 十 根 捆",
+      "caption": "我们一根一根地数 …… 十根，走了十步。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 209,
+      "endSeconds": 6.97,
+      "id": "loose-count-felt",
+      "matchScore": 0.963,
+      "matchText": "我 们 一 根 一 根 的 数 十 根 走 了 十 步",
+      "phrase": "我们一根一根地数十根走了十步",
+      "startFrame": 8,
+      "startSeconds": 0.25,
+      "targetTokens": [
+        "我",
+        "们",
+        "一",
+        "根",
+        "一",
+        "根",
+        "地",
+        "数",
+        "十",
+        "根",
+        "走",
+        "了",
+        "十",
+        "步"
+      ]
+    },
+    {
+      "asrText": "走 了 十 步 这 十 根 捆 成 一 捆 是 一 个 十 再 来 一 捆",
+      "caption": "这十根，捆成一捆，就是一个十。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 334,
+      "endSeconds": 11.12,
+      "id": "bundle-is-one-count",
+      "matchScore": 0.935,
+      "matchText": "这 十 根 捆 成 一 捆 是 一 个 十",
+      "phrase": "这十根捆成一捆就是一个十",
+      "startFrame": 218,
+      "startSeconds": 7.25,
+      "targetTokens": [
+        "这",
+        "十",
+        "根",
+        "捆",
+        "成",
+        "一",
+        "捆",
+        "就",
+        "是",
+        "一",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "是 一 个 十 再 来 一 捆 就 是 两 个 十 再 加 一 捆",
+      "caption": "再来一捆，就是两个十。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 449,
+      "endSeconds": 14.97,
+      "id": "tens-count-like-ones",
+      "matchScore": 1.0,
+      "matchText": "再 来 一 捆 就 是 两 个 十",
+      "phrase": "再来一捆就是两个十",
+      "startFrame": 362,
+      "startSeconds": 12.05,
+      "targetTokens": [
+        "再",
+        "来",
+        "一",
+        "捆",
+        "就",
+        "是",
+        "两",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "是 两 个 十 再 加 一 捆 就 是 三 个 十 数 一 要 走",
+      "caption": "再加一捆，就是三个十。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 554,
+      "endSeconds": 18.47,
+      "id": "pattern-holds",
+      "matchScore": 1.0,
+      "matchText": "再 加 一 捆 就 是 三 个 十",
+      "phrase": "再加一捆就是三个十",
+      "startFrame": 477,
+      "startSeconds": 15.9,
+      "targetTokens": [
+        "再",
+        "加",
+        "一",
+        "捆",
+        "就",
+        "是",
+        "三",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "是 三 个 十 数 一 要 走 十 步 属 实 制 奏 三 步",
+      "caption": "数一，要走十步；数十，只走三步。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 746,
+      "endSeconds": 24.87,
+      "id": "tens-are-the-faster-way",
+      "matchScore": 0.826,
+      "matchText": "数 一 要 走 十 步 属 实 制 奏 三 步",
+      "phrase": "数一要走十步数十只走三步",
+      "startFrame": 584,
+      "startSeconds": 19.45,
+      "targetTokens": [
+        "数",
+        "一",
+        "要",
+        "走",
+        "十",
+        "步",
+        "数",
+        "十",
+        "只",
+        "走",
+        "三",
+        "步"
+      ]
+    }
+  ]
+}

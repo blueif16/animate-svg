@@ -1,0 +1,16 @@
+{
+  "lessonId": "kp3-tens-and-ones-place",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKp3TensAndOnesPlaceLesson",
+  "cuePlan": "lesson-data/kp3-tens-and-ones-place/script-cues.json",
+  "output": "lesson-data/kp3-tens-and-ones-place/kp3-tens-and-ones-place.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kp3-tens-and-ones-place-voice.wav",
+    "metaOut": "lesson-data/kp3-tens-and-ones-place/gemini-voice.json",
+    "alignOutJson": "lesson-data/kp3-tens-and-ones-place/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kp3TensAndOnesPlaceTiming.ts",
+    "constPrefix": "kp3TensAndOnesPlace"
+  }
+}

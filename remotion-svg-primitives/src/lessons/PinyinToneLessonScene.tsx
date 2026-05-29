@@ -1,4 +1,5 @@
-import { Easing, interpolate, useCurrentFrame } from "remotion";
+import { interpolate, useCurrentFrame } from "remotion";
+import { EASE } from "../motion-primitives";
 import { SceneFrame } from "../scenes/SceneFrame";
 import {
   AnswerTile,
@@ -76,7 +77,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 const reveal = (frame: number, start: number, duration: number) =>
   interpolate(frame, [start, start + duration], [0, 1], {
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
+    easing: EASE.enter,
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });

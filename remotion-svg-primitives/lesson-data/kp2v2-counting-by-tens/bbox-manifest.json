@@ -1,0 +1,616 @@
+{
+  "lesson": "kp2v2-counting-by-tens",
+  "fps": 30,
+  "generatedAt": "2026-05-28T00:23:12.299Z",
+  "keyFrames": [
+    {
+      "id": "loose-count-felt:cascade-mid",
+      "frame": 88,
+      "cueId": "loose-count-felt",
+      "offset": 80,
+      "label": "row of 10 sticks, ~5 count badges revealed above (1..5), cascade walking",
+      "elements": [
+        {
+          "id": "c1-loose-row",
+          "zone": "objects",
+          "bbox": [
+            138,
+            310,
+            1004,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "c1-badges",
+          "zone": "badges",
+          "bbox": [
+            121,
+            132,
+            1038,
+            48
+          ],
+          "opacity": 1
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "loose-count-felt:full",
+      "frame": 178,
+      "cueId": "loose-count-felt",
+      "offset": 170,
+      "label": "row of 10 sticks + all 10 count badges visible; felt-labor hold",
+      "elements": [
+        {
+          "id": "c1-loose-row",
+          "zone": "objects",
+          "bbox": [
+            138,
+            310,
+            1004,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "c1-badges",
+          "zone": "badges",
+          "bbox": [
+            121,
+            132,
+            1038,
+            48
+          ],
+          "opacity": 1
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "bundle-is-one-count:wrap",
+      "frame": 268,
+      "cueId": "bundle-is-one-count",
+      "offset": 50,
+      "label": "sticks compressed into bundle layout; coral rope tying with top bow forming",
+      "elements": [
+        {
+          "id": "bundle-0-sticks",
+          "zone": "objects",
+          "bbox": [
+            552,
+            310,
+            176,
+            100
+          ],
+          "opacity": 0.8722015952852717
+        },
+        {
+          "id": "bundle-0-wrap",
+          "zone": "objects",
+          "bbox": [
+            552,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 0.8722015952852717
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "bundle-is-one-count:landed",
+      "frame": 318,
+      "cueId": "bundle-is-one-count",
+      "offset": 100,
+      "label": "bundle settled at center, 一个十 label below, '1' badge above bundle",
+      "elements": [
+        {
+          "id": "bundle-0-sticks",
+          "zone": "objects",
+          "bbox": [
+            552,
+            310,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-wrap",
+          "zone": "objects",
+          "bbox": [
+            552,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-badge",
+          "zone": "badges",
+          "bbox": [
+            616,
+            132,
+            48,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-label",
+          "zone": "labels",
+          "bbox": [
+            599.08,
+            553.6,
+            81.84,
+            52.8
+          ],
+          "opacity": 0.9882640435635894
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "tens-count-like-ones:two",
+      "frame": 437,
+      "cueId": "tens-count-like-ones",
+      "offset": 75,
+      "label": "two bundles side-by-side; badges 1, 2 above; labels 一个十, 两个十 below",
+      "elements": [
+        {
+          "id": "bundle-0-sticks",
+          "zone": "objects",
+          "bbox": [
+            424,
+            310,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-sticks",
+          "zone": "objects",
+          "bbox": [
+            680,
+            310,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-wrap",
+          "zone": "objects",
+          "bbox": [
+            424,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-wrap",
+          "zone": "objects",
+          "bbox": [
+            680,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-badge",
+          "zone": "badges",
+          "bbox": [
+            488,
+            132,
+            48,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-badge",
+          "zone": "badges",
+          "bbox": [
+            744,
+            132,
+            48,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-label",
+          "zone": "labels",
+          "bbox": [
+            471.08,
+            553.6,
+            81.84,
+            52.8
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-label",
+          "zone": "labels",
+          "bbox": [
+            727.08,
+            553.6,
+            81.84,
+            52.8
+          ],
+          "opacity": 0.9949886653607001
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "pattern-holds:three",
+      "frame": 547,
+      "cueId": "pattern-holds",
+      "offset": 70,
+      "label": "three bundles in row; badges 1, 2, 3 above; labels 一个十, 两个十, 三个十 below",
+      "elements": [
+        {
+          "id": "bundle-0-sticks",
+          "zone": "objects",
+          "bbox": [
+            296,
+            310,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-sticks",
+          "zone": "objects",
+          "bbox": [
+            552,
+            310,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-sticks",
+          "zone": "objects",
+          "bbox": [
+            808,
+            310,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-wrap",
+          "zone": "objects",
+          "bbox": [
+            296,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-wrap",
+          "zone": "objects",
+          "bbox": [
+            552,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-wrap",
+          "zone": "objects",
+          "bbox": [
+            808,
+            281.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-badge",
+          "zone": "badges",
+          "bbox": [
+            360,
+            132,
+            48,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-badge",
+          "zone": "badges",
+          "bbox": [
+            616,
+            132,
+            48,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-badge",
+          "zone": "badges",
+          "bbox": [
+            872,
+            132,
+            48,
+            48
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-label",
+          "zone": "labels",
+          "bbox": [
+            343.08,
+            553.6,
+            81.84,
+            52.8
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-label",
+          "zone": "labels",
+          "bbox": [
+            599.08,
+            553.6,
+            81.84,
+            52.8
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-label",
+          "zone": "labels",
+          "bbox": [
+            855.08,
+            553.6,
+            81.84,
+            52.8
+          ],
+          "opacity": 0.9984953720140475
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "tens-are-the-faster-way:both-rows",
+      "frame": 644,
+      "cueId": "tens-are-the-faster-way",
+      "offset": 60,
+      "label": "loose row of 10 fading in above; 3-bundle row reflowing below; no pills yet",
+      "elements": [
+        {
+          "id": "bundle-0-sticks",
+          "zone": "objects",
+          "bbox": [
+            296,
+            460,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-sticks",
+          "zone": "objects",
+          "bbox": [
+            552,
+            460,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-sticks",
+          "zone": "objects",
+          "bbox": [
+            808,
+            460,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-wrap",
+          "zone": "objects",
+          "bbox": [
+            296,
+            431.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-wrap",
+          "zone": "objects",
+          "bbox": [
+            552,
+            431.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-wrap",
+          "zone": "objects",
+          "bbox": [
+            808,
+            431.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "beat5-loose-row",
+          "zone": "objects",
+          "bbox": [
+            138,
+            230,
+            1004,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "tally-ten-bu",
+          "zone": "labels",
+          "bbox": [
+            573.9072,
+            184,
+            132.1856,
+            52
+          ],
+          "opacity": 0.6342441116743412
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    },
+    {
+      "id": "tens-are-the-faster-way:climax",
+      "frame": 724,
+      "cueId": "tens-are-the-faster-way",
+      "offset": 140,
+      "label": "both rows settled; '十步' pill above loose row; '三步' pill above bundle row; sparkle on '三步'",
+      "elements": [
+        {
+          "id": "bundle-0-sticks",
+          "zone": "objects",
+          "bbox": [
+            296,
+            460,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-sticks",
+          "zone": "objects",
+          "bbox": [
+            552,
+            460,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-sticks",
+          "zone": "objects",
+          "bbox": [
+            808,
+            460,
+            176,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-0-wrap",
+          "zone": "objects",
+          "bbox": [
+            296,
+            431.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-1-wrap",
+          "zone": "objects",
+          "bbox": [
+            552,
+            431.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "bundle-2-wrap",
+          "zone": "objects",
+          "bbox": [
+            808,
+            431.152,
+            176,
+            112.64
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "beat5-loose-row",
+          "zone": "objects",
+          "bbox": [
+            138,
+            230,
+            1004,
+            100
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "tally-ten-bu",
+          "zone": "labels",
+          "bbox": [
+            573.9072,
+            184,
+            132.1856,
+            52
+          ],
+          "opacity": 1
+        },
+        {
+          "id": "tally-three-bu",
+          "zone": "labels",
+          "bbox": [
+            583.9016,
+            364,
+            112.1968,
+            52
+          ],
+          "opacity": 1
+        }
+      ],
+      "collisions": [],
+      "warnings": []
+    }
+  ],
+  "summary": {
+    "collisionCount": 0,
+    "keyFramesScanned": 8
+  }
+}

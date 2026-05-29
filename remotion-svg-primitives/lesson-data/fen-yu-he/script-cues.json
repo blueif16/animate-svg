@@ -1,0 +1,61 @@
+{
+  "lessonId": "fen-yu-he",
+  "cues": [
+    {
+      "id": "intro-title",
+      "narration": "今天，我们学五的分与合。",
+      "phrase": "今天我们学五的分与合",
+      "caption": "今天，我们学五的分与合。"
+    },
+    {
+      "id": "five-whole",
+      "narration": "先看中间这一堆糖。",
+      "phrase": "先看中间这一堆糖",
+      "caption": "先看中间这一堆糖。"
+    },
+    {
+      "id": "split-into-two",
+      "narration": "画一条线，把它们分开。",
+      "phrase": "画一条线把它们分开",
+      "caption": "画一条线，把它们分开。"
+    },
+    {
+      "id": "recombine-inverse",
+      "narration": "再推回来，合起来。",
+      "phrase": "再推回来合起来",
+      "caption": "再推回来，合起来。"
+    },
+    {
+      "id": "read-fen-he-shi",
+      "narration": "这样分，可以写成分合式，上下都能读。",
+      "phrase": "这样分可以写成分合式上下都能读",
+      "caption": "这样分，可以写成分合式，上下都能读。",
+      "emphasis": true
+    },
+    {
+      "id": "first-ordered-split",
+      "narration": "我们从左边最少的开始排。",
+      "phrase": "我们从左边最少的开始排",
+      "caption": "我们从左边最少的开始排。"
+    },
+    {
+      "id": "slide-one-at-a-time",
+      "narration": "再挪一个到左边，又一个，再一个，每挪一次，多出一行。",
+      "phrase": "再挪一个到左边又一个再一个每挪一次多出一行",
+      "caption": "再挪一个到左边，又一个，再一个，每挪一次，多出一行。"
+    },
+    {
+      "id": "ordered-column-complete",
+      "narration": "从上往下看，左边排好了。",
+      "phrase": "从上往下看左边排好了",
+      "caption": "从上往下看，左边排好了。"
+    },
+    {
+      "id": "order-matters",
+      "narration": "这两行，左右换一下，就不一样。",
+      "phrase": "这两行左右换一下就不一样",
+      "caption": "这两行，左右换一下，就不一样。",
+      "emphasis": true
+    }
+  ]
+}

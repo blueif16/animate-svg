@@ -1,0 +1,67 @@
+{
+  "lessonId": "kp1-fen-yu-he-intro",
+  "cues": [
+    {
+      "id": "intro",
+      "narration": "今天，我们来认识分与合。",
+      "phrase": "今天我们来认识分与合",
+      "caption": "今天，我们来认识分与合。"
+    },
+    {
+      "id": "fen-show",
+      "narration": "看，这一堆点点可以分开。",
+      "phrase": "看这一堆点点可以分开",
+      "caption": "看，这一堆点点可以分开。"
+    },
+    {
+      "id": "fen-name",
+      "narration": "把它们这样分开，就叫做分。",
+      "phrase": "把它们这样分开就叫做分",
+      "caption": "把它们这样分开，就叫做分。"
+    },
+    {
+      "id": "he-show",
+      "narration": "现在反过来，让它们合到一起。",
+      "phrase": "现在反过来让它们合到一起",
+      "caption": "现在反过来，让它们合到一起。"
+    },
+    {
+      "id": "he-name",
+      "narration": "合到一起，就叫做合。分和合，方向相反。",
+      "phrase": "合到一起就叫做合分和合方向相反",
+      "caption": "合到一起，就叫做合。分和合，方向相反。",
+      "emphasis": true
+    },
+    {
+      "id": "fenheshi-intro",
+      "narration": "把它画下来，这张图叫做分合式。",
+      "phrase": "把它画下来这张图叫做分合式",
+      "caption": "把它画下来，这张图叫做分合式。",
+      "emphasis": true
+    },
+    {
+      "id": "fenheshi-read",
+      "narration": "从上往下，是分成；从下往上，是组成。",
+      "phrase": "从上往下是分成从下往上是组成",
+      "caption": "从上往下，是分成；从下往上，是组成。"
+    },
+    {
+      "id": "five-1-4",
+      "narration": "一和四，也是五的一种分法。",
+      "phrase": "一和四也是五的一种分法",
+      "caption": "一和四，也是五的一种分法。"
+    },
+    {
+      "id": "five-3-2-and-4-1",
+      "narration": "还有三和二，四和一。一共四种。",
+      "phrase": "还有三和二四和一一共四种",
+      "caption": "还有三和二，四和一。一共四种。"
+    },
+    {
+      "id": "outro",
+      "narration": "这就是五的分与合，一共四种。",
+      "phrase": "这就是五的分与合一共四种",
+      "caption": "这就是五的分与合，一共四种。"
+    }
+  ]
+}

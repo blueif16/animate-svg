@@ -81,10 +81,46 @@ export {
 } from "./lessons/CompleteComparisonLesson";
 export { completeComparisonLessonDuration } from "./lessons/comparisonLessonTimeline";
 export {
+  CompleteKp2CountingByTensLesson,
+  completeKp2CountingByTensLessonDefaultProps,
+} from "./lessons/CompleteKp2CountingByTensLesson";
+export { completeKp2CountingByTensLessonDuration } from "./lessons/kp2CountingByTensLessonTimeline";
+export {
+  CompleteKp2v2CountingByTensLesson,
+  completeKp2v2CountingByTensLessonDefaultProps,
+} from "./lessons/CompleteKp2v2CountingByTensLesson";
+export { completeKp2v2CountingByTensLessonDuration } from "./lessons/kp2v2CountingByTensLessonTimeline";
+export {
   CompleteMakeTenLesson,
   completeMakeTenLessonDefaultProps,
 } from "./lessons/CompleteMakeTenLesson";
 export { completeMakeTenLessonDuration } from "./lessons/makeTenLessonTimeline";
+export {
+  CompleteTenOnesMakeOneTenLesson,
+  completeTenOnesMakeOneTenLessonDefaultProps,
+} from "./lessons/CompleteTenOnesMakeOneTenLesson";
+export { completeTenOnesMakeOneTenLessonDuration } from "./lessons/tenOnesMakeOneTenLessonTimeline";
+export {
+  PRIMITIVE_CHECK_DURATION as primitiveCheckTenOnesMakeOneTenDuration,
+  PrimitiveCheckTenOnesMakeOneTenBundleWrap,
+  PrimitiveCheckTenOnesMakeOneTenStickRow,
+} from "./lessons/tenOnesMakeOneTen/primitiveChecks";
+export {
+  CompleteFenYuHeLesson,
+  completeFenYuHeLessonDefaultProps,
+  completeFenYuHeLessonDuration,
+} from "./lessons/CompleteFenYuHeLesson";
+export {
+  CompleteKp1FenYuHeIntroLesson,
+  completeKp1FenYuHeIntroLessonDefaultProps,
+  completeKp1FenYuHeIntroLessonDuration,
+} from "./lessons/CompleteKp1FenYuHeIntroLesson";
+export {
+  PRIMITIVE_CHECK_FEN_HE_DURATION as primitiveCheckKp1FenHeDuration,
+  PrimitiveCheckKp1FenHeDiagramHardest,
+  PrimitiveCheckKp1FenHeDiagramMigration,
+  PrimitiveCheckKp1FenHeDiagramMultiplicity,
+} from "./lessons/kp1FenYuHeIntro/primitiveChecks";
 export {
   CompletePinyinToneLesson,
   completePinyinToneLessonDefaultProps,

@@ -1,0 +1,36 @@
+{
+  "lessonId": "kp2v2-counting-by-tens",
+  "cues": [
+    {
+      "id": "loose-count-felt",
+      "narration": "我们一根一根地数……十根，走了十步。",
+      "phrase": "我们一根一根地数十根走了十步",
+      "caption": "我们一根一根地数 …… 十根，走了十步。"
+    },
+    {
+      "id": "bundle-is-one-count",
+      "narration": "这十根，捆成一捆，就是一个十。",
+      "phrase": "这十根捆成一捆就是一个十",
+      "caption": "这十根，捆成一捆，就是一个十。"
+    },
+    {
+      "id": "tens-count-like-ones",
+      "narration": "再来一捆，就是两个十。",
+      "phrase": "再来一捆就是两个十",
+      "caption": "再来一捆，就是两个十。"
+    },
+    {
+      "id": "pattern-holds",
+      "narration": "再加一捆，就是三个十。",
+      "phrase": "再加一捆就是三个十",
+      "caption": "再加一捆，就是三个十。"
+    },
+    {
+      "id": "tens-are-the-faster-way",
+      "narration": "数一，要走十步；数十，只走三步。",
+      "phrase": "数一要走十步数十只走三步",
+      "caption": "数一，要走十步；数十，只走三步。",
+      "emphasis": true
+    }
+  ]
+}

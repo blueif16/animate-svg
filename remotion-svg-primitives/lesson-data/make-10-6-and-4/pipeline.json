@@ -11,7 +11,7 @@
     "alignOutJson": "lesson-data/make-10-6-and-4/asr-alignment.json",
     "alignOutTs": "src/lessons/generated/makeTenLessonTiming.ts",
     "apiKeyEnvFile": "/Users/tk/Desktop/Omniscience/.env.local",
-    "asrScript": "scripts/asr-align-lesson.py",
+    "asrScript": "node_modules/@studio/narration-kit/bin/asr-align.py",
     "constPrefix": "makeTenLesson",
     "gapSeconds": 0.25,
     "generationMode": "perCue",
@@ -27,7 +27,7 @@
       "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
       "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
       "sampleRate": 16000,
-      "timingImportPath": "../timingTypes",
+      "timingImportPath": "@studio/narration-kit",
       "tokenPattern": "[\\u3400-\\u9fff]",
       "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
     }

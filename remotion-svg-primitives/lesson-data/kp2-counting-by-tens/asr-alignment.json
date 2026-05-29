@@ -1,0 +1,515 @@
+{
+  "fps": 30,
+  "lessonId": "kp2-counting-by-tens",
+  "asrAssets": {
+    "decoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/decoder-epoch-99-avg-1.onnx",
+    "encoder": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/encoder-epoch-99-avg-1.int8.onnx",
+    "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
+    "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
+  },
+  "recording": "public/audio/kp2-counting-by-tens-voice.wav",
+  "source": "local sherpa-onnx streaming ASR",
+  "status": "asr-derived",
+  "transcript": {
+    "duration": 25.93,
+    "segments": [
+      {
+        "end": 20.25,
+        "start": 0.5,
+        "text": "看这是我们的一个十 SIL把它打开里面有十根 SIL一根一根的数 SIL要数十次 SIL捆起来 SIL只要数一次 SIL加一捆 SIL就是两个十 SIL再加一",
+        "tokens": [
+          "看",
+          "这",
+          "是",
+          "我",
+          "们",
+          "的",
+          "一",
+          "个",
+          "十",
+          "把",
+          "它",
+          "打",
+          "开",
+          "里",
+          "面",
+          "有",
+          "十",
+          "根",
+          "一",
+          "根",
+          "一",
+          "根",
+          "的",
+          "数",
+          "要",
+          "数",
+          "十",
+          "次",
+          "捆",
+          "起",
+          "来",
+          "只",
+          "要",
+          "数",
+          "一",
+          "次",
+          "加",
+          "一",
+          "捆",
+          "就",
+          "是",
+          "两",
+          "个",
+          "十",
+          "再",
+          "加",
+          "一"
+        ]
+      },
+      {
+        "end": 25.93,
+        "start": 20.35,
+        "text": "捆就是三个十一捆一捆的数更快",
+        "tokens": [
+          "捆",
+          "就",
+          "是",
+          "三",
+          "个",
+          "十",
+          "一",
+          "捆",
+          "一",
+          "捆",
+          "的",
+          "数",
+          "更",
+          "快"
+        ]
+      }
+    ],
+    "tokenEvents": [
+      {
+        "time": 0.75,
+        "token": "看"
+      },
+      {
+        "time": 1.4,
+        "token": "这"
+      },
+      {
+        "time": 1.7,
+        "token": "是"
+      },
+      {
+        "time": 2.05,
+        "token": "我"
+      },
+      {
+        "time": 2.05,
+        "token": "们"
+      },
+      {
+        "time": 2.35,
+        "token": "的"
+      },
+      {
+        "time": 2.65,
+        "token": "一"
+      },
+      {
+        "time": 3.0,
+        "token": "个"
+      },
+      {
+        "time": 3.65,
+        "token": "十"
+      },
+      {
+        "time": 4.25,
+        "token": "把"
+      },
+      {
+        "time": 4.6,
+        "token": "它"
+      },
+      {
+        "time": 4.6,
+        "token": "打"
+      },
+      {
+        "time": 4.9,
+        "token": "开"
+      },
+      {
+        "time": 5.85,
+        "token": "里"
+      },
+      {
+        "time": 5.85,
+        "token": "面"
+      },
+      {
+        "time": 6.5,
+        "token": "有"
+      },
+      {
+        "time": 6.85,
+        "token": "十"
+      },
+      {
+        "time": 7.15,
+        "token": "根"
+      },
+      {
+        "time": 8.1,
+        "token": "一"
+      },
+      {
+        "time": 8.45,
+        "token": "根"
+      },
+      {
+        "time": 8.75,
+        "token": "一"
+      },
+      {
+        "time": 8.75,
+        "token": "根"
+      },
+      {
+        "time": 9.05,
+        "token": "的"
+      },
+      {
+        "time": 9.4,
+        "token": "数"
+      },
+      {
+        "time": 10.35,
+        "token": "要"
+      },
+      {
+        "time": 11.0,
+        "token": "数"
+      },
+      {
+        "time": 11.3,
+        "token": "十"
+      },
+      {
+        "time": 11.3,
+        "token": "次"
+      },
+      {
+        "time": 12.6,
+        "token": "捆"
+      },
+      {
+        "time": 12.6,
+        "token": "起"
+      },
+      {
+        "time": 12.6,
+        "token": "来"
+      },
+      {
+        "time": 13.85,
+        "token": "只"
+      },
+      {
+        "time": 13.85,
+        "token": "要"
+      },
+      {
+        "time": 14.85,
+        "token": "数"
+      },
+      {
+        "time": 14.85,
+        "token": "一"
+      },
+      {
+        "time": 15.15,
+        "token": "次"
+      },
+      {
+        "time": 16.45,
+        "token": "加"
+      },
+      {
+        "time": 16.75,
+        "token": "一"
+      },
+      {
+        "time": 16.75,
+        "token": "捆"
+      },
+      {
+        "time": 17.7,
+        "token": "就"
+      },
+      {
+        "time": 17.7,
+        "token": "是"
+      },
+      {
+        "time": 18.05,
+        "token": "两"
+      },
+      {
+        "time": 18.35,
+        "token": "个"
+      },
+      {
+        "time": 18.65,
+        "token": "十"
+      },
+      {
+        "time": 19.95,
+        "token": "再"
+      },
+      {
+        "time": 19.95,
+        "token": "加"
+      },
+      {
+        "time": 20.25,
+        "token": "一"
+      },
+      {
+        "time": 20.6,
+        "token": "捆"
+      },
+      {
+        "time": 21.25,
+        "token": "就"
+      },
+      {
+        "time": 21.25,
+        "token": "是"
+      },
+      {
+        "time": 21.85,
+        "token": "三"
+      },
+      {
+        "time": 21.85,
+        "token": "个"
+      },
+      {
+        "time": 22.5,
+        "token": "十"
+      },
+      {
+        "time": 23.45,
+        "token": "一"
+      },
+      {
+        "time": 23.45,
+        "token": "捆"
+      },
+      {
+        "time": 24.1,
+        "token": "一"
+      },
+      {
+        "time": 24.1,
+        "token": "捆"
+      },
+      {
+        "time": 24.45,
+        "token": "的"
+      },
+      {
+        "time": 24.75,
+        "token": "数"
+      },
+      {
+        "time": 25.4,
+        "token": "更"
+      },
+      {
+        "time": 25.7,
+        "token": "快"
+      }
+    ]
+  },
+  "cues": [
+    {
+      "asrText": "看 这 是 我 们 的 一 个 十 把 它 打 开",
+      "caption": "看，这是我们的一个十。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 113,
+      "endSeconds": 3.77,
+      "id": "bundle-recall",
+      "matchScore": 1.0,
+      "matchText": "看 这 是 我 们 的 一 个 十",
+      "phrase": "看这是我们的一个十",
+      "startFrame": 16,
+      "startSeconds": 0.55,
+      "targetTokens": [
+        "看",
+        "这",
+        "是",
+        "我",
+        "们",
+        "的",
+        "一",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "的 一 个 十 把 它 打 开 里 面 有 十 根 一 根 一 根",
+      "caption": "把它打开，里面有十根。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 218,
+      "endSeconds": 7.27,
+      "id": "untie-reveal",
+      "matchScore": 1.0,
+      "matchText": "把 它 打 开 里 面 有 十 根",
+      "phrase": "把它打开里面有十根",
+      "startFrame": 122,
+      "startSeconds": 4.05,
+      "targetTokens": [
+        "把",
+        "它",
+        "打",
+        "开",
+        "里",
+        "面",
+        "有",
+        "十",
+        "根"
+      ]
+    },
+    {
+      "asrText": "面 有 十 根 一 根 一 根 的 数 要 数 十 次 捆 起 来 只",
+      "caption": "一根一根地数，要数十次。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 343,
+      "endSeconds": 11.42,
+      "id": "slow-count-ones",
+      "matchScore": 0.947,
+      "matchText": "一 根 一 根 的 数 要 数 十 次",
+      "phrase": "一根一根地数要数十次",
+      "startFrame": 237,
+      "startSeconds": 7.9,
+      "targetTokens": [
+        "一",
+        "根",
+        "一",
+        "根",
+        "地",
+        "数",
+        "要",
+        "数",
+        "十",
+        "次"
+      ]
+    },
+    {
+      "asrText": "要 数 十 次 捆 起 来 只 要 数 一 次 加 一 捆 就",
+      "caption": "捆起来，只要数一次。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 458,
+      "endSeconds": 15.27,
+      "id": "fast-vs-slow",
+      "matchScore": 1.0,
+      "matchText": "捆 起 来 只 要 数 一 次",
+      "phrase": "捆起来只要数一次",
+      "startFrame": 372,
+      "startSeconds": 12.4,
+      "targetTokens": [
+        "捆",
+        "起",
+        "来",
+        "只",
+        "要",
+        "数",
+        "一",
+        "次"
+      ]
+    },
+    {
+      "asrText": "再 加 一 捆 就 是 两 个 十",
+      "caption": "再加一捆，就是两个十。",
+      "confidence": "silence-detect-corrected",
+      "emphasis": false,
+      "endFrame": 558,
+      "endSeconds": 18.6,
+      "id": "two-tens",
+      "matchScore": 0.941,
+      "matchText": "再 加 一 捆 就 是 两 个 十",
+      "phrase": "再加一捆就是两个十",
+      "startFrame": 592,
+      "startSeconds": 19.75,
+      "targetTokens": [
+        "再",
+        "加",
+        "一",
+        "捆",
+        "就",
+        "是",
+        "两",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "是 两 个 十 再 加 一 捆 就 是 三 个 十 一 捆 一 捆",
+      "caption": "再加一捆，就是三个十。",
+      "confidence": "asr-derived",
+      "emphasis": false,
+      "endFrame": 679,
+      "endSeconds": 22.62,
+      "id": "three-tens",
+      "matchScore": 1.0,
+      "matchText": "再 加 一 捆 就 是 三 个 十",
+      "phrase": "再加一捆就是三个十",
+      "startFrame": 592,
+      "startSeconds": 19.75,
+      "targetTokens": [
+        "再",
+        "加",
+        "一",
+        "捆",
+        "就",
+        "是",
+        "三",
+        "个",
+        "十"
+      ]
+    },
+    {
+      "asrText": "是 三 个 十 一 捆 一 捆 的 数 更 快",
+      "caption": "一捆一捆地数，更快。",
+      "confidence": "asr-derived",
+      "emphasis": true,
+      "endFrame": 775,
+      "endSeconds": 25.82,
+      "id": "recap",
+      "matchScore": 0.933,
+      "matchText": "一 捆 一 捆 的 数 更 快",
+      "phrase": "一捆一捆地数更快",
+      "startFrame": 698,
+      "startSeconds": 23.25,
+      "targetTokens": [
+        "一",
+        "捆",
+        "一",
+        "捆",
+        "地",
+        "数",
+        "更",
+        "快"
+      ]
+    }
+  ]
+}

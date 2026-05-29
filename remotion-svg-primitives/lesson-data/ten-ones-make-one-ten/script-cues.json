@@ -1,0 +1,61 @@
+{
+  "lessonId": "ten-ones-make-one-ten",
+  "cues": [
+    {
+      "id": "opening",
+      "narration": "看，这里有许多小棒。",
+      "phrase": "看这里有许多小棒",
+      "caption": "看，这里有许多小棒。"
+    },
+    {
+      "id": "count-one-by-one",
+      "narration": "我们一根一根地数。",
+      "phrase": "我们一根一根地数",
+      "caption": "我们一根一根地数。"
+    },
+    {
+      "id": "count-to-ten",
+      "narration": "请慢慢数完每根小棒。",
+      "phrase": "请慢慢数完每根小棒",
+      "caption": "请慢慢数完每根小棒。"
+    },
+    {
+      "id": "feels-slow",
+      "narration": "数了十次，才数完。",
+      "phrase": "数了十次才数完",
+      "caption": "数了十次，才数完。"
+    },
+    {
+      "id": "bundle-action",
+      "narration": "我们把这十根捆在一起。",
+      "phrase": "我们把这十根捆在一起",
+      "caption": "我们把这十根捆在一起。",
+      "emphasis": true
+    },
+    {
+      "id": "rename-bundle",
+      "narration": "这一捆，就叫一个十。",
+      "phrase": "这一捆就叫一个十",
+      "caption": "这一捆，就叫一个十。"
+    },
+    {
+      "id": "still-ten-ones",
+      "narration": "捆里还是十根小棒哦。",
+      "phrase": "捆里还是十根小棒哦",
+      "caption": "捆里还是十根小棒哦。"
+    },
+    {
+      "id": "faster-count",
+      "narration": "现在数一捆，只要数一次。",
+      "phrase": "现在数一捆只要数一次",
+      "caption": "现在数一捆，只要数一次。"
+    },
+    {
+      "id": "recap",
+      "narration": "十个一，就是一个十。",
+      "phrase": "十个一就是一个十",
+      "caption": "十个一，就是一个十。",
+      "emphasis": true
+    }
+  ]
+}

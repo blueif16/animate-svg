@@ -10,6 +10,7 @@ import {
   clamp01,
   clampNumber,
   fontFamily,
+  mulberry32,
   resolveColor,
   shadowStyle,
   starPath,
@@ -531,6 +532,13 @@ export const NumberCard = ({
   ...groupProps
 }: NumberCardProps) => {
   const fill = resolveColor(color, colors.white);
+  // Size the glyph as a fraction of the card's short side so there is ALWAYS
+  // clear inset (>= ~16% of the card) between the digit and the border AT EVERY
+  // SIZE — the previous fixed 50/58px font overflowed small (36px) cards. A
+  // two-digit value gets a tighter ratio so the wider glyph still fits.
+  const cardShortSide = Math.min(width, height);
+  const isTwoDigit = typeof value === "number" && value >= 10;
+  const glyphFontSize = cardShortSide * (isTwoDigit ? 0.46 : 0.56);
 
   return (
     <PlacedGroup
@@ -579,10 +587,10 @@ export const NumberCard = ({
             dominantBaseline="middle"
             fill={colors.textNavy}
             fontFamily={fontFamily}
-            fontSize={typeof value === "number" && value >= 10 ? 50 : 58}
+            fontSize={glyphFontSize}
             fontWeight={900}
             textAnchor="middle"
-            y={3}
+            y={glyphFontSize * 0.05}
           >
             {value}
           </text>
@@ -1247,6 +1255,1020 @@ export const TenFrameRod = ({
           );
         })}
       </g>
+    </PlacedGroup>
+  );
+};
+
+export type SmallStickHighlight = "idle" | "active" | "counted";
+
+export type SmallStickProps = PrimitiveGroupProps &
+  PlacementProps & {
+    activeColor?: ThemeColor;
+    color?: ThemeColor;
+    highlight?: SmallStickHighlight;
+    length?: number;
+    outlineColor?: ThemeColor;
+    rotation?: number;
+    scale?: number;
+    thickness?: number;
+  };
+
+export const SmallStick = ({
+  activeColor,
+  color,
+  highlight = "idle",
+  length = 120,
+  outlineColor,
+  rotation = 0,
+  scale = 1,
+  thickness = 18,
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: SmallStickProps) => {
+  const restingFill = resolveColor(color, colors.reward);
+  const activeFill = resolveColor(activeColor, colors.sunshine);
+  const stroke = resolveColor(outlineColor, colors.textNavy);
+  const fill = highlight === "active" ? activeFill : restingFill;
+  const transforms = [
+    rotation !== 0 ? `rotate(${rotation})` : undefined,
+    scale !== 1 ? `scale(${scale})` : undefined,
+    transform,
+  ].filter(Boolean);
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      transform={transforms.length > 0 ? transforms.join(" ") : undefined}
+      x={x}
+      y={y}
+    >
+      <g className="body" style={shadowStyle()}>
+        <rect
+          fill={fill}
+          height={length}
+          rx={thickness * 0.5}
+          stroke={stroke}
+          strokeWidth={NAVY_STROKE}
+          width={thickness}
+          x={-thickness / 2}
+          y={-length / 2}
+        />
+      </g>
+    </PlacedGroup>
+  );
+};
+
+export type StickGroupLayout = "scatter" | "row" | "bundle";
+
+export type StickGroupProps = PrimitiveGroupProps &
+  PlacementProps & {
+    activeIndex?: number;
+    bundleGap?: number;
+    celebrate?: boolean;
+    color?: ThemeColor;
+    compress?: number;
+    count: number;
+    layout: StickGroupLayout;
+    revealUpTo?: number;
+    rowGap?: number;
+    scale?: number;
+    scatterRadius?: number;
+    scatterRotationRange?: number;
+    seed?: number;
+    stickLength?: number;
+    stickThickness?: number;
+  };
+
+type StickPlacement = {
+  rotation: number;
+  x: number;
+  y: number;
+};
+
+type StickPlacementInput = {
+  bundleGap?: number;
+  compress?: number;
+  count: number;
+  rowGap?: number;
+  scatterRadius?: number;
+  scatterRotationRange?: number;
+  seed?: number;
+};
+
+const effectiveBundleGap = (bundleGap: number, compress: number): number => {
+  const c = clamp01(compress);
+
+  return bundleGap * (1 - 0.3 * c);
+};
+
+export const getStickPlacement = (
+  index: number,
+  layout: StickGroupLayout,
+  props: StickPlacementInput,
+): StickPlacement => {
+  const {
+    bundleGap = 18,
+    compress = 0,
+    count,
+    rowGap = 130,
+    scatterRadius = 220,
+    scatterRotationRange = 25,
+    seed = 0,
+  } = props;
+
+  if (layout === "row") {
+    return {
+      rotation: 0,
+      x: (index - (count - 1) / 2) * rowGap,
+      y: 0,
+    };
+  }
+
+  if (layout === "bundle") {
+    const gap = effectiveBundleGap(bundleGap, compress);
+
+    return {
+      rotation: 0,
+      x: (index - (count - 1) / 2) * gap,
+      y: 0,
+    };
+  }
+
+  const rand = mulberry32(seed + index * 2654435761);
+  const rx = (rand() * 2 - 1) * scatterRadius;
+  const ry = (rand() * 2 - 1) * scatterRadius * 0.55;
+  const rr = (rand() * 2 - 1) * scatterRotationRange;
+
+  return {
+    rotation: rr,
+    x: rx,
+    y: ry,
+  };
+};
+
+export const StickGroup = ({
+  activeIndex,
+  bundleGap = 18,
+  celebrate = false,
+  color,
+  compress = 0,
+  count,
+  layout,
+  revealUpTo,
+  rowGap = 130,
+  scale = 1,
+  scatterRadius = 220,
+  scatterRotationRange = 25,
+  seed = 0,
+  stickLength = 120,
+  stickThickness = 18,
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: StickGroupProps) => {
+  const safeCount = Math.max(0, Math.floor(count));
+  const clampedReveal =
+    revealUpTo === undefined
+      ? safeCount
+      : Math.round(clampNumber(revealUpTo, 0, safeCount));
+  // `celebrate` lets the composer reason about pulse intent; the actual
+  // scale value is composer-driven via `scale` so the pulse can interpolate.
+  void celebrate;
+  const transforms = [
+    scale !== 1 ? `scale(${scale})` : undefined,
+    transform,
+  ].filter(Boolean);
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      transform={transforms.length > 0 ? transforms.join(" ") : undefined}
+      x={x}
+      y={y}
+    >
+      {Array.from({ length: safeCount }, (_, index) => {
+        const placement = getStickPlacement(index, layout, {
+          bundleGap,
+          compress,
+          count: safeCount,
+          rowGap,
+          scatterRadius,
+          scatterRotationRange,
+          seed,
+        });
+        const isActive = activeIndex === index;
+        const highlight: SmallStickHighlight = isActive
+          ? "active"
+          : index < clampedReveal
+            ? "counted"
+            : "idle";
+
+        return (
+          <SmallStick
+            color={color}
+            highlight={highlight}
+            key={index}
+            length={stickLength}
+            rotation={placement.rotation}
+            scale={isActive ? 1.08 : 1}
+            thickness={stickThickness}
+            x={placement.x}
+            y={placement.y}
+          />
+        );
+      })}
+    </PlacedGroup>
+  );
+};
+
+export type BundleWrapStyle = "rope" | "band" | "ribbon";
+
+export type BundleWrapKnotPosition = "top" | "left" | "right";
+
+export type BundleWrapProps = PrimitiveGroupProps &
+  PlacementProps & {
+    color?: ThemeColor;
+    height?: number;
+    /** @deprecated Use `knotPosition` instead. Ignored when `knotPosition` is provided. */
+    knotSide?: "left" | "right";
+    knotPosition?: BundleWrapKnotPosition;
+    opacity?: number;
+    outlineColor?: ThemeColor;
+    style?: BundleWrapStyle;
+    width: number;
+    wrapProgress?: number;
+  };
+
+type BowKnotProps = {
+  bandHeight: number;
+  fill: string;
+  ropeStroke: number;
+  ropeStrokeWidth: number;
+  stroke: string;
+  subProgress: number;
+};
+
+const BundleWrapBowKnot = ({
+  bandHeight,
+  fill,
+  ropeStroke,
+  ropeStrokeWidth,
+  stroke,
+  subProgress,
+}: BowKnotProps) => {
+  void ropeStroke;
+  const t = clamp01(subProgress);
+  const popScale = 0.8 + 0.2 * t;
+  const opacity = t;
+  // Two flattened loops tilted out from a central pill knot — the whole bow
+  // sits ABOVE the rope band so it never overlaps the rope's stroke width.
+  // No tails: at lesson scale they previously collided with the rope and read
+  // as arrow-shaped noise rather than a bow.
+  const loopRx = bandHeight * 0.6;
+  const loopRy = bandHeight * 0.34;
+  const loopTilt = 24;
+  const loopCenterX = bandHeight * 0.62;
+  const loopCenterY = -bandHeight * 0.35;
+  const knotWidth = bandHeight * 0.4;
+  const knotHeight = bandHeight * 0.4;
+  // Anchor so the bow's lowest ink (knot bottom) sits one rope-half above the
+  // rope's top edge — leaves a clear visual gap between bow and rope.
+  const ropeTop = -bandHeight * 0.3;
+  const knotBottom = knotHeight / 2;
+  const anchorY = ropeTop - knotBottom - bandHeight * 0.18;
+
+  return (
+    <g
+      className="bow"
+      opacity={opacity}
+      transform={`translate(0 ${anchorY}) scale(${popScale})`}
+    >
+      <ellipse
+        cx={-loopCenterX}
+        cy={loopCenterY}
+        fill={fill}
+        rx={loopRx}
+        ry={loopRy}
+        stroke={stroke}
+        strokeWidth={ropeStrokeWidth}
+        transform={`rotate(${-loopTilt} ${-loopCenterX} ${loopCenterY})`}
+      />
+      <ellipse
+        cx={loopCenterX}
+        cy={loopCenterY}
+        fill={fill}
+        rx={loopRx}
+        ry={loopRy}
+        stroke={stroke}
+        strokeWidth={ropeStrokeWidth}
+        transform={`rotate(${loopTilt} ${loopCenterX} ${loopCenterY})`}
+      />
+      <rect
+        fill={fill}
+        height={knotHeight}
+        rx={knotHeight / 2}
+        stroke={stroke}
+        strokeWidth={ropeStrokeWidth}
+        width={knotWidth}
+        x={-knotWidth / 2}
+        y={-knotHeight / 2}
+      />
+    </g>
+  );
+};
+
+export const BundleWrap = ({
+  color,
+  height,
+  knotPosition,
+  knotSide,
+  opacity = 1,
+  outlineColor,
+  style = "rope",
+  transform,
+  width,
+  wrapProgress = 1,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: BundleWrapProps) => {
+  const bandHeight = height ?? width * 0.22;
+  const fill = resolveColor(color, colors.coral);
+  const stroke = resolveColor(outlineColor, colors.textNavy);
+  const reveal = clamp01(wrapProgress);
+  const groupOpacity = clamp01(opacity);
+  const half = width / 2;
+  // `knotPosition` wins when provided. Otherwise fall back to legacy
+  // `knotSide` ("left" | "right") for backwards compat. Default to "top".
+  const resolvedKnotPosition: BundleWrapKnotPosition =
+    knotPosition ?? (knotSide === undefined ? "top" : knotSide);
+  const legacySide: "left" | "right" =
+    resolvedKnotPosition === "left" ? "left" : "right";
+  const knotX = legacySide === "right" ? half : -half;
+  const startX = legacySide === "right" ? -half : half;
+  const knotRadius = bandHeight * 0.7;
+
+  if (style === "band") {
+    return (
+      <PlacedGroup
+        {...groupProps}
+        opacity={groupOpacity}
+        transform={transform}
+        x={x}
+        y={y}
+      >
+        <g className="body" style={shadowStyle()}>
+          <rect
+            fill={fill}
+            height={bandHeight}
+            opacity={reveal}
+            rx={bandHeight / 2}
+            stroke={stroke}
+            strokeWidth={NAVY_STROKE}
+            width={width * reveal}
+            x={legacySide === "right" ? -half : half - width * reveal}
+            y={-bandHeight / 2}
+          />
+        </g>
+      </PlacedGroup>
+    );
+  }
+
+  if (style === "ribbon") {
+    const tailDirection = legacySide === "right" ? 1 : -1;
+
+    return (
+      <PlacedGroup
+        {...groupProps}
+        opacity={groupOpacity}
+        transform={transform}
+        x={x}
+        y={y}
+      >
+        <g className="body" style={shadowStyle()}>
+          <rect
+            fill={fill}
+            height={bandHeight}
+            opacity={reveal}
+            rx={bandHeight / 3}
+            stroke={stroke}
+            strokeWidth={NAVY_STROKE}
+            width={width * reveal}
+            x={legacySide === "right" ? -half : half - width * reveal}
+            y={-bandHeight / 2}
+          />
+          {reveal >= 0.95 ? (
+            <path
+              d={`M ${knotX} 0 L ${knotX + tailDirection * bandHeight * 1.2} ${-bandHeight * 0.9} L ${knotX + tailDirection * bandHeight * 1.2} ${bandHeight * 0.9} Z`}
+              fill={fill}
+              stroke={stroke}
+              strokeLinejoin="round"
+              strokeWidth={NAVY_STROKE}
+            />
+          ) : null}
+        </g>
+      </PlacedGroup>
+    );
+  }
+
+  const ropeStroke = bandHeight * 0.6;
+  // For the top-knot layout, the rope spans the full bundle width.
+  // For legacy side-knot layouts, the rope still spans from one side to the other.
+  const ropePath =
+    resolvedKnotPosition === "top"
+      ? `M ${-half} 0 L ${half} 0`
+      : `M ${startX} 0 L ${knotX} 0`;
+  // Back stroke is offset slightly downward so the kid reads it as the
+  // rope curving around behind the sticks. Lower opacity so it sits "behind"
+  // visually even though it is drawn in the same primitive layer.
+  const backOffsetY = 6;
+  const backRopePath =
+    resolvedKnotPosition === "top"
+      ? `M ${-half} ${backOffsetY} L ${half} ${backOffsetY}`
+      : `M ${startX} ${backOffsetY} L ${knotX} ${backOffsetY}`;
+  // The bow draws on in the last 20% of wrapProgress.
+  const bowSubProgress = reveal <= 0.8 ? 0 : (reveal - 0.8) / 0.2;
+  const renderBow = resolvedKnotPosition === "top" && bowSubProgress > 0;
+  const renderSideCircle = resolvedKnotPosition !== "top" && reveal >= 0.9;
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={groupOpacity}
+      transform={transform}
+      x={x}
+      y={y}
+    >
+      <g className="body" style={shadowStyle()}>
+        {/* Back rope stroke — same coral, lower opacity, slightly offset. */}
+        <path
+          d={backRopePath}
+          fill="none"
+          opacity={0.35}
+          pathLength={1}
+          stroke={fill}
+          strokeDasharray={1}
+          strokeDashoffset={1 - reveal}
+          strokeLinecap="round"
+          strokeWidth={ropeStroke}
+        />
+        {/* Front rope stroke — full opacity, dominant rope visual. */}
+        <path
+          d={ropePath}
+          fill="none"
+          pathLength={1}
+          stroke={fill}
+          strokeDasharray={1}
+          strokeDashoffset={1 - reveal}
+          strokeLinecap="round"
+          strokeWidth={ropeStroke}
+        />
+        <path
+          d={ropePath}
+          fill="none"
+          opacity={0.35}
+          pathLength={1}
+          stroke={stroke}
+          strokeDasharray="6 14"
+          strokeDashoffset={1 - reveal}
+          strokeLinecap="round"
+          strokeWidth={ropeStroke * 0.45}
+        />
+        {renderBow ? (
+          <BundleWrapBowKnot
+            bandHeight={bandHeight}
+            fill={fill}
+            ropeStroke={ropeStroke}
+            ropeStrokeWidth={NAVY_STROKE}
+            stroke={stroke}
+            subProgress={bowSubProgress}
+          />
+        ) : null}
+        {renderSideCircle ? (
+          <circle
+            cx={knotX}
+            cy={0}
+            fill={fill}
+            r={knotRadius}
+            stroke={stroke}
+            strokeWidth={NAVY_STROKE}
+          />
+        ) : null}
+      </g>
+    </PlacedGroup>
+  );
+};
+
+export type CountStepIndicatorProps = PrimitiveGroupProps &
+  PlacementProps & {
+    background?: ThemeColor;
+    color?: ThemeColor;
+    outlineColor?: ThemeColor;
+    progress?: number;
+    size?: number;
+    value: number | string;
+  };
+
+export const CountStepIndicator = ({
+  background,
+  color,
+  outlineColor,
+  progress = 1,
+  size = 56,
+  transform,
+  value,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: CountStepIndicatorProps) => {
+  const reveal = clamp01(progress);
+  const popScale = 0.6 + 0.4 * reveal;
+  const fadeOpacity = clamp01(reveal * 2);
+  const fill = resolveColor(background, colors.white);
+  const stroke = resolveColor(outlineColor, colors.textNavy);
+  const inkFill = resolveColor(color, colors.textNavy);
+  const transforms = [`scale(${popScale})`, transform].filter(Boolean);
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={fadeOpacity}
+      transform={transforms.join(" ")}
+      x={x}
+      y={y}
+    >
+      <g className="body" style={shadowStyle()}>
+        <circle
+          cx={0}
+          cy={0}
+          fill={fill}
+          r={size / 2}
+          stroke={stroke}
+          strokeWidth={NAVY_STROKE}
+        />
+        <PrimitiveLabel fill={inkFill} fontSize={size * 0.62} x={0} y={2}>
+          {value}
+        </PrimitiveLabel>
+      </g>
+    </PlacedGroup>
+  );
+};
+
+export type StepTallyVariant = "dots" | "numeric";
+
+export type StepTallyProps = PrimitiveGroupProps &
+  PlacementProps & {
+    background?: ThemeColor;
+    color?: ThemeColor;
+    dimmed?: boolean;
+    dotColor?: ThemeColor;
+    dotGap?: number;
+    dotSize?: number;
+    label?: ReactNode;
+    outlineColor?: ThemeColor;
+    progress?: number;
+    size?: number;
+    steps: number;
+    variant?: StepTallyVariant;
+  };
+
+export const StepTally = ({
+  background,
+  color,
+  dimmed = false,
+  dotColor,
+  dotGap = 8,
+  dotSize = 18,
+  label,
+  outlineColor,
+  progress = 1,
+  size = 64,
+  steps,
+  transform,
+  variant = "numeric",
+  x = 0,
+  y = 0,
+  ...groupProps
+}: StepTallyProps) => {
+  const safeSteps = Math.max(0, Math.floor(steps));
+  const reveal = clamp01(progress);
+  const dimOpacity = stateOpacity(undefined, dimmed);
+  const fadeOpacity = clamp01(reveal) * dimOpacity;
+  const inkFill = resolveColor(color, colors.textNavy);
+  const stroke = resolveColor(outlineColor, colors.textNavy);
+  const fill = resolveColor(background, colors.white);
+
+  if (variant === "dots") {
+    const dotFill = resolveColor(dotColor, colors.textNavy);
+    const totalWidth =
+      safeSteps > 0 ? safeSteps * dotSize + (safeSteps - 1) * dotGap : 0;
+
+    return (
+      <PlacedGroup
+        {...groupProps}
+        opacity={fadeOpacity}
+        transform={transform}
+        x={x}
+        y={y}
+      >
+        <g className="body">
+          {Array.from({ length: safeSteps }, (_, index) => (
+            <circle
+              cx={-totalWidth / 2 + dotSize / 2 + index * (dotSize + dotGap)}
+              cy={0}
+              fill={dotFill}
+              key={index}
+              r={dotSize / 2}
+            />
+          ))}
+        </g>
+      </PlacedGroup>
+    );
+  }
+
+  const valueFontSize = size * 0.62;
+  const labelFontSize = size * 0.42;
+  const valueText = String(safeSteps);
+  const approxValueWidth = valueText.length * valueFontSize * 0.62;
+  const labelWidth = label ? labelFontSize * 1.2 : 0;
+  const innerGap = label ? 10 : 0;
+  const horizontalPadding = 28;
+  const pillWidth =
+    approxValueWidth + innerGap + labelWidth + horizontalPadding * 2;
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={fadeOpacity}
+      transform={transform}
+      x={x}
+      y={y}
+    >
+      <g className="body" style={shadowStyle()}>
+        <rect
+          fill={fill}
+          height={size}
+          rx={size / 2}
+          stroke={stroke}
+          strokeWidth={NAVY_STROKE}
+          width={pillWidth}
+          x={-pillWidth / 2}
+          y={-size / 2}
+        />
+        <PrimitiveLabel
+          fill={inkFill}
+          fontSize={valueFontSize}
+          x={
+            label
+              ? -pillWidth / 2 + horizontalPadding + approxValueWidth / 2
+              : 0
+          }
+          y={2}
+        >
+          {valueText}
+        </PrimitiveLabel>
+        {label ? (
+          <PrimitiveLabel
+            fill={inkFill}
+            fontSize={labelFontSize}
+            x={
+              -pillWidth / 2 +
+              horizontalPadding +
+              approxValueWidth +
+              innerGap +
+              labelWidth / 2
+            }
+            y={3}
+          >
+            {label}
+          </PrimitiveLabel>
+        ) : null}
+      </g>
+    </PlacedGroup>
+  );
+};
+
+export type LabelCalloutAppearStyle = "fade" | "write-on";
+
+export type LabelCalloutProps = PrimitiveGroupProps &
+  PlacementProps & {
+    appearStyle?: LabelCalloutAppearStyle;
+    color?: ThemeColor;
+    fontSize?: number;
+    fontWeight?: number;
+    maxWidth?: number;
+    progress?: number;
+    text: ReactNode;
+    underline?: boolean;
+    underlineColor?: ThemeColor;
+  };
+
+export const LabelCallout = ({
+  // appearStyle "write-on" currently falls back to "fade" — Chinese glyph
+  // path write-on is brittle; composer can override in future non-CJK lessons.
+  appearStyle = "fade",
+  color,
+  fontSize = 48,
+  fontWeight = 900,
+  maxWidth,
+  progress = 1,
+  text,
+  transform,
+  underline = false,
+  underlineColor,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: LabelCalloutProps) => {
+  const reveal = clamp01(progress);
+  const inkFill = resolveColor(color, colors.textNavy);
+  const underlineStroke = resolveColor(underlineColor, colors.textNavy);
+  // Both "fade" and "write-on" currently drive opacity off progress. See note above.
+  const textOpacity = appearStyle === "fade" ? reveal : reveal;
+  const approxTextWidth =
+    typeof text === "string"
+      ? text.length * fontSize * 0.62
+      : maxWidth ?? fontSize * 4;
+  const underlineWidth = maxWidth ?? approxTextWidth;
+  const underlineY = fontSize * 0.62;
+
+  return (
+    <PlacedGroup {...groupProps} transform={transform} x={x} y={y}>
+      <g className="body" opacity={textOpacity}>
+        <text
+          dominantBaseline="middle"
+          fill={inkFill}
+          fontFamily={fontFamily}
+          fontSize={fontSize}
+          fontWeight={fontWeight}
+          textAnchor="middle"
+          y={0}
+        >
+          {text}
+        </text>
+      </g>
+      {underline ? (
+        <line
+          pathLength={1}
+          stroke={underlineStroke}
+          strokeDasharray={1}
+          strokeDashoffset={1 - reveal}
+          strokeLinecap="round"
+          strokeWidth={Math.max(3, fontSize * 0.08)}
+          x1={-underlineWidth / 2}
+          x2={underlineWidth / 2}
+          y1={underlineY}
+          y2={underlineY}
+        />
+      ) : null}
+    </PlacedGroup>
+  );
+};
+
+// =========================================================================
+// FenHeDiagram — 分合式 (part-whole diagram).
+//
+// Whole-on-top, two diagonal stroke-revealable lines descending to two
+// part numbers below. Lesson-agnostic: callers pass `whole` and
+// `parts: [left, right]`; the primitive renders only geometry. No
+// hardcoded Chinese strings, no hardcoded values.
+//
+// Two modes:
+//  - `renderNumbers={true}` (default) — primitive renders its own NumberCards
+//    at the three anchor positions. Use for `fenheshi-read`, `five-1-4`,
+//    `five-3-2-and-4-1`, outro recap.
+//  - `renderNumbers={false}` — primitive renders ONLY the two diagonal
+//    lines (no numerals). The composer places external NumberCard
+//    instances at the anchor positions returned by
+//    `getFenHeDiagramAnchors(width)`. This mode enables identity-preserved
+//    glyph migration: in `fenheshi-intro`, the same NumberCard React
+//    instances from zone-chips interpolate their `x`/`y` to land exactly
+//    on these anchors — same instance, no fade-out/fade-in cross-fade.
+//
+// `progress` (0–1) drives the two diagonal lines via `strokeDashoffset`,
+// and (when `renderNumbers=true`) fades in the part-number cards once the
+// lines have begun drawing. The whole-number card is always at full
+// opacity when `renderNumbers=true` — it lands first, lines follow.
+// =========================================================================
+
+export type FenHeDiagramAnchors = {
+  leftPart: { x: number; y: number };
+  rightPart: { x: number; y: number };
+  whole: { x: number; y: number };
+};
+
+/**
+ * Returns the three numeral anchor positions for a FenHeDiagram of the
+ * given width, in the primitive's LOCAL coordinate space (origin at the
+ * group's transform). The diagram is symmetric about x=0.
+ *
+ * `width` is the OUTER bounding box of the diagram — the left and
+ * right NumberCards (sized internally from `width`) sit so their
+ * OUTER edges align with `±width/2`. Two diagrams placed at centers
+ * `width + gap` apart will have a visible `gap` between their cards,
+ * never an overlap. The composer uses this guarantee to lay out the
+ * four-diagram row in `five-3-2-and-4-1` without manual offsets.
+ *
+ * The composer also uses this to compute migration targets in
+ * `fenheshi-intro` — interpolate a NumberCard's `x`/`y` from its
+ * zone-chips anchor TO `anchors.whole` (or `anchors.leftPart`, etc.)
+ * expressed in the scene's outer coordinate space (add the diagram's
+ * own translation).
+ */
+export const getFenHeDiagramAnchors = (
+  width = 200,
+  // Vertical reach of the diagonals as a fraction of `width`. Default 0.65
+  // (slightly taller than half-width so the V reads as a "comes down from the
+  // whole" gesture, not a flat triangle). A SMALLER ratio makes the diagram
+  // vertically SHORTER (whole/parts closer) WITHOUT changing card size — used
+  // by the compact column variant so more diagrams fit with padded glyphs.
+  verticalReachRatio = 0.65,
+): FenHeDiagramAnchors => {
+  // Cards sit so their outer edge lines up with the diagram's outer
+  // edge. Card width is `width * 0.36` (see FenHeDiagram body). The
+  // part-anchor x is therefore `±(width/2 - cardWidth/2)`.
+  const cardWidth = width * 0.36;
+  const partAnchorX = width / 2 - cardWidth / 2;
+  const verticalReach = width * verticalReachRatio;
+
+  return {
+    leftPart: { x: -partAnchorX, y: verticalReach / 2 },
+    rightPart: { x: partAnchorX, y: verticalReach / 2 },
+    whole: { x: 0, y: -verticalReach / 2 },
+  };
+};
+
+export type FenHeDiagramValue = number | string;
+
+export type FenHeDiagramProps = PrimitiveGroupProps &
+  PlacementProps & {
+    /** Diagram width in local SVG units. Default 200. The diagonal vertical
+     *  reach scales from this. */
+    diagramWidth?: number;
+    /** Reduce opacity (per `shared.ts` `stateOpacity`). Used for the
+     *  "previously seen" state in `five-1-4`. */
+    dimmed?: boolean;
+    /** Color of the two diagonal lines. Defaults to textNavy. The
+     *  visual-design contract recommends navy unless the part-numbers
+     *  visibly dominate; coral is allowed as a stylistic accent only. */
+    lineColor?: ThemeColor;
+    /** Color of the rendered NumberCard glyphs. Defaults to textNavy
+     *  (passed through to NumberCard's text fill via the card surface
+     *  color contract). */
+    numberColor?: ThemeColor;
+    /** Two part numbers, left and right. */
+    parts: [FenHeDiagramValue, FenHeDiagramValue];
+    /** 0..1. Drives stroke-on of the two diagonals AND (when
+     *  `renderNumbers=true`) the part-number cards' opacity. The
+     *  whole-number card lands at the start of the cue at full opacity. */
+    progress?: number;
+    /** When false, the primitive draws ONLY the two diagonal lines —
+     *  the caller is responsible for placing the three NumberCards at
+     *  `getFenHeDiagramAnchors(diagramWidth)`. Use for migration cues. */
+    renderNumbers?: boolean;
+    /** Vertical reach of the diagonals as a fraction of `diagramWidth`.
+     *  Default 0.65. A smaller value makes the diagram vertically SHORTER
+     *  (whole/parts closer) while keeping card size unchanged — enables a
+     *  compact column variant. Must match the ratio passed to
+     *  `getFenHeDiagramAnchors` when the caller places its own cards. */
+    verticalReachRatio?: number;
+    /** The whole value (top of the diagram). */
+    whole: FenHeDiagramValue;
+  };
+
+export const FenHeDiagram = ({
+  diagramWidth = 200,
+  dimmed = false,
+  lineColor,
+  numberColor,
+  parts,
+  progress = 1,
+  renderNumbers = true,
+  transform,
+  verticalReachRatio = 0.65,
+  whole,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: FenHeDiagramProps) => {
+  const reveal = clamp01(progress);
+  const stroke = resolveColor(lineColor, colors.textNavy);
+  const cardSurface = resolveColor(numberColor, colors.white);
+  const anchors = getFenHeDiagramAnchors(diagramWidth, verticalReachRatio);
+  // NumberCard sized so two diagrams placed `diagramWidth + gap`
+  // apart never overlap their part-cards: the part anchor sits at
+  // `±(diagramWidth/2 - cardSize/2)`, so the outer card edge is
+  // exactly `±diagramWidth/2`. The 0.36 ratio keeps the glyph at
+  // ~60+ px on a diagram width of 200, which clears the
+  // visual-design body-label minimum (36 px) and lands near the
+  // secondary-target (80 px) when the diagram is rendered at the
+  // larger `fenheshi-intro` size (≥ 220 px).
+  const cardSize = diagramWidth * 0.36;
+  const cardHeight = cardSize * 1.18;
+
+  // The diagonals' visible endpoints sit at the edge of each
+  // NumberCard, NOT at the center. Inset both ends by an amount that
+  // matches half the card's height (rough projection along the line),
+  // so the line doesn't crash into the numeral's bounding box.
+  const inset = cardHeight * 0.45;
+  // Original endpoints (corner-to-corner).
+  const leftDx = anchors.leftPart.x - anchors.whole.x;
+  const leftDy = anchors.leftPart.y - anchors.whole.y;
+  const leftLen = Math.hypot(leftDx, leftDy);
+  const leftUx = leftDx / leftLen;
+  const leftUy = leftDy / leftLen;
+  const leftStart = {
+    x: anchors.whole.x + leftUx * inset,
+    y: anchors.whole.y + leftUy * inset,
+  };
+  const leftEnd = {
+    x: anchors.leftPart.x - leftUx * inset,
+    y: anchors.leftPart.y - leftUy * inset,
+  };
+
+  const rightDx = anchors.rightPart.x - anchors.whole.x;
+  const rightDy = anchors.rightPart.y - anchors.whole.y;
+  const rightLen = Math.hypot(rightDx, rightDy);
+  const rightUx = rightDx / rightLen;
+  const rightUy = rightDy / rightLen;
+  const rightStart = {
+    x: anchors.whole.x + rightUx * inset,
+    y: anchors.whole.y + rightUy * inset,
+  };
+  const rightEnd = {
+    x: anchors.rightPart.x - rightUx * inset,
+    y: anchors.rightPart.y - rightUy * inset,
+  };
+
+  const strokeWidth = Math.max(4, diagramWidth * 0.025);
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={stateOpacity(undefined, dimmed)}
+      transform={transform}
+      x={x}
+      y={y}
+    >
+      <g className="lines">
+        <line
+          pathLength={1}
+          stroke={stroke}
+          strokeDasharray={1}
+          strokeDashoffset={1 - reveal}
+          strokeLinecap="round"
+          strokeWidth={strokeWidth}
+          x1={leftStart.x}
+          x2={leftEnd.x}
+          y1={leftStart.y}
+          y2={leftEnd.y}
+        />
+        <line
+          pathLength={1}
+          stroke={stroke}
+          strokeDasharray={1}
+          strokeDashoffset={1 - reveal}
+          strokeLinecap="round"
+          strokeWidth={strokeWidth}
+          x1={rightStart.x}
+          x2={rightEnd.x}
+          y1={rightStart.y}
+          y2={rightEnd.y}
+        />
+      </g>
+      {renderNumbers ? (
+        <g className="numbers">
+          <NumberCard
+            color={cardSurface}
+            height={cardHeight}
+            value={whole}
+            width={cardSize}
+            x={anchors.whole.x}
+            y={anchors.whole.y}
+          />
+          <g opacity={reveal}>
+            <NumberCard
+              color={cardSurface}
+              height={cardHeight}
+              value={parts[0]}
+              width={cardSize}
+              x={anchors.leftPart.x}
+              y={anchors.leftPart.y}
+            />
+            <NumberCard
+              color={cardSurface}
+              height={cardHeight}
+              value={parts[1]}
+              width={cardSize}
+              x={anchors.rightPart.x}
+              y={anchors.rightPart.y}
+            />
+          </g>
+        </g>
+      ) : null}
     </PlacedGroup>
   );
 };
