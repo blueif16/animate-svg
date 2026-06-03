@@ -21,6 +21,170 @@ import {
   type ThemeColor,
 } from "./shared";
 
+// RegionSplit — partition a single filled round region (a "cookie"/disk) into N
+// EQUAL-AREA parts. This is the fraction/area-partition primitive (split ONE
+// whole into equal regions), distinct from FenHeDiagram (a NUMBER bond) and
+// PartWholeBrace (bracket a linear span). Pedagogy flow it supports: show the
+// whole (cutProgress 0) → cut it (cutProgress 0→1 draws the radial cuts) →
+// shade one part (highlightPart) → give the parts out (separation 0→1 pulls the
+// wedges apart). Prop-driven + lesson-agnostic — no topic/copy baked in.
+export type RegionSplitProps = PrimitiveGroupProps &
+  PlacementProps & {
+    accent?: ThemeColor;
+    cutProgress?: number; // 0..1 reveal of the dividing cuts
+    fill?: ThemeColor;
+    highlightPart?: number; // 0-based part to emphasize, -1 = none
+    label?: ReactNode;
+    parts?: number; // equal parts to split into (1-8)
+    radius?: number;
+    separation?: number; // 0..1 how far the parts are pulled apart
+    showLabels?: boolean; // render "1/parts" on each part when separated
+  };
+
+const regionPolar = (r: number, angle: number): readonly [number, number] => [
+  Math.cos(angle) * r,
+  Math.sin(angle) * r,
+];
+
+const regionSectorPath = (r: number, a0: number, a1: number) => {
+  const [sx, sy] = regionPolar(r, a0);
+  const [ex, ey] = regionPolar(r, a1);
+  const largeArc = a1 - a0 > Math.PI ? 1 : 0;
+  return `M 0 0 L ${sx.toFixed(2)} ${sy.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${ex.toFixed(2)} ${ey.toFixed(2)} Z`;
+};
+
+export const RegionSplit = ({
+  accent,
+  cutProgress = 1,
+  fill,
+  highlightPart = -1,
+  label,
+  parts = 2,
+  radius = 90,
+  separation = 0,
+  showLabels = false,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: RegionSplitProps) => {
+  const n = clampNumber(Math.floor(parts), 1, 8);
+  const r = Math.max(8, radius);
+  const cut = clamp01(cutProgress);
+  const spread = clamp01(separation);
+  const baseFill = resolveColor(fill, colors.sunshine);
+  const accentFill = resolveColor(accent, colors.reward);
+  const stroke = colors.textNavy;
+  const step = (Math.PI * 2) / n;
+  const startAngle = -Math.PI / 2;
+
+  if (n === 1) {
+    return (
+      <PlacedGroup x={x} y={y} {...groupProps}>
+        <circle
+          cx={0}
+          cy={0}
+          fill={highlightPart === 0 ? accentFill : baseFill}
+          r={r}
+          stroke={stroke}
+          strokeWidth={NAVY_STROKE}
+        />
+        {label != null ? (
+          <PrimitiveLabel x={0} y={r + 36}>
+            {label}
+          </PrimitiveLabel>
+        ) : null}
+      </PlacedGroup>
+    );
+  }
+
+  const sectors = Array.from({ length: n }, (_, i) => {
+    const a0 = startAngle + i * step;
+    const a1 = startAngle + (i + 1) * step;
+    return { a0, a1, bisector: (a0 + a1) / 2, i };
+  });
+
+  return (
+    <PlacedGroup x={x} y={y} {...groupProps}>
+      {spread === 0 ? (
+        <g>
+          <circle cx={0} cy={0} fill={baseFill} r={r} />
+          {highlightPart >= 0 && highlightPart < n ? (
+            <path
+              d={regionSectorPath(
+                r,
+                sectors[highlightPart].a0,
+                sectors[highlightPart].a1,
+              )}
+              fill={accentFill}
+            />
+          ) : null}
+          {sectors.map(({ a0, i }) => {
+            const [ex, ey] = regionPolar(r * cut, a0);
+            return (
+              <line
+                key={`cut-${i}`}
+                stroke={stroke}
+                strokeLinecap="round"
+                strokeWidth={NAVY_STROKE}
+                x1={0}
+                x2={ex}
+                y1={0}
+                y2={ey}
+              />
+            );
+          })}
+          <circle
+            cx={0}
+            cy={0}
+            fill="none"
+            r={r}
+            stroke={stroke}
+            strokeWidth={NAVY_STROKE}
+          />
+        </g>
+      ) : (
+        sectors.map(({ a0, a1, bisector, i }) => {
+          const [ox, oy] = regionPolar(r * 0.55 * spread, bisector);
+          const isHighlighted = i === highlightPart;
+          return (
+            <path
+              key={`part-${i}`}
+              d={regionSectorPath(r, a0, a1)}
+              fill={isHighlighted ? accentFill : baseFill}
+              opacity={highlightPart < 0 || isHighlighted ? 1 : 0.55}
+              stroke={stroke}
+              strokeLinejoin="round"
+              strokeWidth={NAVY_STROKE}
+              transform={`translate(${ox.toFixed(2)} ${oy.toFixed(2)})`}
+            />
+          );
+        })
+      )}
+      {showLabels && spread > 0
+        ? sectors.map(({ bisector, i }) => {
+            const [ox, oy] = regionPolar(r * 0.55 * spread, bisector);
+            const [lx, ly] = regionPolar(r * 0.58, bisector);
+            return (
+              <PrimitiveLabel
+                key={`lbl-${i}`}
+                fontSize={Math.round(r * 0.3)}
+                x={ox + lx}
+                y={oy + ly}
+              >
+                {`1/${n}`}
+              </PrimitiveLabel>
+            );
+          })
+        : null}
+      {label != null ? (
+        <PrimitiveLabel x={0} y={r + 36}>
+          {label}
+        </PrimitiveLabel>
+      ) : null}
+    </PlacedGroup>
+  );
+};
+
 export type CountableObjectVariant =
   | "animal"
   | "banana"
