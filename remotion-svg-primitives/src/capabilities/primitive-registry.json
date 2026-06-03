@@ -221,6 +221,20 @@
     },
     {
       "kind": "counting",
+      "id": "region-split",
+      "component": "RegionSplit",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "fraction",
+        "area-partition",
+        "equal-share"
+      ],
+      "useWhen": "Splitting ONE filled round region (a cookie/disk) into N equal-area parts to teach halves/thirds/quarters: cutProgress draws the cuts on, highlightPart shades one part, separation pulls the parts out to hand each to someone.",
+      "avoidWhen": "Decomposing a NUMBER into addends (use FenHeDiagram) or bracketing a linear span (use PartWholeBrace) — RegionSplit is about dividing a continuous area, not a count.",
+      "status": "experimental"
+    },
+    {
+      "kind": "counting",
       "id": "small-stick",
       "component": "SmallStick",
       "source": "src/shape-primitives/counting.tsx",
@@ -348,7 +362,7 @@
         "character",
         "card"
       ],
-      "useWhen": "Presenting a single Chinese character with optional pinyin, word, and a small pictograph hint, in selected/focused states.",
+      "useWhen": "Presenting a Chinese character (one per card; compose several side by side for a contrasting SET — e.g. a tone minimal pair 妈/麻/马/骂) with optional pinyin, word, and a small pictograph hint, in selected/focused states.",
       "avoidWhen": "Showing pinyin spelling structure (initial/final/tone) rather than the character — use PinyinSyllableCard.",
       "variants": {
         "picture": [
