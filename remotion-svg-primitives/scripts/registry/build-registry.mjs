@@ -106,6 +106,21 @@ const buildPrimitives = (priorByComponent) => {
     );
 };
 
+// STRANDED shape exports — a PascalCase component re-exported from the shape
+// barrel via a module that is NOT one of the known families (MODULE_KIND).
+// buildPrimitives() can't place it (it has no kind), so without this check it
+// would be SILENTLY DROPPED — a built-but-invisible primitive the gate never
+// sees. The membership-completeness rule (account for EVERY code member or
+// deliberately register it) closes that blind spot: a stranded export is hard
+// drift. Fix = move it into a family file (counting/literacy/interaction/
+// sketch) OR register a new family (MODULE_KIND + KIND_ORDER + the schema.ts
+// `kind` union).
+const strandedShapeExports = () =>
+  parseBarrelValueExports(read(P.shapeBarrel))
+    .filter((e) => isComponentName(e.name) && !MODULE_KIND[e.module])
+    .map((e) => `${e.name} (from "${e.module}")`)
+    .sort();
+
 // --- motionComponents[] / fxComponents[] ------------------------------------
 const buildReusable = (barrelAbs, priorByComponent) => {
   const discovered = parseBarrelValueExports(read(barrelAbs)).filter((e) =>
@@ -169,8 +184,46 @@ const undocumented = (next) =>
     (e) => e.status === "undocumented" || !e.useWhen,
   ).length;
 
+const stranded = strandedShapeExports();
+const printStranded = () => {
+  console.error(
+    "registry:check FAILED — shape-primitive component(s) exported from the barrel " +
+      "but from an UNREGISTERED family module (silently uncatalogued otherwise):",
+  );
+  for (const s of stranded) console.error(`  - ${s}`);
+  console.error(
+    "\nFix: move the export into a family file (src/shape-primitives/{counting,literacy," +
+      "interaction,sketch}.tsx), OR register a new family — add the module to MODULE_KIND + " +
+      "KIND_ORDER in scripts/registry/build-registry.mjs AND the `kind` union in " +
+      "src/capabilities/schema.ts. A primitive must belong to a known family to be catalogued.",
+  );
+};
+
 if (checkMode) {
-  if (committed === generated) {
+  let failed = false;
+  if (committed !== generated) {
+    failed = true;
+    console.error(
+      "registry:check FAILED — the catalog is out of sync with the code (a primitive/" +
+        "component was added or removed in a barrel, or a structural field drifted).",
+    );
+    // Region-aware first-diff so the message points at the change.
+    const a = committed.split("\n");
+    const b = generated.split("\n");
+    for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+      if (a[i] !== b[i]) {
+        if (a[i] !== undefined) console.error(`  committed (line ${i + 1}): ${a[i]}`);
+        if (b[i] !== undefined) console.error(`  generated (line ${i + 1}): ${b[i]}`);
+        break;
+      }
+    }
+    console.error("\nFix: run `npm run registry:build` to regenerate, then author prose for any new entry.");
+  }
+  if (stranded.length) {
+    failed = true;
+    printStranded();
+  }
+  if (!failed) {
     const next = JSON.parse(generated);
     console.log(
       `registry:check ok — catalog in sync with code ` +
@@ -178,27 +231,17 @@ if (checkMode) {
         `${next.fxComponents.length} fx, curves ${next.motionVocabulary.curves.length}/` +
         `springs ${next.motionVocabulary.springs.length}). ${undocumented(next)} entr(ies) still need prose.`,
     );
-    process.exit(0);
   }
-  console.error(
-    "registry:check FAILED — the catalog is out of sync with the code (a primitive/" +
-      "component was added or removed in a barrel, or a structural field drifted).",
-  );
-  // Region-aware first-diff so the message points at the change.
-  const a = committed.split("\n");
-  const b = generated.split("\n");
-  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
-    if (a[i] !== b[i]) {
-      if (a[i] !== undefined) console.error(`  committed (line ${i + 1}): ${a[i]}`);
-      if (b[i] !== undefined) console.error(`  generated (line ${i + 1}): ${b[i]}`);
-      break;
-    }
-  }
-  console.error("\nFix: run `npm run registry:build` to regenerate, then author prose for any new entry.");
-  process.exit(1);
+  process.exit(failed ? 1 : 0);
 }
 
-// build mode
+// build mode — a stranded export is a hard error here too: it cannot be
+// represented in the catalog, so building "succeeds" only for the known
+// families and would leave the stranded primitive silently invisible.
+if (stranded.length) {
+  printStranded();
+  process.exit(1);
+}
 if (committed === generated) {
   const next = JSON.parse(generated);
   console.log(
