@@ -1,0 +1,766 @@
+{
+  "$comment": "GENERATED STRUCTURE + carried-forward prose. component/kind/source and motionVocabulary are DERIVED FROM CODE by `npm run registry:build` — do NOT hand-edit them. intent/useWhen/avoidWhen/variants ARE hand-authored and are carried forward by component id. After adding a primitive, run `npm run registry:build`; `npm run registry:check` gates drift (regenerate-then-diff).",
+  "version": 1,
+  "description": "Reusable craft catalog for the remotion-svg-primitives lesson pipeline. Source of truth for SHAPE is src/capabilities/schema.ts; source of truth for WHAT EXISTS is the code (barrels + unions). This JSON is a report-only baseline in cut 1.",
+  "generatedSections": [
+    "primitives",
+    "motionComponents",
+    "fxComponents",
+    "motionVocabulary"
+  ],
+  "membershipGatedSections": [
+    "styles"
+  ],
+  "manifestAuthoredSections": [
+    "recipes"
+  ],
+  "primitives": [
+    {
+      "kind": "counting",
+      "id": "answer-tile",
+      "component": "AnswerTile",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "answer",
+        "choice",
+        "card"
+      ],
+      "useWhen": "A tappable answer or choice card holding a number, text, or icon child, with correct/wrong/selected/focused states and a state badge.",
+      "avoidWhen": "Showing a bare digit with no answer-choice framing — use NumberCard.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "bundle-wrap",
+      "component": "BundleWrap",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "bundle",
+        "group",
+        "ten"
+      ],
+      "useWhen": "Wrapping a row of ten sticks into a bundle with a rope, band, or ribbon that draws on via wrapProgress to show ten ones becoming one ten.",
+      "avoidWhen": "Grouping objects with no physical wrap gesture, or drawing the sticks themselves — use StickGroup with layout=bundle.",
+      "variants": {
+        "style": [
+          "rope",
+          "band",
+          "ribbon"
+        ],
+        "knotPosition": [
+          "top",
+          "left",
+          "right"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "comparison-symbol",
+      "component": "ComparisonSymbol",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "compare",
+        "operator",
+        "reveal"
+      ],
+      "useWhen": "Placing a >, <, or = between two quantities, optionally as a hungry-mouth glyph or hidden behind a ? until revealed.",
+      "avoidWhen": "Using = inside a built-out equation — use EquationStrip's operator tile.",
+      "variants": {
+        "symbol": [
+          "<",
+          "=",
+          ">"
+        ],
+        "style": [
+          "formal",
+          "mouth"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "countable-object",
+      "component": "CountableObject",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "countable",
+        "object",
+        "set"
+      ],
+      "useWhen": "A single cute countable thing (fish, star, fruit, etc.) to populate a counting or comparison set, with selected/dimmed/label states.",
+      "avoidWhen": "Abstract place-value units or sticks — use UnitBlock or SmallStick.",
+      "variants": {
+        "variant": [
+          "animal",
+          "banana",
+          "block",
+          "fish",
+          "fruit",
+          "star"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "count-step-indicator",
+      "component": "CountStepIndicator",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "count",
+        "step",
+        "badge"
+      ],
+      "useWhen": "A small circular badge that pops and fades in via progress to mark the running count at each step of a counting sequence.",
+      "avoidWhen": "Showing a total with an optional unit label — use StepTally; tracking position on a line — use NumberLineTrack.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "equation-strip",
+      "component": "EquationStrip",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "equation",
+        "blank",
+        "operator"
+      ],
+      "useWhen": "Laying out a horizontal number sentence (left op right = result) with an optional active or blank tile to spotlight a missing term.",
+      "avoidWhen": "Showing a part-whole split rather than an arithmetic sentence — use FenHeDiagram or PartWholeBrace.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "fen-he-diagram",
+      "component": "FenHeDiagram",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "part-whole decomposition"
+      ],
+      "useWhen": "Showing a whole splitting into two parts (分合式) or composing two parts into a whole; identity-preserving via getFenHeDiagramAnchors.",
+      "avoidWhen": "Plain counting or comparison with no part-whole relationship.",
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "label-callout",
+      "component": "LabelCallout",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "label",
+        "callout",
+        "text"
+      ],
+      "useWhen": "Dropping a centered word or phrase with an optional draw-on underline that fades in via progress to name what is on screen.",
+      "avoidWhen": "Hand-drawn teacher annotation pointing at a target — use TeacherMark.",
+      "variants": {
+        "appearStyle": [
+          "fade",
+          "write-on"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "number-card",
+      "component": "NumberCard",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "number",
+        "card",
+        "digit"
+      ],
+      "useWhen": "Showing a single digit or short value on a rounded card with optional blank line and correct/wrong/selected states, auto-sized so the glyph always insets cleanly.",
+      "avoidWhen": "The value is an answer choice with an icon or label — use AnswerTile.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "number-line-track",
+      "component": "NumberLineTrack",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "number-line",
+        "position",
+        "jump"
+      ],
+      "useWhen": "Showing position, ticks, highlights, and animated arc jumps along a min-to-max number line with a current-value badge.",
+      "avoidWhen": "Counting discrete objects with no linear scale — use a CountableObject set or StickGroup.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "part-whole-brace",
+      "component": "PartWholeBrace",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "brace",
+        "part-whole",
+        "group"
+      ],
+      "useWhen": "Drawing a curly brace that reveals via progress to bracket a span as one whole or one part, in any of four directions with an optional label.",
+      "avoidWhen": "Showing the numeric whole/parts relationship itself — use FenHeDiagram.",
+      "variants": {
+        "direction": [
+          "down",
+          "left",
+          "right",
+          "up"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "small-stick",
+      "component": "SmallStick",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "stick",
+        "unit",
+        "count"
+      ],
+      "useWhen": "A single counting stick with idle/active/counted highlight, rotation, and scale — the unit primitive for stick counting and bundling.",
+      "avoidWhen": "Placing many sticks at once — use StickGroup, which lays out and highlights them for you.",
+      "variants": {
+        "highlight": [
+          "idle",
+          "active",
+          "counted"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "step-tally",
+      "component": "StepTally",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "tally",
+        "total",
+        "count"
+      ],
+      "useWhen": "Showing the running total as a numeric pill or a row of dots, with an optional unit label, that pops in via progress.",
+      "avoidWhen": "Marking just the current step with no total — use CountStepIndicator.",
+      "variants": {
+        "variant": [
+          "dots",
+          "numeric"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "stick-group",
+      "component": "StickGroup",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "sticks",
+        "count",
+        "bundle"
+      ],
+      "useWhen": "Laying out N counting sticks in a scatter, row, or bundle with per-index active highlight, reveal-up-to, and seeded scatter placement.",
+      "avoidWhen": "A single stick or a non-stick countable — use SmallStick or CountableObject.",
+      "variants": {
+        "layout": [
+          "scatter",
+          "row",
+          "bundle"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "ten-frame-rod",
+      "component": "TenFrameRod",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "ten-frame",
+        "place-value",
+        "fill"
+      ],
+      "useWhen": "Filling a 10-cell two-row ten-frame or one-row rod by count or colored segments to show how many make ten and the ones inside.",
+      "avoidWhen": "Counting loose objects with no ten-structure — use a CountableObject set; physical stick bundling — use StickGroup plus BundleWrap.",
+      "variants": {
+        "variant": [
+          "frame",
+          "rod"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "unit-block",
+      "component": "UnitBlock",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "unit",
+        "block",
+        "place-value"
+      ],
+      "useWhen": "Showing 1-10 place-value units as cubes, dots, chips, or a segmented rod, optionally stacked, with a value label.",
+      "avoidWhen": "Cute themed countables for early counting — use CountableObject; a structured ten-frame — use TenFrameRod.",
+      "variants": {
+        "variant": [
+          "chip",
+          "cube",
+          "dot",
+          "rod"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "animated-stroke-path",
+      "component": "AnimatedStrokePath",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "stroke",
+        "hanzi",
+        "write-on"
+      ],
+      "useWhen": "Drawing a single hanzi stroke on via durationInFrames or progress, with a faint ghost guide underneath and an optional pen-tip cursor.",
+      "avoidWhen": "A generic non-stroke path reveal — use DrawPath; teacher annotation marks — use TeacherMark.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "hanzi-card",
+      "component": "HanziCard",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "hanzi",
+        "character",
+        "card"
+      ],
+      "useWhen": "Presenting a single Chinese character with optional pinyin, word, and a small pictograph hint, in selected/focused states.",
+      "avoidWhen": "Showing pinyin spelling structure (initial/final/tone) rather than the character — use PinyinSyllableCard.",
+      "variants": {
+        "picture": [
+          "book",
+          "heart",
+          "moon",
+          "person",
+          "sun",
+          "tree",
+          "water"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "mouth-shape-icon",
+      "component": "MouthShapeIcon",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "mouth",
+        "phonics",
+        "articulation"
+      ],
+      "useWhen": "A face icon whose mouth shows the articulation (open, round, smile, teeth) for teaching a pinyin sound's lip position.",
+      "avoidWhen": "Showing the written syllable or tone — use PinyinSyllableCard or ToneMarkGlyph.",
+      "variants": {
+        "state": [
+          "open",
+          "round",
+          "smile",
+          "teeth"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "pinyin-syllable-card",
+      "component": "PinyinSyllableCard",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "pinyin",
+        "syllable",
+        "structure"
+      ],
+      "useWhen": "Showing a pinyin syllable split into initial and final tiles plus a tone mark, with the initial, final, or tone segment highlightable.",
+      "avoidWhen": "Showing the Chinese character itself — use HanziCard; just the tone curve — use ToneMarkGlyph.",
+      "variants": {
+        "highlight": [
+          "final",
+          "initial",
+          "none",
+          "tone"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "radical-tile",
+      "component": "RadicalTile",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "radical",
+        "component",
+        "tile"
+      ],
+      "useWhen": "A tile holding a single radical or character component with an optional label and correct/wrong/selected answer states.",
+      "avoidWhen": "Presenting a full character with pinyin and word — use HanziCard.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "stroke-guide-cell",
+      "component": "StrokeGuideCell",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "grid",
+        "writing",
+        "guide"
+      ],
+      "useWhen": "A Chinese-writing practice cell (田/米/half grid) with dashed guides and an optional highlighted focus zone for where a stroke goes.",
+      "avoidWhen": "Animating the stroke itself — use AnimatedStrokePath inside the cell.",
+      "variants": {
+        "grid": [
+          "half",
+          "mi",
+          "tian"
+        ],
+        "focusZone": [
+          "bottom",
+          "center",
+          "left",
+          "right",
+          "top"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "tone-mark-glyph",
+      "component": "ToneMarkGlyph",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "tone",
+        "pinyin",
+        "contour"
+      ],
+      "useWhen": "Drawing one of the four Mandarin tone contours (or the neutral dot) that strokes on via progress to teach pitch shape.",
+      "avoidWhen": "Showing the full syllable structure around the tone — use PinyinSyllableCard.",
+      "variants": {
+        "tone": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "interaction",
+      "id": "pair-connector",
+      "component": "PairConnector",
+      "source": "src/shape-primitives/interaction.tsx",
+      "intent": [
+        "connect",
+        "match",
+        "line"
+      ],
+      "useWhen": "Drawing a line that grows via progress between two points to pair or match items, optionally dotted with snap endpoint dots that turn green on completion.",
+      "avoidWhen": "An annotated teacher arrow or label line — use TeacherMark or PointerHandArrow.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "interaction",
+      "id": "pointer-hand-arrow",
+      "component": "PointerHandArrow",
+      "source": "src/shape-primitives/interaction.tsx",
+      "intent": [
+        "pointer",
+        "direct-attention",
+        "arrow"
+      ],
+      "useWhen": "Pointing the child's attention at a target with an arrow, pointing hand, or sparkle that nudges and scales in via progress, in any of four directions.",
+      "avoidWhen": "A hand-drawn annotation stroke or a connecting match line — use TeacherMark or PairConnector.",
+      "variants": {
+        "variant": [
+          "arrow",
+          "hand",
+          "sparkle"
+        ],
+        "direction": [
+          "down",
+          "left",
+          "right",
+          "up"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "interaction",
+      "id": "reward-progress-token",
+      "component": "RewardProgressToken",
+      "source": "src/shape-primitives/interaction.tsx",
+      "intent": [
+        "reward",
+        "progress",
+        "token"
+      ],
+      "useWhen": "A star, coin, badge, or node token with a circular progress ring filled by progress, showing a percent or OK once collected.",
+      "avoidWhen": "Tracking the count of a teaching set rather than session reward progress — use StepTally.",
+      "variants": {
+        "variant": [
+          "badge",
+          "coin",
+          "node",
+          "star"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "interaction",
+      "id": "sorting-bin",
+      "component": "SortingBin",
+      "source": "src/shape-primitives/interaction.tsx",
+      "intent": [
+        "sort",
+        "bin",
+        "drop-target"
+      ],
+      "useWhen": "A labeled basket or tray drop-target whose state (idle/accept/reject) recolors to show whether a sorted item belongs there.",
+      "avoidWhen": "Just collecting reward progress, or matching pairs — use RewardProgressToken or PairConnector.",
+      "variants": {
+        "state": [
+          "accept",
+          "idle",
+          "reject"
+        ],
+        "variant": [
+          "basket",
+          "tray"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "sketch",
+      "id": "teacher-mark",
+      "component": "TeacherMark",
+      "source": "src/shape-primitives/sketch.tsx",
+      "intent": [
+        "annotation",
+        "ink",
+        "teacher"
+      ],
+      "useWhen": "Hand-drawn teacher ink (underline, wrap-arc, label-arrow, vs-mark) that draws on via drawProgress with optional boil wobble and pen-settle.",
+      "avoidWhen": "A clean typeset label or directional pointer — use LabelCallout or PointerHandArrow.",
+      "variants": {
+        "kind": [
+          "underline",
+          "wrap-arc",
+          "label-arrow",
+          "vs-mark"
+        ]
+      },
+      "status": "stable"
+    }
+  ],
+  "motionComponents": [
+    {
+      "id": "drag",
+      "component": "Drag",
+      "source": "src/motion-primitives/Drag.tsx",
+      "intent": [],
+      "useWhen": "Stagger an appendage/child chain with trailing lag.",
+      "avoidWhen": "Single-element entrances.",
+      "status": "experimental"
+    },
+    {
+      "id": "draw-path",
+      "component": "DrawPath",
+      "source": "src/motion-primitives/DrawPath.tsx",
+      "intent": [
+        "draw-on",
+        "path",
+        "reveal"
+      ],
+      "useWhen": "Revealing any SVG path stroke-by-stroke via durationInFrames or an external progress, using a pathLength dash trick.",
+      "avoidWhen": "A hanzi stroke needing a ghost guide and cursor — use AnimatedStrokePath; an object traveling along a path — use FollowPath.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "id": "follow-path",
+      "component": "FollowPath",
+      "source": "src/motion-primitives/FollowPath.tsx",
+      "intent": [
+        "motion-path",
+        "travel",
+        "trace"
+      ],
+      "useWhen": "Moving a child element along a path spec via progress, optionally rotating it to the path tangent, to animate something tracing a route.",
+      "avoidWhen": "Drawing the path's ink rather than moving along it — use DrawPath.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "id": "pop-in",
+      "component": "PopIn",
+      "source": "src/motion-primitives/PopIn.tsx",
+      "intent": [],
+      "useWhen": "Entrance scale physics for any appearing element.",
+      "avoidWhen": "Continuous/idle motion — use Breathe.",
+      "variants": {
+        "motion": [
+          "snap",
+          "bouncy",
+          "settle"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "id": "pulse-circle",
+      "component": "PulseCircle",
+      "source": "src/motion-primitives/PulseCircle.tsx",
+      "intent": [
+        "pulse",
+        "emphasis",
+        "ripple"
+      ],
+      "useWhen": "Emitting expanding fading ripple rings from a point for a fixed repeatCount to draw a beat of attention to a spot.",
+      "avoidWhen": "A celebratory star burst — use SparkleBurst; a directed pointer — use PointerHandArrow.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "id": "smear",
+      "component": "Smear",
+      "source": "src/motion-primitives/Smear.tsx",
+      "intent": [],
+      "useWhen": "Motion-blur substitute for fast straight-line travel (>180 vbu/frame).",
+      "avoidWhen": "Slow or curved motion.",
+      "status": "experimental"
+    },
+    {
+      "id": "sparkle-burst",
+      "component": "SparkleBurst",
+      "source": "src/motion-primitives/SparkleBurst.tsx",
+      "intent": [
+        "sparkle",
+        "celebrate",
+        "burst"
+      ],
+      "useWhen": "Firing a one-shot radial burst of stars outward from a point to celebrate a correct answer or completed beat.",
+      "avoidWhen": "A sustained attention pulse — use PulseCircle; a persistent reward token — use RewardProgressToken.",
+      "variants": {},
+      "status": "stable"
+    }
+  ],
+  "fxComponents": [
+    {
+      "id": "breathe",
+      "component": "Breathe",
+      "source": "src/fx/Breathe.tsx",
+      "intent": [],
+      "useWhen": "Moving-hold idle breathing so held elements stay alive.",
+      "avoidWhen": "During active motion.",
+      "status": "experimental"
+    },
+    {
+      "id": "fx-defs",
+      "component": "FXDefs",
+      "source": "src/fx/FXDefs.tsx",
+      "intent": [],
+      "useWhen": "Render once per scene root to publish the FX filter defs.",
+      "avoidWhen": "Never omit when any fx/ component is used.",
+      "status": "experimental"
+    },
+    {
+      "id": "glint-flash",
+      "component": "GlintFlash",
+      "source": "src/fx/GlintFlash.tsx",
+      "intent": [],
+      "useWhen": "Point flash at a moment of emphasis.",
+      "avoidWhen": "Repeatedly — one accent per beat.",
+      "status": "experimental"
+    },
+    {
+      "id": "glow-pulse",
+      "component": "GlowPulse",
+      "source": "src/fx/GlowPulse.tsx",
+      "intent": [],
+      "useWhen": "Pulsing aura wrapper to draw the eye.",
+      "avoidWhen": "On more than one element at a time.",
+      "status": "experimental"
+    },
+    {
+      "id": "shine-sweep",
+      "component": "ShineSweep",
+      "source": "src/fx/ShineSweep.tsx",
+      "intent": [],
+      "useWhen": "Cinematic shine sweeping across a rectangle (card/title).",
+      "avoidWhen": "On teaching primitives the child is reasoning about.",
+      "status": "experimental"
+    },
+    {
+      "id": "sparkle",
+      "component": "Sparkle",
+      "source": "src/fx/Sparkle.tsx",
+      "intent": [],
+      "useWhen": "One-shot sparkle particle accent on a reward/reveal.",
+      "avoidWhen": "Under narration or as continuous decoration.",
+      "status": "experimental"
+    }
+  ],
+  "motionVocabulary": {
+    "curves": [
+      "enter",
+      "balanced",
+      "overshoot",
+      "outCubic",
+      "outQuint",
+      "inOutCubic"
+    ],
+    "springs": [
+      "snappy",
+      "bouncy",
+      "smooth"
+    ]
+  },
+  "styles": [
+    {
+      "id": "default",
+      "useWhen": "Canonical lesson appearance — no aesthetic overlay.",
+      "status": "stable"
+    },
+    {
+      "id": "ink-wash",
+      "useWhen": "Sumi-e ink on warm rice paper aesthetic overlay.",
+      "status": "experimental",
+      "runtimeDir": "src/styles/ink-wash",
+      "skillBundle": ".agents/styles/ink-wash"
+    }
+  ],
+  "recipes": []
+}

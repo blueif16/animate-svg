@@ -1,0 +1,447 @@
+{
+  "$comment": "GENERATED from src/capabilities/schema.ts via z.toJSONSchema — do NOT hand-edit; run `npm run registry:schema-export` (or registry:build) to regenerate.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "generatedSections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "membershipGatedSections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "manifestAuthoredSections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "primitives": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "counting"
+              },
+              "id": {
+                "type": "string"
+              },
+              "component": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "intent": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "useWhen": {
+                "type": "string"
+              },
+              "avoidWhen": {
+                "type": "string"
+              },
+              "variants": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "component",
+              "source",
+              "intent",
+              "useWhen",
+              "avoidWhen",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "literacy"
+              },
+              "id": {
+                "type": "string"
+              },
+              "component": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "intent": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "useWhen": {
+                "type": "string"
+              },
+              "avoidWhen": {
+                "type": "string"
+              },
+              "variants": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "component",
+              "source",
+              "intent",
+              "useWhen",
+              "avoidWhen",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "interaction"
+              },
+              "id": {
+                "type": "string"
+              },
+              "component": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "intent": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "useWhen": {
+                "type": "string"
+              },
+              "avoidWhen": {
+                "type": "string"
+              },
+              "variants": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "component",
+              "source",
+              "intent",
+              "useWhen",
+              "avoidWhen",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "sketch"
+              },
+              "id": {
+                "type": "string"
+              },
+              "component": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "intent": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "useWhen": {
+                "type": "string"
+              },
+              "avoidWhen": {
+                "type": "string"
+              },
+              "variants": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "component",
+              "source",
+              "intent",
+              "useWhen",
+              "avoidWhen",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "motionComponents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "useWhen": {
+            "type": "string"
+          },
+          "avoidWhen": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "source",
+          "useWhen",
+          "avoidWhen",
+          "status"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "fxComponents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "useWhen": {
+            "type": "string"
+          },
+          "avoidWhen": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "source",
+          "useWhen",
+          "avoidWhen",
+          "status"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "motionVocabulary": {
+      "type": "object",
+      "properties": {
+        "curves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "springs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "curves",
+        "springs"
+      ],
+      "additionalProperties": {}
+    },
+    "styles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "useWhen": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "runtimeDir": {
+            "type": "string"
+          },
+          "skillBundle": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "useWhen",
+          "status"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "useWhen": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "useWhen",
+          "items"
+        ],
+        "additionalProperties": {}
+      }
+    }
+  },
+  "required": [
+    "version",
+    "description",
+    "generatedSections",
+    "membershipGatedSections",
+    "manifestAuthoredSections",
+    "primitives",
+    "motionComponents",
+    "fxComponents",
+    "motionVocabulary",
+    "styles",
+    "recipes"
+  ],
+  "additionalProperties": {}
+}
