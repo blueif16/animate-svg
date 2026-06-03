@@ -99,10 +99,21 @@ console.log("\n=== capability-registry drift report (CUT 1, report-only — alwa
   const barrel = parseBarrelValueExports(read(P.shapeBarrel));
   const components = barrel.filter((e) => isComponentName(e.name) && MODULE_KIND[e.module]);
   const helpers = barrel.filter((e) => !isComponentName(e.name) && MODULE_KIND[e.module]);
+  // Stranded: a PascalCase component exported from an UNREGISTERED family module
+  // — uncatalogued by buildPrimitives() and (registry:check) gate-failing.
+  const stranded = barrel.filter((e) => isComponentName(e.name) && !MODULE_KIND[e.module]);
   const codeIds = components.map((e) => e.name);
   const regIds = (registry.primitives ?? []).map((p) => p.component);
   console.log("KIND 1 · SVG primitives  (src/shape-primitives/index.ts barrel ↔ primitives[].component)");
   reportDiff("primitives", codeIds, regIds);
+  if (stranded.length) {
+    sectionsDrifted += 1;
+    console.log(
+      `  ✗ STRANDED exports (PascalCase, UNREGISTERED family module — uncatalogued + registry:check-failing) [${stranded.length}]: ` +
+        stranded.map((e) => `${e.name} (from "${e.module}")`).join(", "),
+    );
+    console.log("      fix: move into a family file, or register the module (MODULE_KIND + KIND_ORDER + schema.ts kind union).");
+  }
   // Per-family breakdown so the gap reads at a glance.
   const byKind = {};
   for (const c of components) (byKind[MODULE_KIND[c.module]] ??= []).push(c.name);
