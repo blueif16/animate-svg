@@ -1,0 +1,19 @@
+#!/bin/sh
+# Capability-registry lockstep gate (capability-registry-harness, Stage 5).
+#
+# Regenerate-then-diff the catalog + digest + JSON-Schema and safeParse the
+# committed catalog against the Zod schema. A commit that drifts the registry
+# from the code (a primitive added to a barrel but not rebuilt, a stale digest,
+# a schema/JSON mismatch) cannot land. Fast on purpose: no tsc, no full lint /
+# validate (those stay in `npm run lint`, too slow for the commit path).
+#
+# Versioned + self-installing: `npm install` in remotion-svg-primitives runs the
+# `prepare` script which sets `git config core.hooksPath .githooks`. To bypass in
+# an emergency: `git commit --no-verify` (and then fix the drift).
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT/remotion-svg-primitives"
+
+npm run --silent registry:check
+npm run --silent registry:schema-check
