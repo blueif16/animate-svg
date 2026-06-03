@@ -8,18 +8,33 @@ This file is the **single registry of every reusable craft capability** the less
 
 ## Protocol — adding a new capability
 
-A capability is reusable craft that lives behind a stable API: a named export, a component prop, a JSON key, a skill primitive. Bug fixes and one-off scene tweaks are NOT capabilities.
+A capability is reusable craft behind a stable API: a named export, a component prop, a JSON key, a skill primitive. Bug fixes and one-off scene tweaks are NOT capabilities.
 
-When adding one, follow this protocol exactly:
+**There are two homes — pick by kind:**
 
-1. **Implement the code** with inline JSDoc on the public surface. Public types are exported, *and re-exported through the relevant barrel `index.ts`* — every name a downstream scene imports must resolve via the package's documented entry point, not via deep paths into the file. Defaults preserve today's behavior (opt-in features default OFF, opt-out features default to legacy values).
+### A. A barrel COMPONENT → the capability registry (source of truth, drift-gated)
+
+A new SVG primitive (`src/shape-primitives/`), motion component (`src/motion-primitives/`), or FX component (`src/fx/`). The machine catalog `src/capabilities/` owns these — it is generated from the barrels and **gated by `.githooks/pre-commit`**, so an exported-but-unregistered component **cannot be committed**. Do NOT hand-write a markdown entry for these; register them like this:
+
+1. **Implement + export from the barrel `index.ts`** with inline JSDoc. Opt-in features default OFF, opt-out default to legacy. A component the registry can't see via the barrel does not exist. **SVG primitives live in a FAMILY file** (`counting`/`literacy`/`interaction`/`sketch`.tsx) — a brand-new standalone shape file is a "stranded export" that *fails* `registry:check` unless you register a new family (`MODULE_KIND` + `KIND_ORDER` in `build-registry.mjs` + the `kind` union in `schema.ts`). Motion/fx components are one file each — any file in their barrel works.
+2. **`npm run registry:build`** — discovers it and writes the catalog entry's STRUCTURE (`component`/`kind`/`source`) + the agent digest. Never hand-edit those fields.
+3. **Author the entry's prose** in `src/capabilities/primitive-registry.json` — `intent`, `useWhen`, `avoidWhen`, `variants`, and flip `status` off `"undocumented"`. Re-run `npm run registry:build` (prose is carried forward by component id).
+4. **`npm run registry:check`** must be green (the pre-commit hook runs it). The capability now appears in `catalog-digest.md`, visible to the next workflow run.
+
+A `## <id>` markdown entry below is OPTIONAL for a barrel component — add one only when it needs a richer reach-guide / anti-pattern table than the catalog's one-line prose (e.g. `fen-he-diagram`).
+
+### B. A TECHNIQUE / prop / system / JSON key → a markdown entry in this file
+
+A new prop (`<PopIn motion>`, `<TeacherMark boil>`), a style overlay, an audio-layer key, a signal component — anything with no catalogued-barrel home. The registry only catalogs barrel components, so these live here:
+
+1. **Implement the code** with inline JSDoc; export public types through the relevant barrel `index.ts`.
 2. **Add one entry to this file** using the fixed entry schema below. Backdate `Added:` to today.
-3. **Update the owning skill(s)** with a one-paragraph reach guide that references this registry entry by id (e.g. `see CAPABILITIES.md#sketch-boil`). Skills teach *when*; the registry declares *what*.
+3. **Update the owning skill(s)** with a one-paragraph reach guide referencing the entry id (e.g. `see CAPABILITIES.md#sketch-boil`).
 4. **Add one line** to the index below — `- [capability-id](#capability-id) — one-line description`.
-5. **If always-relevant** (every lesson scene must obey): add one line to CLAUDE.md `## Capabilities` block. Otherwise skip CLAUDE.md.
+5. **If always-relevant** (every lesson scene must obey): add one line to CLAUDE.md `## Capabilities` block.
 
 When deprecating a capability:
-1. Set `Status:` to `deprecated`, add a `Migration:` line with the replacement.
+1. Markdown entry: set `Status:` to `deprecated`, add a `Migration:` line. Registry entry: set the catalog entry's `status` to `deprecated`.
 2. Leave the entry. Removal happens after one full cycle of new lessons has migrated.
 
 ### Fixed entry schema
