@@ -605,6 +605,26 @@
       "status": "stable"
     },
     {
+      "kind": "interaction",
+      "id": "unmatched-slot",
+      "component": "UnmatchedSlot",
+      "source": "src/shape-primitives/interaction.tsx",
+      "intent": [
+        "unmatched",
+        "no-partner",
+        "surplus"
+      ],
+      "useWhen": "Marking the absence of a pairing partner under a surplus item in a compare-by-matching layout, so 'more than' reads as 'these have nobody' — a dashed ghost of the missing partner or a struck empty slot.",
+      "avoidWhen": "The partner EXISTS and you are drawing the match line between two present items — use PairConnector (UnmatchedSlot is for the item that is MISSING a partner).",
+      "variants": {
+        "state": [
+          "empty",
+          "ghost"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
       "kind": "sketch",
       "id": "teacher-mark",
       "component": "TeacherMark",

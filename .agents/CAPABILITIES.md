@@ -73,6 +73,7 @@ When deprecating a capability:
 - [motion-smear](#motion-smear) — <Smear> motion-blur substitute
 - [motion-drag-stagger](#motion-drag-stagger) — <Drag> appendage stagger helper
 - [fen-he-diagram](#fen-he-diagram) — `<FenHeDiagram>` 分合式 part-whole notation primitive with anchor exports for identity-preserved glyph migration
+- [paired-column-layout](#paired-column-layout) — `getPairedColumnPlacement()` pure helper aligning two rows into shared columns with a ragged surplus overhang
 - [lesson-music-bed](#lesson-music-bed) — deterministic ducked music-bed envelope + non-looping `<LessonBgmLayer>`
 - [lesson-sfx-layer](#lesson-sfx-layer) — SFX registry + `<LessonSfxLayer>` one-shot events (composer-owned frames)
 
@@ -371,6 +372,35 @@ The critical capability is `renderNumbers={false}` + `getFenHeDiagramAnchors(wid
 - Cross-fade between an external migrating `NumberCard` and the primitive's own internally-rendered card on the same diagram. Pick one mode per glyph: external during migration (`renderNumbers={false}`) OR internal post-migration (`renderNumbers={true}`). Never both at once.
 - A row of `<FenHeDiagram>` wrapped in a new `<FenHeRow>` primitive. The row IS the lesson scene's composition — abstracting it into a primitive hides per-lesson layout decisions.
 - `diagramWidth < 140` at 1280-wide compositions — the numerals fall below the kids-eye body-label minimum.
+
+---
+
+## paired-column-layout
+
+**Code:** `remotion-svg-primitives/src/shape-primitives/interaction.tsx`
+**Surface:** `getPairedColumnPlacement(topCount, bottomCount, opts?)` → `{ top, bottom, columnX, overhangColumns, overhangRow }`; type `PairedColumnPlacement`; exported from `src/shape-primitives/index.ts`
+**Owned by:** `remotion-lesson-composer` (placement reach), `visual-discipline` (when the ragged-edge layout is the right metaphor)
+**Status:** experimental
+**Added:** 2026-06-03
+
+Pure positioning helper (renders nothing), in the same family as `getStickPlacement` / `getFenHeDiagramAnchors`. Aligns two rows of countables into shared vertical columns so partners sit above/below each other and the surplus overhangs as a ragged edge — the layout that makes "5 > 3" read as "two of these have no partner." Both rows are LEFT-aligned to column 0 so every overhanging item lands in a partnerless column; the whole block centers about local x=0. Deterministic and lesson-agnostic — counts and spacing come from the caller. Being a LOWERCASE export it is not a catalog component, so it carries no `primitive-registry.json` entry.
+
+### Reach guide
+
+| When | Reach for |
+|---|---|
+| Lay out a one-to-one comparison (the "more than" / "fewer than" beat) | `const p = getPairedColumnPlacement(top, bottom, { columnGap: 130, rowGap: 150 })` |
+| Place the items | one countable per `p.top[i]` and `p.bottom[i]` |
+| Draw the matches | `<PairConnector>` from `p.top[c]` to `p.bottom[c]` for each `c < min(top, bottom)` |
+| Mark the surplus | one `<UnmatchedSlot>` at `p.columnX[c]` for `c` in `p.overhangColumns`, on the row opposite `p.overhangRow` |
+| Custom spacing per lesson | pass `columnGap` / `rowGap` in `opts` — never edit the defaults |
+
+### Anti-patterns
+
+- Re-deriving overhang column centers by hand in scene code instead of reading `p.overhangColumns` + `p.columnX` — the helper exists so those offsets do not drift (same rule as `getFenHeDiagramAnchors`).
+- Center-aligning the two rows so the surplus splits to both ends — the comparison must read as "extra on the end," not "shifted over." The helper left-aligns deliberately.
+- Promoting this into a rendering `<PairedColumn>` component — the row IS the lesson scene's composition (it picks the countable, the connector style, the slot state); abstracting it hides per-lesson layout decisions, same trap as a `<FenHeRow>` primitive.
+- Absolute x/y literals for the rows when this helper would compute them.
 
 ---
 

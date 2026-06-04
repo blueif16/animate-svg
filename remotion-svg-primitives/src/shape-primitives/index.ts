@@ -90,9 +90,12 @@ export {
   PointerHandArrow,
   RewardProgressToken,
   SortingBin,
+  UnmatchedSlot,
+  getPairedColumnPlacement,
 } from "./interaction";
 export type {
   PairConnectorProps,
+  PairedColumnPlacement,
   PointerDirection,
   PointerHandArrowProps,
   PointerHandArrowVariant,
@@ -101,6 +104,8 @@ export type {
   SortingBinProps,
   SortingBinState,
   SortingBinVariant,
+  UnmatchedSlotProps,
+  UnmatchedSlotState,
 } from "./interaction";
 export { TeacherMark } from "./sketch";
 export type {
