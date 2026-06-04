@@ -1,0 +1,8 @@
+{
+  "source": "omniscience-icon-library",
+  "originId": "sheet2_r2c2",
+  "category": "math",
+  "desc": "colored number blocks with a minus sign",
+  "track": "sheet→cut→vectorize (build_icon_library.py)",
+  "importedBy": "scripts/import-origin-icons.mjs"
+}

@@ -1,0 +1,8 @@
+{
+  "source": "omniscience-icon-library",
+  "originId": "sheet2_r1c5",
+  "category": "object",
+  "desc": "open gold chest with a character card popping out",
+  "track": "sheet→cut→vectorize (build_icon_library.py)",
+  "importedBy": "scripts/import-origin-icons.mjs"
+}

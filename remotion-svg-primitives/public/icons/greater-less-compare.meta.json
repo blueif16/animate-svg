@@ -1,0 +1,8 @@
+{
+  "source": "omniscience-icon-library",
+  "originId": "sheet2_r2c3",
+  "category": "math",
+  "desc": "greater-than and less-than tokens linked by dotted lines",
+  "track": "sheet→cut→vectorize (build_icon_library.py)",
+  "importedBy": "scripts/import-origin-icons.mjs"
+}

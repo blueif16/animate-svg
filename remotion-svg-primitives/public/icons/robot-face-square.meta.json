@@ -1,0 +1,8 @@
+{
+  "source": "omniscience-icon-library",
+  "originId": "sheet1_r5c2",
+  "category": "character-face",
+  "desc": "smiling blue square-headed robot with antenna",
+  "track": "sheet→cut→vectorize (build_icon_library.py)",
+  "importedBy": "scripts/import-origin-icons.mjs"
+}

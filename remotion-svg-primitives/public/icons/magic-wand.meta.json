@@ -1,0 +1,8 @@
+{
+  "source": "omniscience-icon-library",
+  "originId": "sheet1_r5c3",
+  "category": "object",
+  "desc": "yellow star wand with sparkles",
+  "track": "sheet→cut→vectorize (build_icon_library.py)",
+  "importedBy": "scripts/import-origin-icons.mjs"
+}

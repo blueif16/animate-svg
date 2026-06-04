@@ -6,7 +6,7 @@
 >
 > Source of truth for SHAPE: `src/capabilities/schema.ts`. Source of truth for WHAT EXISTS: the component barrels + `EASE`/`SPRING` keys. This menu is generated — never hand-edited.
 
-**Coverage:** 48/48 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
+**Coverage:** 49/49 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
 
 ## SVG teaching primitives
 
@@ -74,6 +74,7 @@
 
 | id | component | variants | use when |
 | --- | --- | --- | --- |
+| `asset-morph` | `AssetMorph` | direction: bundle \| unbundle | Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a SparkleBurst over the swap while the arriving element settles, so ten sticks BECOME one roped bundle (direction=bundle) or a bundle un-bundles into fanning sticks (direction=unbundle). Caller supplies from/to and a shared centerX/centerY (bbox-matched so identity is preserved); atFrame is cues[id].startFrame+offset. |
 | `drag` | `Drag` | — | Stagger an appendage/child chain with trailing lag. |
 | `draw-path` | `DrawPath` | — | Revealing any SVG path stroke-by-stroke via durationInFrames or an external progress, using a pathLength dash trick. |
 | `follow-path` | `FollowPath` | — | Moving a child element along a path spec via progress, optionally rotating it to the path tangent, to animate something tracing a route. |
@@ -104,4 +105,18 @@
 | --- | --- | --- |
 | `default` | Canonical lesson appearance — no aesthetic overlay. | stable |
 | `ink-wash` | Sumi-e ink on warm rice paper aesthetic overlay. | experimental |
+
+## Generated asset library — `<IconAsset name=... />` (70)
+
+Fixed-form decorative/representational objects (traced flat SVG, on-palette). REUSE these before hand-coding or generating. Not teaching primitives — see `icon-asset` above for the fence.
+
+- **animal** — `owl-reading`, `paw-print`
+- **celebration** — `award-ribbon`, `confetti-burst`, `shining-star-orbit`, `sparkle-star`, `star`
+- **character-face** — `boy-face`, `robot-face-round`, `robot-face-square`, `sad-cloud-face`
+- **generated** — `pointing-hand`, `stick-bundle-roped`
+- **math** — `abacus`, `add-blocks`, `balance-scale`, `bar-line-chart`, `basic-shapes`, `donut-chart`, `fraction-quarters`, `greater-less-compare`, `pattern-sequence`, `sort-shapes-bins`, `subtract-blocks`
+- **nature** — `atom`, `flame`, `leaf-water-drop`, `planet-saturn`, `sprout`
+- **object** — `bookmark`, `crystal-ball`, `dashboard-card`, `document-note`, `ear-listening`, `ear-soundwave`, `eye`, `flashcard-stack`, `gear`, `house`, `jigsaw-four-piece`, `journey-path-flag`, `layout-tiles`, `lightbulb-circuit`, `lightbulb-idea`, `magic-wand`, `magnet`, `microphone`, `open-book`, `prism-rainbow`, `reward-chest-card`, `scroll-document`, `shield-heart`, `stopwatch`, `treasure-chest`, `treasure-map`
+- **symbol** — `checkmark-circle`, `pause-button`, `play-button`, `question-mark-circle`, `replay-arrow`, `sound-wave-bars`, `speaker-volume`, `speech-bubble-dots`, `sync-arrows`, `tap-gesture`, `upload-arrow`
+- **tool** — `beaker`, `magnifying-glass`, `microscope`, `ruler-set-square`
 

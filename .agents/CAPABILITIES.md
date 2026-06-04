@@ -72,6 +72,7 @@ When deprecating a capability:
 - [magic-fx-library](#magic-fx-library) — sparkle / shine / glint / glow / breathe FX wrappers
 - [motion-smear](#motion-smear) — <Smear> motion-blur substitute
 - [motion-drag-stagger](#motion-drag-stagger) — <Drag> appendage stagger helper
+- [asset-morph](#asset-morph) — `<AssetMorph>` parametric→asset magic-transition (FX-masked crossfade + unbundle reverse)
 - [fen-he-diagram](#fen-he-diagram) — `<FenHeDiagram>` 分合式 part-whole notation primitive with anchor exports for identity-preserved glyph migration
 - [paired-column-layout](#paired-column-layout) — `getPairedColumnPlacement()` pure helper aligning two rows into shared columns with a ragged surplus overhang
 - [lesson-music-bed](#lesson-music-bed) — deterministic ducked music-bed envelope + non-looping `<LessonBgmLayer>`
@@ -340,6 +341,38 @@ Settle composes with `boil`: `boil` runs during the held portion (after `drawPro
 - Children that don't accept a `startFrame` (or the configured `delayProp`). Drag is a no-op on them.
 - Stagger > 8 frames per child. The chain reads as separate events, not a connected drag.
 - Combining `<Drag>` with already-staggered `<PopIn>` delay props — they compound. Pick one.
+
+---
+
+## asset-morph
+
+**Code:** `remotion-svg-primitives/src/motion-primitives/AssetMorph.tsx`
+**Surface:** `<AssetMorph atFrame durationInFrames? direction? centerX? centerY? from to fx? fxColor? fxRadius? fxCount? settle? />`, types `AssetMorphProps`, `AssetMorphDirection`
+**Owned by:** `remotion-lesson-composer` (wiring), `early-childhood-visual-taste` (when a morph earns its keep)
+**Status:** experimental
+**Added:** 2026-06-03
+
+The parametric→asset magic-transition. The teaching mechanics stay PARAMETRIC (e.g. `<StickGroup>` counts and gathers); at the gather instant AssetMorph FX-masks a short crossfade into the fixed-form `<IconAsset>` so the child sees the cluster BECOME the object — and `direction="unbundle"` reverses it. Identity is preserved by co-locating `from`/`to` at one `centerX`/`centerY` with matched bbox; a `<SparkleBurst>` hides the ~10-frame seam. Lesson-agnostic: it owns ONLY the masked swap — the gather-before / fan-after motion is the caller's.
+
+### Recipe — ten ones → one ten (and back)
+1. **Gather (caller-owned, cue-relative):** drive `<StickGroup layout="bundle">`'s `bundleGap` from spread → tight across the cue's gather window.
+2. **Morph:** `<AssetMorph direction="bundle" atFrame={cueOf("bundle").startFrame + GATHER_FRAMES} from={<StickGroup .../>} to={<IconAsset name="stick-bundle-roped" .../>} centerX={cx} centerY={cy} />`. Size `to`'s `width` so its visible bundle ≈ the gathered sticks' bbox.
+3. **Hold:** after `atFrame` only the asset shows; wrap it in `<Breathe>` for rule #6.
+4. **Unbundle:** `direction="unbundle"`, `atFrame={cueOf("unbundle").startFrame + offset}`, then fan `bundleGap` tight → spread after it. Pairs with `ConservationBundle`'s x-ray.
+
+### Reach guide
+| When | Reach for |
+|---|---|
+| Ten ones become one ten | `direction="bundle"`, StickGroup as `from`, `stick-bundle-roped` as `to` |
+| A bundle opens back into units | `direction="unbundle"` |
+| Composer fires its own SFX/FX at the swap | `fx={false}` so the SparkleBurst does not double |
+| Calmer reveal, no pop | `settle={false}` |
+
+### Anti-patterns
+- A frame literal in `atFrame` — it is `cues[id].startFrame + offset`, like every other frame in scene code.
+- Morphing a teaching primitive AT MULTIPLICITY where each unit still needs its own highlight — assets cannot per-index highlight; keep those parametric.
+- `from`/`to` whose centers/bboxes do not match — the swap then reads as a cut, not a transformation (identity broken). Tune `width`/`centerX`/`centerY` against the render.
+- `durationInFrames` > ~14 — the crossfade ghost becomes visible; the mask works only because the seam is brief.
 
 ---
 

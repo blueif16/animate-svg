@@ -1,3 +1,5 @@
+export { AssetMorph } from "./AssetMorph";
+export type { AssetMorphDirection, AssetMorphProps } from "./AssetMorph";
 export { DrawPath } from "./DrawPath";
 export { FollowPath } from "./FollowPath";
 export { PopIn } from "./PopIn";

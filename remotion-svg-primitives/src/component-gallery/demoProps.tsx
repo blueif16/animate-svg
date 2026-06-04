@@ -37,6 +37,7 @@ import {
   UnmatchedSlot,
 } from "../shape-primitives";
 import {
+  AssetMorph,
   Drag,
   DrawPath,
   FollowPath,
@@ -612,6 +613,34 @@ export const demoProps: Record<string, GalleryDemo> = {
         </FollowPath>
       </g>
     ),
+  },
+  "asset-morph": {
+    // Frame-driven: atFrame/duration are tuned so the gallery still frame (22)
+    // lands MID-SWAP — sticks fading out, the roped-bundle asset arriving, the
+    // SparkleBurst masking the seam. See AssetMorphDemo for the full motion.
+    render: () => (
+      <AssetMorph
+        atFrame={28}
+        centerX={0}
+        centerY={0}
+        direction="bundle"
+        durationInFrames={12}
+        from={
+          <StickGroup
+            bundleGap={12}
+            color={colors.reward}
+            count={10}
+            layout="bundle"
+            seed={7}
+            stickLength={84}
+            stickThickness={12}
+          />
+        }
+        fxRadius={96}
+        to={<IconAsset name="stick-bundle-roped" variant="color" width={150} />}
+      />
+    ),
+    tall: true,
   },
   "pop-in": {
     // PopIn is frame-driven; at the still frame each motion variant sits at a
