@@ -661,26 +661,103 @@ export type ToneMarkGlyphProps = PrimitiveGroupProps &
     tone: ToneNumber;
   };
 
-const tonePath = (tone: ToneNumber, size: number) => {
+/**
+ * The geometry of one Mandarin tone contour, in local coords (origin centered).
+ * `start`/`end` are the two endpoints; `control` is the quadratic-Bézier control
+ * point for the curved third tone (undefined for the straight contours). This is
+ * the SINGLE source of truth for the contour shape — both `tonePath` (which draws
+ * the stroke) and `tonePointAt` (which samples a point along it for PitchPlayhead)
+ * read from it, so the drawn line and the playhead can never drift apart.
+ */
+const toneGeometry = (
+  tone: ToneNumber,
+  size: number,
+):
+  | {
+      control?: { x: number; y: number };
+      end: { x: number; y: number };
+      start: { x: number; y: number };
+    }
+  | undefined => {
   const half = size / 2;
 
   if (tone === 1) {
-    return `M ${-half} 0 H ${half}`;
+    return { end: { x: half, y: 0 }, start: { x: -half, y: 0 } };
   }
 
   if (tone === 2) {
-    return `M ${-half} ${half * 0.36} L ${half} ${-half * 0.36}`;
+    return {
+      end: { x: half, y: -half * 0.36 },
+      start: { x: -half, y: half * 0.36 },
+    };
   }
 
   if (tone === 3) {
-    return `M ${-half} ${-half * 0.18} Q 0 ${half * 0.5} ${half} ${-half * 0.18}`;
+    return {
+      control: { x: 0, y: half * 0.5 },
+      end: { x: half, y: -half * 0.18 },
+      start: { x: -half, y: -half * 0.18 },
+    };
   }
 
   if (tone === 4) {
-    return `M ${-half} ${-half * 0.36} L ${half} ${half * 0.36}`;
+    return {
+      end: { x: half, y: half * 0.36 },
+      start: { x: -half, y: -half * 0.36 },
+    };
   }
 
-  return "";
+  return undefined;
+};
+
+const tonePath = (tone: ToneNumber, size: number) => {
+  const geom = toneGeometry(tone, size);
+
+  if (!geom) {
+    return "";
+  }
+
+  if (tone === 1) {
+    return `M ${geom.start.x} ${geom.start.y} H ${geom.end.x}`;
+  }
+
+  if (geom.control) {
+    return `M ${geom.start.x} ${geom.start.y} Q ${geom.control.x} ${geom.control.y} ${geom.end.x} ${geom.end.y}`;
+  }
+
+  return `M ${geom.start.x} ${geom.start.y} L ${geom.end.x} ${geom.end.y}`;
+};
+
+/**
+ * The point at parameter `t` (0..1) along a tone contour — the position the
+ * PitchPlayhead rides. Straight contours interpolate linearly between endpoints;
+ * the curved third tone evaluates its quadratic Bézier. Returns the origin for
+ * the neutral tone (no contour). Shares `toneGeometry` with `tonePath` so the dot
+ * sits exactly on the stroke ToneMarkGlyph draws.
+ */
+const tonePointAt = (tone: ToneNumber, size: number, t: number) => {
+  const geom = toneGeometry(tone, size);
+
+  if (!geom) {
+    return { x: 0, y: 0 };
+  }
+
+  if (geom.control) {
+    const inv = 1 - t;
+    const a = inv * inv;
+    const b = 2 * inv * t;
+    const c = t * t;
+
+    return {
+      x: a * geom.start.x + b * geom.control.x + c * geom.end.x,
+      y: a * geom.start.y + b * geom.control.y + c * geom.end.y,
+    };
+  }
+
+  return {
+    x: geom.start.x + (geom.end.x - geom.start.x) * t,
+    y: geom.start.y + (geom.end.y - geom.start.y) * t,
+  };
 };
 
 export const ToneMarkGlyph = ({
@@ -718,6 +795,69 @@ export const ToneMarkGlyph = ({
           strokeWidth={Math.max(4, size * 0.16)}
         />
       )}
+    </PlacedGroup>
+  );
+};
+
+export type PitchPlayheadProps = PrimitiveGroupProps &
+  PlacementProps & {
+    color?: ThemeColor;
+    progress?: number;
+    showTrail?: boolean;
+    size?: number;
+    tone?: ToneNumber;
+  };
+
+/**
+ * A moving dot that traces a Mandarin tone contour — the "where the pitch is
+ * right now" marker. It rides the SAME contour geometry `ToneMarkGlyph` draws
+ * (via the shared `tonePointAt`), so the dot always sits on the stroke. Drive it
+ * with `progress` (0..1 position along the contour); deterministic, no time
+ * source. `showTrail` paints the already-traveled portion of the contour as a
+ * faint wake behind the dot. Pair it OVER a `ToneMarkGlyph` of the same `tone` /
+ * `size` — ToneMarkGlyph draws the shape, this animates a marker along it.
+ */
+export const PitchPlayhead = ({
+  color,
+  progress = 0,
+  showTrail = false,
+  size = 34,
+  tone = 0,
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: PitchPlayheadProps) => {
+  const dotColor = resolveColor(color, colors.coral);
+  const t = clamp01(progress);
+  const point = tonePointAt(tone, size, t);
+  const trail = tonePath(tone, size);
+
+  return (
+    <PlacedGroup {...groupProps} transform={transform} x={x} y={y}>
+      {showTrail && trail ? (
+        <path
+          className="trail"
+          d={trail}
+          fill="none"
+          opacity={0.4}
+          pathLength={1}
+          stroke={dotColor}
+          strokeDasharray={1}
+          strokeDashoffset={1 - t}
+          strokeLinecap="round"
+          strokeWidth={Math.max(4, size * 0.16)}
+        />
+      ) : null}
+      <circle
+        className="playhead"
+        cx={point.x}
+        cy={point.y}
+        fill={dotColor}
+        r={Math.max(5, size * 0.2)}
+        stroke={colors.textNavy}
+        strokeWidth={3}
+      />
     </PlacedGroup>
   );
 };
@@ -920,6 +1060,90 @@ export const MouthShapeIcon = ({
           strokeWidth={5}
         />
       )}
+    </PlacedGroup>
+  );
+};
+
+export type ListenIconState = "idle" | "playing";
+
+export type ListenIconProps = PrimitiveGroupProps &
+  PlacementProps & {
+    color?: ThemeColor;
+    progress?: number;
+    size?: number;
+    state?: ListenIconState;
+  };
+
+/**
+ * A small speaker "tap to hear" affordance — it signals that a sound/syllable
+ * CAN be played, not how it is articulated. In `state="playing"` the two sound
+ * arcs swell outward, driven deterministically by `progress` (0..1, no time
+ * source); in `state="idle"` they rest at full reach so the icon still reads as
+ * audio. This is an AFFORDANCE icon — for teaching lip position use
+ * MouthShapeIcon, which shows articulation.
+ */
+export const ListenIcon = ({
+  color,
+  progress = 0,
+  size = 64,
+  state = "idle",
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: ListenIconProps) => {
+  const tint = resolveColor(color, colors.sky);
+  const scale = size / 64;
+  // In `playing`, the two arcs swell out and back over the progress cycle; in
+  // `idle` they rest at full reach. The triangular swell keeps the motion
+  // deterministic and seamless when progress loops.
+  const swell =
+    state === "playing"
+      ? 0.45 + 0.55 * (1 - Math.abs(clamp01(progress) * 2 - 1))
+      : 1;
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      transform={[`scale(${scale})`, transform].filter(Boolean).join(" ")}
+      x={x}
+      y={y}
+    >
+      <circle
+        className="base"
+        cx={0}
+        cy={0}
+        fill={colors.white}
+        r={30}
+        stroke={colors.textNavy}
+        strokeWidth={NAVY_STROKE}
+      />
+      <path
+        className="speaker"
+        d="M -16 -8 H -7 L 4 -17 V 17 L -7 8 H -16 Z"
+        fill={tint}
+        stroke={colors.textNavy}
+        strokeLinejoin="round"
+        strokeWidth={3}
+      />
+      <g className="waves" opacity={state === "playing" ? 1 : 0.55}>
+        <path
+          d="M 11 -9 Q 16 0 11 9"
+          fill="none"
+          opacity={swell}
+          stroke={colors.textNavy}
+          strokeLinecap="round"
+          strokeWidth={3}
+        />
+        <path
+          d="M 18 -15 Q 26 0 18 15"
+          fill="none"
+          opacity={state === "playing" ? swell * swell : 0.55}
+          stroke={colors.textNavy}
+          strokeLinecap="round"
+          strokeWidth={3}
+        />
+      </g>
     </PlacedGroup>
   );
 };
