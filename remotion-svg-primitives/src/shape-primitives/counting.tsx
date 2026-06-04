@@ -1454,7 +1454,17 @@ export const SmallStick = ({
   const restingFill = resolveColor(color, colors.reward);
   const activeFill = resolveColor(activeColor, colors.sunshine);
   const stroke = resolveColor(outlineColor, colors.textNavy);
-  const fill = highlight === "active" ? activeFill : restingFill;
+  // Three distinct states: idle = warm resting fill (not yet counted),
+  // active = bright accent (being counted now — the eye rests here),
+  // counted = calm desaturated grey-blue "done" tone, quieter than active and
+  // clearly NOT the idle orange so already-counted sticks read as settled.
+  const countedFill = colors.softGrayBlue;
+  const fill =
+    highlight === "active"
+      ? activeFill
+      : highlight === "counted"
+        ? countedFill
+        : restingFill;
   const transforms = [
     rotation !== 0 ? `rotate(${rotation})` : undefined,
     scale !== 1 ? `scale(${scale})` : undefined,
