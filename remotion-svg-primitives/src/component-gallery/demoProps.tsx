@@ -17,6 +17,7 @@ import {
   MouthShapeIcon,
   NumberCard,
   NumberLineTrack,
+  OrdinalLabelToken,
   PairConnector,
   PartWholeBrace,
   PinyinSyllableCard,
@@ -38,14 +39,25 @@ import {
   UnmatchedSlot,
 } from "../shape-primitives";
 import {
+  AbstractionLadder,
   AssetMorph,
+  ConservationMorphBundle,
+  DialogueExchange,
   Drag,
   DrawPath,
   FollowPath,
+  GlyphStrokeWriter,
+  MatchPairsBoard,
+  OrderedRowSpotlight,
+  PartWholeComposer,
+  PictographEvolution,
   PopIn,
   PulseCircle,
+  ReadAlongHighlight,
   SparkleBurst,
   Smear,
+  VocabFlashcard,
+  glyphStrokesFor,
 } from "../motion-primitives";
 import {
   Breathe,
@@ -54,6 +66,7 @@ import {
   ShineSweep,
   Sparkle,
 } from "../fx";
+import { fontFamily } from "../shape-primitives/shared";
 import { colors } from "../theme";
 
 // =========================================================================
@@ -274,6 +287,21 @@ export const demoProps: Record<string, GalleryDemo> = {
         jumps={[{ color: colors.coral, from: 2, to: 5, progress: 1 }]}
       />
     ),
+  },
+  "ordinal-label-token": {
+    // The 序数-vs-基数 contrast: a bare '5' NumberCard beside a same-size '第5'
+    // OrdinalLabelToken — same digit, only the colored 第 prefix distinguishes
+    // the ordinal. Mirrors OrdinalLabelTokenHardest.
+    render: () => (
+      <Strip
+        gap={280}
+        items={[
+          { caption: "基数 · 5", node: <NumberCard value={5} height={160} width={132} /> },
+          { caption: "序数 · 第5", node: <OrdinalLabelToken prefix="第" value={5} height={160} width={210} /> },
+        ]}
+      />
+    ),
+    tall: true,
   },
   "part-whole-brace": {
     render: () => (
@@ -599,6 +627,65 @@ export const demoProps: Record<string, GalleryDemo> = {
   },
 
   // ------------------------------------------------------------------- motion
+  "abstraction-ladder": {
+    // The 实物→小棒→圆点→数字 ladder for count 5, parked PAST the last rung's
+    // settle so all four rungs + the 1:1 conservation connectors read at once
+    // (the cardinality payoff). Mirrors AbstractionLadderRow. perStage 30 × 4
+    // rungs → fully settled by local ≈ 130 ⇒ atFrame = 22 − 130. Native span is
+    // ~1060 wide; scaled to fit the cell.
+    render: () => (
+      <g transform="translate(0 14) scale(0.52)">
+        <AbstractionLadder
+          atFrame={22 - 130}
+          count={5}
+          objectVariant="fish"
+          orientation="row"
+          perStageDurationFrames={30}
+          revealLabel={["5只鱼", "5根小棒", "5个圆点", "用 5 表示"]}
+          span={1060}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "conservation-morph-bundle": {
+    // The "ten ones → one roped ten that still IS ten ones" beat, held AFTER the
+    // morph with the conservation peek half-open (peekProgress 0.7) so the roped
+    // bundle x-rays to reveal the ten ones still inside. Prop values mirror the
+    // TenOnesMakeOneTen lesson. local must be past the morph: atFrame = 22 − 24.
+    render: () => (
+      <g transform="scale(0.72)">
+        <ConservationMorphBundle
+          asset={<IconAsset name="stick-bundle-roped" variant="color" width={300} />}
+          centerX={0}
+          centerY={0}
+          count={10}
+          from={
+            <StickGroup
+              bundleGap={18}
+              color={colors.reward}
+              count={10}
+              layout="bundle"
+              seed={7}
+              stickLength={120}
+              stickThickness={18}
+            />
+          }
+          morphAtFrame={22 - 24}
+          morphDurationInFrames={12}
+          peekColor={colors.coral}
+          peekHighlightInside
+          peekProgress={0.7}
+          peekStickColor={colors.reward}
+          peekStickLength={120}
+          peekStickThickness={18}
+        />
+      </g>
+    ),
+    tall: true,
+  },
   drag: {
     // Drag staggers a chain of CountStepIndicators by startFrame. At the still
     // frame the staggered children are at different reveal phases.
@@ -777,6 +864,210 @@ export const demoProps: Record<string, GalleryDemo> = {
       </g>
     ),
   },
+
+  // ----------------------------------------------- special components (composites)
+  // Each is frame-driven (reads useCurrentFrame() = the gallery still frame, 22).
+  // atFrame is chosen so `local = 22 - atFrame` lands on a SETTLED, representative
+  // beat for a static QC sheet. Content is centered on origin and scaled down with
+  // a wrapping <g transform="scale(...)"> so the native ~1280-wide layout fits a
+  // cell. Demo content mirrors each component's Demo scene (the lesson-agnostic law
+  // governs the COMPONENT, not this harness, so explicit strings are fine here).
+  "dialogue-exchange": {
+    // A greeting Q&A, held in turn 1's hold so BOTH bubbles read together (the
+    // question + its emphasis-flagged answer). step = 48+6 = 54; local ≈ 90.
+    render: () => (
+      <g transform="translate(0 24) scale(0.5)">
+        <DialogueExchange
+          atFrame={22 - 90}
+          figureRadius={104}
+          left={{ figure: dialogueBoy, nameCard: dialogueName("Tom") }}
+          perTurnDurationFrames={48}
+          right={{ figure: dialogueRobot, nameCard: dialogueName("Robo") }}
+          speakerGap={560}
+          turns={[
+            { speaker: "left", line: utterance("Hello!") },
+            { speaker: "right", line: utterance("Hi! I'm Robo!"), emphasis: true },
+          ]}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "vocab-flashcard": {
+    // A stationery flashcard settled past its reveal: picture + label + phonetic +
+    // listen cue + the pronunciation pulse all up. local ≈ 40 (t = 1, faceUp).
+    render: () => (
+      <g transform="scale(0.82)">
+        <VocabFlashcard
+          atFrame={22 - 40}
+          highlightLabel
+          label={utterance("eraser")}
+          listenCue
+          mode="reveal"
+          phonetic={utterance("[ɪˈreɪzə]")}
+          picture={<IconAsset name="ruler-set-square" variant="color" width={150} />}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "match-pairs-board": {
+    // A 连一连 with 3 object↔汉字 pairs, held after all three link + the
+    // all-matched celebration. step = 46+8 = 54; 3 pairs done by local 162.
+    render: () => (
+      <g transform="translate(0 18) scale(0.42)">
+        <MatchPairsBoard
+          atFrame={22 - 200}
+          celebrateLabel={utterance("真棒！")}
+          columnGap={600}
+          itemGap={180}
+          itemRadius={78}
+          left={[matchPic("star"), matchPic("leaf-water-drop"), matchPic("owl-reading")]}
+          pairs={[
+            { left: 0, right: 1 },
+            { left: 1, right: 2 },
+            { left: 2, right: 0 },
+          ]}
+          perPairDurationFrames={46}
+          right={[
+            <NumberCard key="niao" value="鸟" width={128} />,
+            <NumberCard key="xing" value="星" width={128} />,
+            <NumberCard key="ye" value="叶" width={128} />,
+          ]}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "read-along-highlight": {
+    // A 对韵歌 sweep (云对雨 / 雪对风) held mid-sweep so an item glows + swells and
+    // the underline cursor sits on it. beats sum 8 × perBeat 22 = 176 total.
+    render: () => (
+      <g transform="scale(0.74)">
+        <ReadAlongHighlight
+          atFrame={22 - 96}
+          beats={[1, 2, 1, 1, 2, 1]}
+          cursor="underline"
+          dimPast={false}
+          highlightColorAlready={colors.mint}
+          itemGap={150}
+          lineGap={170}
+          lines={[duiyunLine("云对雨"), duiyunLine("雪对风")]}
+          perBeatDurationFrames={22}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "part-whole-composer": {
+    // N=5 分与合 enumerate, held at the LAST settled split (4&1) so all five
+    // objects sit in two clean clusters with the synced 分合式 above. step =
+    // 24+8 = 32; last step (index 3) settles at local 3*32+24 = 120.
+    render: () => (
+      <g transform="translate(0 10) scale(0.42)">
+        <PartWholeComposer
+          atFrame={22 - 120}
+          clusterGap={140}
+          count={5}
+          interStepGapFrames={8}
+          itemRadius={48}
+          mode="enumerate"
+          perStepDurationFrames={24}
+          renderItem={renderPartWholeApple}
+          showDiagram
+          showTally
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "glyph-stroke-writer": {
+    // The 火 glyph written stroke-by-stroke in 田字格, parked AFTER the last
+    // stroke finishes so the whole character reads with its 起笔/收笔 dots.
+    // Mirrors GlyphStrokeWriterHardest's setup with a clear glyph. 4 strokes ×
+    // (26 draw + 8 gap) ⇒ all drawn by local ≈ 135 ⇒ atFrame = 22 − 135. Centered
+    // by offsetting the cell by −size/2.
+    render: () => {
+      const size = 240;
+      return (
+        <g transform={`translate(${-size / 2} ${-size / 2})`}>
+          <GlyphStrokeWriter
+            atFrame={22 - 135}
+            grid="tian"
+            interStrokeGapFrames={8}
+            perStrokeDurationFrames={26}
+            size={size}
+            strokes={glyphStrokesFor("火")?.strokes ?? []}
+          />
+        </g>
+      );
+    },
+    tall: true,
+  },
+  "ordered-row-spotlight": {
+    // A 5-item ordered row with the cardinal bracket ('一共5') over the whole heap
+    // AND the ordinal spotlight ring + '第3' token on position 3 — the
+    // cardinal-vs-ordinal contrast in one settled frame. Mirrors the demo's
+    // bracket + spotlight props; both reveal off atFrame, so park past their
+    // settle: atFrame = 22 − 60. Scaled to fit (the brace + below-row token make
+    // it tall).
+    render: () => (
+      <g transform="translate(0 6) scale(0.6)">
+        <OrderedRowSpotlight
+          atFrame={22 - 60}
+          cardinalLabel="一共5"
+          direction="ltr"
+          itemRadius={56}
+          items={Array.from({ length: 5 }, (_, i) => (
+            <CountableObject key={i} size={92} variant="star" />
+          ))}
+          ordinalLabel={(pos) => `第${pos}`}
+          rowGap={150}
+          showCardinalBracket
+          showDirectionArrow
+          spotlightOrdinal={3}
+          stepDurationFrames={18}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
+  "pictograph-evolution": {
+    // 日 字理演变: sun object → ancient 日 → modern 日, held AFTER the last stage
+    // settles with the silhouette-overlap payoff (the modern 日 over the ghosted
+    // sun). step = 48+16 = 64; last transition done at 128, ghost up by ~169.
+    render: () => (
+      <g transform="translate(0 -8) scale(0.7)">
+        <PictographEvolution
+          atFrame={22 - 180}
+          centerX={0}
+          centerY={0}
+          interStageGapFrames={16}
+          perStageDurationFrames={48}
+          silhouetteOpacity={0.34}
+          silhouetteOverlap
+          stageLabels={[caption("实物"), caption("古文字"), caption("今字")]}
+          stages={[pictographSun(), pictographAncient("ancient-glyph-sun"), pictographHanzi("日")]}
+          stageSize={220}
+          x={0}
+          y={0}
+        />
+      </g>
+    ),
+    tall: true,
+  },
 };
 
 // Drag needs children that accept a numeric `delay` prop and themselves entrance
@@ -796,3 +1087,146 @@ const DraggablePop = ({
     </PopIn>
   </g>
 );
+
+// ====================================================================
+// Special-component demo helpers — caller scene content mirrored from each
+// component's Demo scene. Explicit strings/faces are fine HERE (the
+// lesson-agnostic law governs the COMPONENT, not this QC harness).
+// ====================================================================
+
+// A localized utterance / label node — a styled <tspan> the caller owns.
+const utterance = (text: string): ReactNode => (
+  <tspan fontFamily={fontFamily} fontWeight={900}>
+    {text}
+  </tspan>
+);
+
+// A caller-localized caption node (实物 / 古文字 / 今字).
+const caption = (text: string): ReactNode => (
+  <tspan fontFamily={fontFamily} fontWeight={900}>
+    {text}
+  </tspan>
+);
+
+// ---- DialogueExchange faces + name card (from DialogueExchangeDemo) ----
+const dialogueBoy = <IconAsset name="boy-face" variant="color" width={180} />;
+const dialogueRobot = (
+  <IconAsset name="robot-face-round" variant="color" width={180} />
+);
+const dialogueName = (text: string): ReactNode => (
+  <g>
+    <rect
+      fill={colors.paleCream}
+      height={48}
+      rx={24}
+      stroke={colors.textNavy}
+      strokeWidth={3}
+      width={150}
+      x={-75}
+      y={-24}
+    />
+    <text
+      dominantBaseline="middle"
+      fill={colors.textNavy}
+      fontFamily={fontFamily}
+      fontSize={28}
+      fontWeight={900}
+      textAnchor="middle"
+      x={0}
+      y={2}
+    >
+      {text}
+    </text>
+  </g>
+);
+
+// ---- MatchPairsBoard left-column picture node (from MatchPairsBoardDemo) ----
+const matchPic = (name: string): ReactNode => (
+  <IconAsset name={name} variant="color" width={132} />
+);
+
+// ---- ReadAlongHighlight item glyphs (from ReadAlongHighlightDemo) ----
+// fill="currentColor" lets each glyph ride the active/dim highlight tint.
+const duiyunGlyph = (text: string, size = 70): ReactNode => (
+  <text
+    dominantBaseline="central"
+    fill="currentColor"
+    fontFamily={fontFamily}
+    fontSize={size}
+    fontWeight={900}
+    textAnchor="middle"
+    x={0}
+    y={0}
+  >
+    {text}
+  </text>
+);
+const duiyunLine = (s: string): ReactNode[] =>
+  s.split("").map((c) => duiyunGlyph(c, 70));
+
+// ---- PartWholeComposer object (from PartWholeComposerDemo) ----
+const renderPartWholeApple = (
+  _i: number,
+  part: "left" | "right" | "whole",
+): ReactNode => (
+  <CountableObject
+    color={
+      part === "left"
+        ? colors.coral
+        : part === "right"
+          ? colors.sky
+          : colors.sunshine
+    }
+    size={84}
+    variant="fruit"
+  />
+);
+
+// ---- PictographEvolution stages (from PictographEvolutionDemo) ----
+const pictographHanzi = (char: string, size = 200): ReactNode => (
+  <text
+    dominantBaseline="central"
+    fill={colors.textNavy}
+    fontFamily={fontFamily}
+    fontSize={size}
+    fontWeight={900}
+    textAnchor="middle"
+    x={0}
+    y={0}
+  >
+    {char}
+  </text>
+);
+const pictographAncient = (name: string, size = 200): ReactNode => (
+  <IconAsset name={name} variant="color" width={size} />
+);
+const pictographSun = (size = 220): ReactNode => {
+  const r = size * 0.32;
+  return (
+    <g>
+      {Array.from({ length: 12 }, (_, i) => {
+        const a = (i * Math.PI) / 6;
+        return (
+          <line
+            key={i}
+            stroke={colors.reward}
+            strokeLinecap="round"
+            strokeWidth={size * 0.05}
+            x1={Math.cos(a) * r * 1.18}
+            x2={Math.cos(a) * r * 1.5}
+            y1={Math.sin(a) * r * 1.18}
+            y2={Math.sin(a) * r * 1.5}
+          />
+        );
+      })}
+      <circle
+        cx={0}
+        cy={0}
+        fill={colors.sunshine}
+        r={r}
+        stroke={colors.textNavy}
+        strokeWidth={size * 0.04}
+      />
+    </g>
+  );
+};

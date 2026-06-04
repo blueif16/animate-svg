@@ -87,9 +87,10 @@ The registry is **code-as-truth and drift-gated**: an exported-but-unregistered 
 2. Export the component + public types from `src/shape-primitives/index.ts`.
 3. `npm run registry:build` → writes the catalog entry's structure + digest.
 4. Author prose (`intent`/`useWhen`/`avoidWhen`/`variants`, flip `status` off `undocumented`) in `src/capabilities/primitive-registry.json`; re-run `registry:build`.
-5. `npm run registry:check` GREEN.
+5. Add a `demoProps` entry for the component in `src/component-gallery/demoProps.tsx` (a centered render at the gallery still frame, with a short strip of its key variants) — a registered component with no demo FAILS `registry:check` via the gallery gate (`check-gallery.mjs`), so the Component Gallery is always complete.
+6. `npm run registry:check` GREEN.
 
-**Special component** (`src/special-components/<Name>.tsx`): same loop, exported from `src/special-components/index.ts` and registered in the `specialComponents[]` tier. It COMPOSES registered primitives/assets/fx + named `EASE.*`/`SPRING.*` motion — ZERO raw motion literals, ZERO frame literals (its public API takes `atFrame`/`startFrame`/`progress` + cue-relative offsets from the caller; it never reads a master-timeline literal). Until the `specialComponents` tier exists, a composite MAY register through the `motion-primitives` barrel (the AssetMorph precedent) — name it in the spec.
+**Special component** (`src/special-components/<Name>.tsx`): same loop (incl. the step-5 `demoProps` entry), exported from `src/special-components/index.ts` and registered in the `specialComponents[]` tier. It COMPOSES registered primitives/assets/fx + named `EASE.*`/`SPRING.*` motion — ZERO raw motion literals, ZERO frame literals (its public API takes `atFrame`/`startFrame`/`progress` + cue-relative offsets from the caller; it never reads a master-timeline literal). Until the `specialComponents` tier exists, a composite MAY register through the `motion-primitives` barrel (the AssetMorph precedent) — name it in the spec.
 
 **Asset** (`public/icons/`): IMPORT from the origin library if it exists (`scripts/import-origin-icons.mjs`) OR generate author-time (trace pipeline) OR compose. Land `<name>.svg` + `mono/<name>.svg` + `<name>.meta.json` (category + desc), then `npm run icons:build` (auto-emits `asset-catalog.json` + digest). Assets are committed (tiny + canonical).
 
@@ -98,7 +99,7 @@ The registry is **code-as-truth and drift-gated**: an exported-but-unregistered 
 ## Self-verification (every builder, before declaring done)
 
 - **Render test stills at REAL render size**: the single hardest frame AND the worst-case multiplicity (e.g. a primitive at 10×). A primitive that looks flat/ambiguous is a gap-filler bug — fix it here, never downstream. Use the gallery or a focused still.
-- `npm run registry:check` GREEN (or `icons:build` for assets).
+- `npm run registry:check` GREEN (or `icons:build` for assets) — this now includes the gallery gate, so a missing `demoProps` entry fails the check.
 - The capability is **lesson-agnostic and reusable**: prove a second imagined caller could use it with different props. If it only fits one lesson, it's mis-scoped — it's scene composition, not a capability.
 
 ---

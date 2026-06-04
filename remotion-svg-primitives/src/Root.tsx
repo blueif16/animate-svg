@@ -7,6 +7,12 @@ import {
   componentGalleryDuration,
 } from "./component-gallery/ComponentGallery";
 import {
+  AssetGallery,
+  ASSET_GALLERY_HEIGHT,
+  ASSET_GALLERY_WIDTH,
+  assetGalleryDuration,
+} from "./scenes/AssetGallery";
+import {
   ABSTRACTION_LADDER_DEMO_DURATION,
   AbstractionLadderColumn,
   AbstractionLadderRow,
@@ -547,6 +553,14 @@ export const RemotionRoot: React.FC = () => {
         fps={video.fps}
         height={COMPONENT_GALLERY_HEIGHT}
         width={COMPONENT_GALLERY_WIDTH}
+      />
+      <Composition
+        id="AssetGallery"
+        component={AssetGallery}
+        durationInFrames={assetGalleryDuration}
+        fps={video.fps}
+        height={ASSET_GALLERY_HEIGHT}
+        width={ASSET_GALLERY_WIDTH}
       />
     </>
   );
