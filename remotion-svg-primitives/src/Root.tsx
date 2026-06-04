@@ -1,5 +1,11 @@
 import "./index.css";
 import { Composition } from "remotion";
+import {
+  ComponentGallery,
+  COMPONENT_GALLERY_HEIGHT,
+  COMPONENT_GALLERY_WIDTH,
+  componentGalleryDuration,
+} from "./component-gallery/ComponentGallery";
 import { InkWashDemo } from "./scenes/InkWashDemo";
 import {
   CountingDemo,
@@ -216,6 +222,14 @@ export const RemotionRoot: React.FC = () => {
         component={InkWashDemo}
         durationInFrames={90}
         {...compositionDefaults}
+      />
+      <Composition
+        id="ComponentGallery"
+        component={ComponentGallery}
+        durationInFrames={componentGalleryDuration}
+        fps={video.fps}
+        height={COMPONENT_GALLERY_HEIGHT}
+        width={COMPONENT_GALLERY_WIDTH}
       />
     </>
   );
