@@ -23,6 +23,33 @@ import {
   ASSET_MORPH_DEMO_DURATION,
 } from "./scenes/AssetMorphDemo";
 import {
+  DIALOGUE_EXCHANGE_DEMO_DURATION,
+  DialogueExchangeChinese,
+  DialogueExchangeHardest,
+  DialogueExchangeMultiplicity,
+} from "./scenes/DialogueExchangeDemo";
+import {
+  VOCAB_FLASHCARD_DEMO_DURATION,
+  VocabFlashcardChinese,
+  VocabFlashcardFlip,
+  VocabFlashcardHardest,
+  VocabFlashcardMultiplicity,
+} from "./scenes/VocabFlashcardDemo";
+import {
+  MATCH_PAIRS_BOARD_DEMO_DURATION,
+  MatchPairsBoardChinese,
+  MatchPairsBoardEnglish,
+  MatchPairsBoardHardest,
+  MatchPairsBoardMultiplicity,
+} from "./scenes/MatchPairsBoardDemo";
+import {
+  READ_ALONG_HIGHLIGHT_DEMO_DURATION,
+  ReadAlongHighlightChinese,
+  ReadAlongHighlightEnglish,
+  ReadAlongHighlightHardest,
+  ReadAlongHighlightMultiplicity,
+} from "./scenes/ReadAlongHighlightDemo";
+import {
   GLYPH_HARDEST_DURATION,
   GLYPH_MULTIPLICITY_DURATION,
   GLYPH_SYMBOLS_DURATION,
@@ -36,6 +63,20 @@ import {
   OrderedRowSpotlightMultiplicity,
   OrderedRowSpotlightSplit,
 } from "./scenes/OrderedRowSpotlightDemo";
+import {
+  PART_WHOLE_COMPOSER_DEMO_DURATION,
+  PartWholeComposerHardest,
+  PartWholeComposerMerge,
+  PartWholeComposerMultiplicity,
+  PartWholeComposerSplit,
+} from "./scenes/PartWholeComposerDemo";
+import {
+  PICTOGRAPH_EVOLUTION_DEMO_DURATION,
+  PictographEvolutionHardest,
+  PictographEvolutionMountain,
+  PictographEvolutionSunOverlap,
+  PictographEvolutionWaterCrossfade,
+} from "./scenes/PictographEvolutionDemo";
 import {
   ORDINAL_LABEL_TOKEN_DEMO_DURATION,
   OrdinalLabelTokenHardest,
@@ -288,6 +329,96 @@ export const RemotionRoot: React.FC = () => {
         {...compositionDefaults}
       />
       <Composition
+        id="DialogueExchangeHardest"
+        component={DialogueExchangeHardest}
+        durationInFrames={DIALOGUE_EXCHANGE_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="DialogueExchangeMultiplicity"
+        component={DialogueExchangeMultiplicity}
+        durationInFrames={DIALOGUE_EXCHANGE_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="DialogueExchangeChinese"
+        component={DialogueExchangeChinese}
+        durationInFrames={DIALOGUE_EXCHANGE_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="VocabFlashcardHardest"
+        component={VocabFlashcardHardest}
+        durationInFrames={VOCAB_FLASHCARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="VocabFlashcardFlip"
+        component={VocabFlashcardFlip}
+        durationInFrames={VOCAB_FLASHCARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="VocabFlashcardMultiplicity"
+        component={VocabFlashcardMultiplicity}
+        durationInFrames={VOCAB_FLASHCARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="VocabFlashcardChinese"
+        component={VocabFlashcardChinese}
+        durationInFrames={VOCAB_FLASHCARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="MatchPairsBoardHardest"
+        component={MatchPairsBoardHardest}
+        durationInFrames={MATCH_PAIRS_BOARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="MatchPairsBoardMultiplicity"
+        component={MatchPairsBoardMultiplicity}
+        durationInFrames={MATCH_PAIRS_BOARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="MatchPairsBoardChinese"
+        component={MatchPairsBoardChinese}
+        durationInFrames={MATCH_PAIRS_BOARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="MatchPairsBoardEnglish"
+        component={MatchPairsBoardEnglish}
+        durationInFrames={MATCH_PAIRS_BOARD_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="ReadAlongHighlightHardest"
+        component={ReadAlongHighlightHardest}
+        durationInFrames={READ_ALONG_HIGHLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="ReadAlongHighlightMultiplicity"
+        component={ReadAlongHighlightMultiplicity}
+        durationInFrames={READ_ALONG_HIGHLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="ReadAlongHighlightChinese"
+        component={ReadAlongHighlightChinese}
+        durationInFrames={READ_ALONG_HIGHLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="ReadAlongHighlightEnglish"
+        component={ReadAlongHighlightEnglish}
+        durationInFrames={READ_ALONG_HIGHLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
         id="GlyphStrokeWriterHardest"
         component={GlyphStrokeWriterHardest}
         durationInFrames={GLYPH_HARDEST_DURATION}
@@ -321,6 +452,54 @@ export const RemotionRoot: React.FC = () => {
         id="OrderedRowSpotlightFlip"
         component={OrderedRowSpotlightFlip}
         durationInFrames={ORDERED_ROW_SPOTLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PartWholeComposerHardest"
+        component={PartWholeComposerHardest}
+        durationInFrames={PART_WHOLE_COMPOSER_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PartWholeComposerMultiplicity"
+        component={PartWholeComposerMultiplicity}
+        durationInFrames={PART_WHOLE_COMPOSER_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PartWholeComposerMerge"
+        component={PartWholeComposerMerge}
+        durationInFrames={PART_WHOLE_COMPOSER_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PartWholeComposerSplit"
+        component={PartWholeComposerSplit}
+        durationInFrames={PART_WHOLE_COMPOSER_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PictographEvolutionHardest"
+        component={PictographEvolutionHardest}
+        durationInFrames={PICTOGRAPH_EVOLUTION_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PictographEvolutionSunOverlap"
+        component={PictographEvolutionSunOverlap}
+        durationInFrames={PICTOGRAPH_EVOLUTION_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PictographEvolutionMountain"
+        component={PictographEvolutionMountain}
+        durationInFrames={PICTOGRAPH_EVOLUTION_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PictographEvolutionWaterCrossfade"
+        component={PictographEvolutionWaterCrossfade}
+        durationInFrames={PICTOGRAPH_EVOLUTION_DEMO_DURATION}
         {...compositionDefaults}
       />
       <Composition

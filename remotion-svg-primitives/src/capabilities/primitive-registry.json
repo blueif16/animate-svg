@@ -807,6 +807,29 @@
       "status": "experimental"
     },
     {
+      "id": "dialogue-exchange",
+      "component": "DialogueExchange",
+      "source": "src/motion-primitives/DialogueExchange.tsx",
+      "intent": [
+        "dialogue",
+        "turn-taking",
+        "speech-bubble",
+        "greeting",
+        "conversation"
+      ],
+      "useWhen": "A turn-taking spoken exchange between TWO caller-supplied speakers: each speaks in order, turn k's speech bubble pops in ONLY after turn k-1 (+ gap) with its tail pointing at the speaker who said it, the speaking figure leans/bobs toward the other, and at most the two most-recent bubbles stay up (older ones dim) so a question and its answer read together without crowding. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, face, or English/Chinese string: left/right are { figure:ReactNode (the caller's face, e.g. <IconAsset name='boy-face'/>), nameCard?:ReactNode }; turns[] is { speaker:'left'|'right', line:ReactNode (the localized utterance — never baked), emphasis?, gesture?:'wave'|'point-self'|'point-other'|'none' }; atFrame is cues[id].startFrame+offset (the component derives every turn's local progress BY INDEX — ZERO frame literals); perTurnDurationFrames + interTurnGapFrames set pacing; maxVisibleBubbles/speakerGap/figureRadius/bubbleFill/bubbleStroke/inkColor/emphasisColor style it. The SAME component drives English greetings (Hello!/Hi!), farewells (Goodbye!/Bye-Bye! with gesture:'wave'), name Q&A (What's your name?/My name is ___, the answer turn emphasis-flagged for the I'm [aɪm]/[em] pronunciation beat), AND Chinese 你/我/他 person reference (gesture:'point-other' for 你/他, 'point-self' for 我) — the caller only varies props. COMPOSES PopIn(motion='bouncy') for bubble entrance + PulseCircle for the emphasis/pronunciation flag + a hand-drawn rounded bubble-with-tail, with named EASE.* motion for the lean/bob.",
+      "avoidWhen": "A monologue / single narrator (no second speaker, no turn-taking) — just place a bubble or LabelCallout. More than two speakers in one frame (it is strictly two-sided; a third party is a different composition). A chat-log where ALL lines must stay readable at once (this keeps only the two newest — raise maxVisibleBubbles and you own legibility, but a transcript panel is the wrong tool). Teaching the WRITTEN form of the words (stroke order, spelling) — use GlyphStrokeWriter / HanziCard. The speakers' faces and every line are caller scene content; this owns only the turn-taking choreography, the tail-pointing bubbles, and the lean/wave/point gestures.",
+      "variants": {
+        "gesture": [
+          "none",
+          "wave",
+          "point-self",
+          "point-other"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
       "id": "drag",
       "component": "Drag",
       "source": "src/motion-primitives/Drag.tsx",
@@ -858,6 +881,31 @@
       "status": "stable"
     },
     {
+      "id": "match-pairs-board",
+      "component": "MatchPairsBoard",
+      "source": "src/motion-primitives/MatchPairsBoard.tsx",
+      "intent": [
+        "matching",
+        "连一连",
+        "pairing",
+        "word-picture",
+        "self-check"
+      ],
+      "useWhen": "The 连一连 / 'match the pairs' beat: TWO caller-supplied columns (pictures one side, words/characters the other) with a line drawn from each item to the one it belongs with, IN ORDER, every correct link snapping its right endpoint dot GREEN on completion, and an optional all-matched celebration. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, value, or English/Chinese string: left:ReactNode[] / right:ReactNode[] are the two columns (IconAssets, VocabFlashcards, hanzi/NumberCards, any node — the component only places them in evenly-spaced columns and derives each item's center for the connector ports); pairs[] is the CORRECT matches as { left:index, right:index, wrongRight?:index } into those arrays (one connector per entry, drawn in array order); mode is 'demonstrate' (default, auto-draw the correct connectors one by one — teacher models the match) or 'quiz' (a pair carrying wrongRight first grows a connector to the WRONG target, snaps RED, retracts, THEN draws the correct line — the learner self-corrects; minimal & opt-in); atFrame is cues[id].startFrame+offset (every pair's progress derived BY INDEX from atFrame + perPairDurationFrames + interPairGapFrames — ZERO frame literals); showPointer traces the active link with a PointerHandArrow; celebrateOnComplete (+ celebrateLabel node) fires a SparkleBurst + collected RewardProgressToken once all pairs link; connectorStyle/connectorColor/wrongColor/connectorStrokeWidth/columnGap/itemGap/itemRadius/x/y style + place it. The SAME component drives a 统编版 Chinese 连一连 (object-picture IconAsset ↔ 汉字 card), a 人教版PEP English word↔picture match, and any future item↔target pairing — the caller only varies props. COMPOSES the registered PairConnector for EVERY link (its grow + snap-green completion is exactly this beat) + PopIn(settle) column entrance + opt-in PointerHandArrow + SparkleBurst + RewardProgressToken, with named EASE.* motion.",
+      "avoidWhen": "A one-to-one quantity COMPARISON by matching (5 > 3, counting surplus) — use getPairedColumnPlacement + PairConnector + UnmatchedSlot, which own the ragged-overhang 'who has no partner' beat; this board is for CORRECT semantic pairings (picture↔word), not surplus counting. A single connector between two known points — just use PairConnector directly; this is the multi-pair, ordered, celebrated composite. Drag-and-drop sorting into bins — use SortingBin. A turn-taking spoken exchange — use DialogueExchange. Teaching the WRITTEN form of a word/character (stroke order) — use GlyphStrokeWriter. Keep pairs <= ~5 and columns short so lines stay legible and crossings unambiguous at 1280-wide. The column nodes and every label are caller scene content; this owns only the two-column layout, the ordered connector draw + green-snap, the opt-in wrong-attempt self-correction, and the all-matched celebration.",
+      "variants": {
+        "mode": [
+          "demonstrate",
+          "quiz"
+        ],
+        "connectorStyle": [
+          "dotted",
+          "solid"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
       "id": "ordered-row-spotlight",
       "component": "OrderedRowSpotlight",
       "source": "src/motion-primitives/OrderedRowSpotlight.tsx",
@@ -875,6 +923,51 @@
         "direction": [
           "ltr",
           "rtl"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "part-whole-composer",
+      "component": "PartWholeComposer",
+      "source": "src/motion-primitives/PartWholeComposer.tsx",
+      "intent": [
+        "part-whole",
+        "分与合",
+        "decompose",
+        "compose",
+        "addition",
+        "enumeration"
+      ],
+      "useWhen": "The concrete-object 分与合 beat: N caller-rendered countables laid out as a whole and SPLIT into two parts, MERGED back together (addition 合并), or walked through EVERY ordered decomposition. Drives 人教版 G1 §1.4 分与合 (the 不重不漏 ordered enumeration that fixes 列举分法遗漏中间项 / 交换顺序后认为是同一种分法 / 操作跳跃无序) AND §1.5 加法的含义 (合并 — physically move two groups together into one total). Prop-driven & LESSON-AGNOSTIC — bakes NO topic, value, or Chinese string: count is N; renderItem(i, part) lets the caller render ONE object given its index + which part ('left'|'right'|'whole') it currently belongs to (so the caller owns the object KIND and the two-color split, e.g. a CountableObject tinted by part); mode is 'split' (one whole group separates into left(k)+right(N-k) clusters moving apart), 'merge' (two clusters left(k)+right(N-k) slide together into one whole, cueing the total N), or 'enumerate' (walk ALL ordered decompositions 1&(N-1), 2&(N-2), …, (N-1)&1 — one item MIGRATES from the right cluster to the left per step, the left cluster growing from the array's right end inward so no index is visited twice, showing 不重不漏 and that swapped pairs like 2&3 vs 3&2 are DISTINCT); partition:{left:k} sets k for split/merge (derived per step for enumerate); atFrame is cues[id].startFrame+offset (every step's progress derived BY INDEX from atFrame + perStepDurationFrames + interStepGapFrames — ZERO frame literals); showDiagram overlays a FenHeDiagram (分合式) whose part numbers UPDATE with the concrete move; showBrace/wholeLabel bracket the whole row; showTally surfaces a StepTally of the enumerate walk; diagramWidth/itemRadius/clusterGap/inkColor/x/y style + place it. The SAME component drives a 分 demo, a 合 (addition) demo, and the full ordered-decomposition enumeration — the caller only varies props. COMPOSES the caller's renderItem objects + FenHeDiagram (the abstract bond, its part numbers driven by the live (k, count-k) via getFenHeDiagramAnchors — no hand-drawn numerals) + PartWholeBrace (optional whole/part brackets) + StepTally (optional walk progress) + PopIn(settle) entrance, with named EASE.* motion (the migrating item glides along an eased lerp).",
+      "avoidWhen": "A single isolated split with NO walk and NO numeric bond — just place two StickGroup/CountableObject clusters and a FenHeDiagram directly; this composite earns its keep on the ORDERED enumeration (不重不漏) and the synced 分合式. A place-value regroup (ten ones become one ten) — use ConservationMorphBundle / BundleWrap, which own the conservation x-ray; this is part-whole over a SMALL count, not base-ten grouping. A turn-taking spoken exchange or a match-pairs board — different composites. The whole 1→N ordinal count-walk (第N spotlight, cardinal-vs-ordinal) — use OrderedRowSpotlight; this composer is about PARTITIONING a quantity, not numbering positions. Keep count <= ~9 so two clusters + the in-flight migrant + the diagram stay legible at 1280-wide. The object kind, the colors, the partition, and every label are caller scene content; this owns only the cluster layout, the split/merge move, the ordered migration walk, and the live diagram/brace/tally sync.",
+      "variants": {
+        "mode": [
+          "split",
+          "merge",
+          "enumerate"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "pictograph-evolution",
+      "component": "PictographEvolution",
+      "source": "src/motion-primitives/PictographEvolution.tsx",
+      "intent": [
+        "字理演变",
+        "象形字",
+        "pictograph",
+        "morph",
+        "evolution",
+        "silhouette-overlap"
+      ],
+      "useWhen": "Reveal that a Chinese character's SHAPE grew from the thing it pictures: walk an ordered list of representation stages — 实物(real object) → 古代象形字(ancient pictograph) → 现代汉字(modern char) — drawn on ONE shared center, morphing the SAME form from each stage into the next, then (the payoff) ghost the original object behind the final character so the child SEES 字形与事物形状相似 — the 字理演变 / 象形字识字 teaching beat (统编版 G1 §1.3 口耳目手足, §1.4 日月水火山石田禾). Prop-driven & LESSON-AGNOSTIC — bakes NO character, object, or Chinese string: stages:ReactNode[] (min 2, typically [objectPicture, ancientGlyph, modernChar] — the caller passes an <IconAsset> object, an ancient-glyph node, a <HanziCard>; the component places each on the shared center and NEVER bakes one); mode 'morph' (default — each consecutive transition is an <AssetMorph> FX-masked sparkle crossfade sharing the center, so the object BECOMES the glyph BECOMES the char with no visible cut) or 'crossfade' (a plain opacity dissolve, calmer, no sparkle mask); silhouetteOverlap (true ⇒ after the last stage settles, ghost stage 0 behind it at the SAME center so the modern char's shape echoes the object — the 字形与事物相似 payoff, faded in via EASE.enter); stageLabels:ReactNode[] (optional caller-localized caption UNDER each stage, 实物/古文字/今字 — never baked, index-aligned, sparse OK, only the current stage's shows); atFrame is cues[id].startFrame+offset (the component derives WHICH transition is active by stage INDEX and its local progress from perStageDurationFrames + interStageGapFrames — ZERO frame literals); centerX/centerY (the shared bbox center every stage + each morph's FX burst sits on — the caller MUST author each stage so its visual center coincides here, exactly AssetMorph's identity-preserving contract), stageSize/silhouetteOpacity/fxColor/inkColor/x/y/transform style + place it. The SAME component drives 日(sun), 山(mountain), 水(water), 口/耳/目/手/足, or any pictograph — only the props change. COMPOSES <AssetMorph> for every consecutive stage transition (its SparkleBurst-masked, bbox-centered swap is exactly this beat) + <PopIn motion='settle'> for the first stage entrance + named EASE.* motion for the silhouette ghost fade + caption reveals.",
+      "avoidWhen": "Teaching the child to WRITE the character (stroke order, 笔顺) — use GlyphStrokeWriter, which traces strokes IN ORDER; this morphs WHOLE forms and does not draw stroke-by-stroke. Binding a word to a picture with no shape-morph (vocab) — use VocabFlashcard. A side-by-side contrasting SET of finished characters (e.g. a tone minimal pair) — compose several HanziCards. Mapping a quantity across abstraction rungs (实物→小棒→圆点→数字 for a NUMBER) — use AbstractionLadder (that conserves a COUNT; this reshapes ONE form). The stages MUST be bbox-centered on the shared center or the morph reads as a cut, not a reshape — that center match is the caller's responsibility (same fence as AssetMorph). The object pictures, the ancient glyphs, and every label are caller scene content; this owns only the staged morph chain, the silhouette-overlap payoff, and the per-stage caption reveal.",
+      "variants": {
+        "mode": [
+          "morph",
+          "crossfade"
         ]
       },
       "status": "experimental"
@@ -910,6 +1003,30 @@
       "status": "stable"
     },
     {
+      "id": "read-along-highlight",
+      "component": "ReadAlongHighlight",
+      "source": "src/motion-primitives/ReadAlongHighlight.tsx",
+      "intent": [
+        "read-along",
+        "recite",
+        "sing-along",
+        "rhythm",
+        "朗读背诵",
+        "bouncing-ball"
+      ],
+      "useWhen": "Sweep a moving highlight (+ optional bouncing cursor) across each item of a text IN TIME, marking the rhythm for read-along / recite / sing-along — the active item glows + swells while a cursor travels with it, turning 机械重复 into a song. The single reusable read-along sweep the whole recite/sing library is built from: a poem is several short lines, the ABC song is one long row. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, NO English/Chinese string, NO glyph: lines:ReactNode[][] (rows of caller items, each inner array = one line of chars/letters/words — the sweep advances item-by-item, line-by-line in reading order; a caller glyph using fill='currentColor' rides the active tint); beats?:number[] (FLAT per-item duration WEIGHTS in reading order across ALL lines, so a held syllable/fermata gets a bigger beat — converted to cumulative active windows scaled to fill total = sum(beats)*perBeatDurationFrames, NO per-item frame literals; default all 1); atFrame is cues[id].startFrame+offset (the component derives WHICH item is active via cumulativeBeatWindow(index), the cursor position, and the glow — ZERO frame literals); perBeatDurationFrames is the unit a beat=1 maps to. cursor:'ball'|'underline'|'box'|'none' — 'ball' bounces and ARCS up-and-over item→item (the sing-along bouncing ball, EASE.outCubic hop + parabolic arc), 'underline'/'box' slide; dimPast (true = past items dim back so the eye tracks one moving spot / read-with-rhythm; false = past items STAY lit in highlightColorAlready, a filling 'we sang this far' trail); activeScale swells the current item; highlightColor/inkColor/itemGap/lineGap/itemRadius/x/y/transform style + place it. The SAME component drives 统编版 Chinese 朗读背诵《对韵歌》 (short hanzi lines, beats weighting the held 对) AND the 人教版PEP English ABC / 字母歌 (one long row of 26 letters, the bouncing ball arcing across them) — the caller only varies props. COMPOSES <PopIn> for each line's entrance + <PulseCircle> for the active-item glow ripple + a derived cursor, with named EASE.* motion.",
+      "avoidWhen": "Teaching the child to WRITE the glyphs (stroke order, 笔顺, spelling) — use GlyphStrokeWriter / HanziCard, which own the written form; this sweeps a highlight FOR RHYTHM, it does not trace. A two-sided spoken exchange (greetings, Q&A) — use DialogueExchange. Binding ONE word to a picture (vocab) — use VocabFlashcard. A bare static label with no in-time sweep — use LabelCallout. Counting an ORDERED row where the point is the ordinal/position (第N) rather than rhythm — use OrderedRowSpotlight. Keep each line short enough (and itemRadius small enough) that every item stays above the kids-eye min size at 1280-wide; the 26-letter row needs a small itemGap+itemRadius. The items, the beats, and the rhythm are caller scene content; this owns only the in-time sweep, the active glow/swell, and the bouncing/sliding cursor.",
+      "variants": {
+        "cursor": [
+          "ball",
+          "underline",
+          "box",
+          "none"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
       "id": "smear",
       "component": "Smear",
       "source": "src/motion-primitives/Smear.tsx",
@@ -931,6 +1048,28 @@
       "avoidWhen": "A sustained attention pulse — use PulseCircle; a persistent reward token — use RewardProgressToken.",
       "variants": {},
       "status": "stable"
+    },
+    {
+      "id": "vocab-flashcard",
+      "component": "VocabFlashcard",
+      "source": "src/motion-primitives/VocabFlashcard.tsx",
+      "intent": [
+        "vocabulary",
+        "picture-word",
+        "flashcard",
+        "图文对照",
+        "label-reveal"
+      ],
+      "useWhen": "Bind a vocabulary WORD to the PICTURE of the thing it names, revealed as ONE beat (and optionally flipped picture↔word). The single reusable card the whole picture-word library is built from: MAP SEVERAL IN A ROW (stagger each card's atFrame) to teach a vocab SET, or pass one with phonetic + listenCue + highlightLabel for the hardest 'say this tricky word' beat. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, NO English/Chinese string: picture:ReactNode (the object illustration — <IconAsset name='...'/> or any node), label:ReactNode (the localized word/character — never baked), phonetic?:ReactNode (pinyin / phonemic hint under the label). mode:'reveal'|'flip'|'label-after' — reveal = picture+label settle in together on one face; flip = the card rotates on its Y-axis from the picture face to the word face (a shine sweeps the edge as it turns); label-after = the picture lands first, then the word writes/fades in below it. atFrame is cues[id].startFrame+offset (every sub-phase — picture settle, flip rotation, label write-in — derived BY FRACTION of revealDurationFrames; ZERO frame literals); listenCue shows a <ListenIcon> speaker affordance that swells to 'playing' (the word is sayable, for the audio beat); highlightLabel + emphasisColor pulse a <PulseCircle> ring at the settled word (the 'hard to pronounce' / multi-syllable 不易读准 flag); fill/stroke/cornerRadius/width/height/inkColor/phoneticColor/x/y/transform style + place it. The SAME card drives 人教版PEP English stationery vocab (crayon/pencil/eraser, the multi-syllable words highlight-flagged) AND 统编版 Chinese 图文对照 (object illustration + 生字 + 拼音, e.g. 木/mù) — the caller only varies props. COMPOSES <PopIn motion='bouncy'> for the card entrance + <ListenIcon> for the audio affordance + <ShineSweep> across the card on flip/reveal + <PulseCircle> for the pronunciation flag, with named EASE.* motion for the flip rotation + label settle.",
+      "avoidWhen": "Teaching the child to WRITE the word's strokes / spelling (stroke order, 笔顺) — use GlyphStrokeWriter / HanziCard, which own the written form; this card only NAMES a picture, it does not trace it. A bare on-screen label with no picture binding — use LabelCallout. A character SET shown for contrast (a tone minimal pair 妈/麻/马/骂) where the point is the characters themselves, not picture↔word — use HanziCard side by side. A two-sided spoken exchange (greetings, Q&A) — use DialogueExchange. The picture, the word, and the phonetic are ALL caller scene content; this owns only the card surface, the reveal/flip choreography, and the audio/pronunciation affordances. A whole vocab SET is the caller mapping several of THESE in a staggered row — don't bake the set into one card.",
+      "variants": {
+        "mode": [
+          "reveal",
+          "flip",
+          "label-after"
+        ]
+      },
+      "status": "experimental"
     }
   ],
   "fxComponents": [
