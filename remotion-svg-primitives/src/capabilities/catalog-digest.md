@@ -118,7 +118,7 @@
 | `default` | Canonical lesson appearance — no aesthetic overlay. | stable |
 | `ink-wash` | Sumi-e ink on warm rice paper aesthetic overlay. | experimental |
 
-## Generated asset library — `<IconAsset name=... />` (73)
+## Generated asset library — `<IconAsset name=... />` (89)
 
 Fixed-form decorative/representational objects (traced flat SVG, on-palette). REUSE these before hand-coding or generating. Not teaching primitives — see `icon-asset` above for the fence.
 
@@ -126,10 +126,10 @@ Fixed-form decorative/representational objects (traced flat SVG, on-palette). RE
 - **celebration** — `award-ribbon`, `confetti-burst`, `shining-star-orbit`, `sparkle-star`, `star`
 - **character-face** — `boy-face`, `robot-face-round`, `robot-face-square`, `sad-cloud-face`
 - **generated** — `pointing-hand`, `stick-bundle-roped`
-- **literacy** — `ancient-glyph-mountain`, `ancient-glyph-sun`, `ancient-glyph-water`
+- **literacy** — `ancient-glyph-ear`, `ancient-glyph-eye`, `ancient-glyph-field`, `ancient-glyph-fire`, `ancient-glyph-foot`, `ancient-glyph-grain`, `ancient-glyph-hand`, `ancient-glyph-moon`, `ancient-glyph-mountain`, `ancient-glyph-mouth`, `ancient-glyph-stone`, `ancient-glyph-sun`, `ancient-glyph-water`
 - **math** — `abacus`, `add-blocks`, `balance-scale`, `bar-line-chart`, `basic-shapes`, `donut-chart`, `fraction-quarters`, `greater-less-compare`, `pattern-sequence`, `sort-shapes-bins`, `subtract-blocks`
 - **nature** — `atom`, `flame`, `leaf-water-drop`, `planet-saturn`, `sprout`
-- **object** — `bookmark`, `crystal-ball`, `dashboard-card`, `document-note`, `ear-listening`, `ear-soundwave`, `eye`, `flashcard-stack`, `gear`, `house`, `jigsaw-four-piece`, `journey-path-flag`, `layout-tiles`, `lightbulb-circuit`, `lightbulb-idea`, `magic-wand`, `magnet`, `microphone`, `open-book`, `prism-rainbow`, `reward-chest-card`, `scroll-document`, `shield-heart`, `stopwatch`, `treasure-chest`, `treasure-map`
+- **object** — `bookmark`, `crayon`, `crystal-ball`, `dashboard-card`, `document-note`, `ear-listening`, `ear-soundwave`, `eraser`, `eye`, `flashcard-stack`, `gear`, `house`, `jigsaw-four-piece`, `journey-path-flag`, `layout-tiles`, `lightbulb-circuit`, `lightbulb-idea`, `magic-wand`, `magnet`, `microphone`, `open-book`, `pen`, `pencil`, `pencil-box`, `prism-rainbow`, `reward-chest-card`, `school-bag`, `scroll-document`, `shield-heart`, `stopwatch`, `treasure-chest`, `treasure-map`
 - **symbol** — `checkmark-circle`, `pause-button`, `play-button`, `question-mark-circle`, `replay-arrow`, `sound-wave-bars`, `speaker-volume`, `speech-bubble-dots`, `sync-arrows`, `tap-gesture`, `upload-arrow`
 - **tool** — `beaker`, `magnifying-glass`, `microscope`, `ruler-set-square`
 

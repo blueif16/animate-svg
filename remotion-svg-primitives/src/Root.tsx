@@ -58,6 +58,14 @@ import {
   GlyphStrokeWriterSymbols,
 } from "./scenes/GlyphStrokeWriterDemo";
 import {
+  GLYPH_DATA_BASICS_DURATION,
+  GLYPH_DATA_CHARS_DURATION,
+  GLYPH_DATA_HARDEST_DURATION,
+  GlyphStrokeDataBasics,
+  GlyphStrokeDataCharacters,
+  GlyphStrokeDataHardest,
+} from "./scenes/GlyphStrokeDataDemo";
+import {
   ORDERED_ROW_SPOTLIGHT_DEMO_DURATION,
   OrderedRowSpotlightFlip,
   OrderedRowSpotlightMultiplicity,
@@ -434,6 +442,24 @@ export const RemotionRoot: React.FC = () => {
         id="GlyphStrokeWriterSymbols"
         component={GlyphStrokeWriterSymbols}
         durationInFrames={GLYPH_SYMBOLS_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="GlyphStrokeDataCharacters"
+        component={GlyphStrokeDataCharacters}
+        durationInFrames={GLYPH_DATA_CHARS_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="GlyphStrokeDataBasics"
+        component={GlyphStrokeDataBasics}
+        durationInFrames={GLYPH_DATA_BASICS_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="GlyphStrokeDataHardest"
+        component={GlyphStrokeDataHardest}
+        durationInFrames={GLYPH_DATA_HARDEST_DURATION}
         {...compositionDefaults}
       />
       <Composition
