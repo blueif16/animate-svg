@@ -82,6 +82,115 @@ export const PairConnector = ({
   );
 };
 
+export type UnmatchedSlotState = "empty" | "ghost";
+
+export type UnmatchedSlotProps = PrimitiveGroupProps &
+  PlacementProps & {
+    /** Color of the marker stroke. Defaults to softGrayBlue (a quiet
+     *  "nobody here" gray) — the surplus item it sits under keeps the
+     *  attention; this only names the absence. */
+    color?: ThemeColor;
+    /** Diameter of the slot in local SVG units. Match the partner item's
+     *  visual size so the gap reads as "a missing one of THOSE". Default 92. */
+    size?: number;
+    /** `"ghost"` (default) — a dashed outline of the missing partner, the
+     *  shape that WOULD pair here. `"empty"` — a struck/voided slot reading
+     *  "no partner here". */
+    state?: UnmatchedSlotState;
+    /** 0..1 reveal. Fades and scales the marker in so it can appear in step
+     *  with the surplus item being singled out. Default 1 (fully shown). */
+    progress?: number;
+  };
+
+// =========================================================================
+// UnmatchedSlot — the "no partner" mark in a compare-by-matching layout.
+//
+// In a one-to-one comparison (e.g. 5 > 3), `PairConnector` draws the lines
+// between items that DO have a partner. UnmatchedSlot is its counterpart:
+// it sits under each SURPLUS item — the ones with nobody across from them —
+// so "5 is more than 3" reads concretely as "two of these have no partner."
+//
+// Lesson-agnostic: it knows nothing about counts or topics; the scene places
+// one instance per overhanging item (see getPairedColumnPlacement, which
+// returns exactly those overhang column centers).
+// =========================================================================
+export const UnmatchedSlot = ({
+  color,
+  progress = 1,
+  size = 92,
+  state = "ghost",
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: UnmatchedSlotProps) => {
+  const reveal = clamp01(progress);
+  const radius = size / 2;
+  const stroke = resolveColor(color, colors.softGrayBlue);
+  // Scale in from 0.86 so the marker "settles" under its surplus item
+  // rather than popping at full size.
+  const scale = 0.86 + reveal * 0.14;
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={reveal}
+      transform={[`scale(${scale})`, transform].filter(Boolean).join(" ")}
+      x={x}
+      y={y}
+    >
+      {state === "ghost" ? (
+        <g className="body">
+          <circle
+            cx={0}
+            cy={0}
+            fill="none"
+            r={radius}
+            stroke={stroke}
+            strokeDasharray="12 10"
+            strokeLinecap="round"
+            strokeWidth={NAVY_STROKE}
+          />
+          {/* A faint dash where the connector WOULD land, reinforcing that a
+              partner is what's missing — not the item itself. */}
+          <line
+            opacity={0.4}
+            stroke={stroke}
+            strokeDasharray="6 8"
+            strokeLinecap="round"
+            strokeWidth={3}
+            x1={0}
+            x2={0}
+            y1={-radius - radius * 0.55}
+            y2={-radius}
+          />
+        </g>
+      ) : (
+        <g className="body">
+          <circle
+            cx={0}
+            cy={0}
+            fill={colors.white}
+            r={radius}
+            stroke={stroke}
+            strokeWidth={NAVY_STROKE}
+          />
+          {/* Diagonal strike — the universal "void / none here" mark. */}
+          <line
+            stroke={stroke}
+            strokeLinecap="round"
+            strokeWidth={NAVY_STROKE}
+            x1={-radius * 0.62}
+            x2={radius * 0.62}
+            y1={radius * 0.62}
+            y2={-radius * 0.62}
+          />
+        </g>
+      )}
+    </PlacedGroup>
+  );
+};
+
 export type SortingBinState = "accept" | "idle" | "reject";
 export type SortingBinVariant = "basket" | "tray";
 
@@ -321,6 +430,87 @@ export const PointerHandArrow = ({
       />
     </PlacedGroup>
   );
+};
+
+export type PairedColumnPlacement = {
+  /** Center x of every column, left→right. Length = max(topCount, bottomCount). */
+  columnX: number[];
+  /** Indices into `columnX` that have an item on ONE row only — the ragged
+   *  overhang. Drop an UnmatchedSlot at each. Empty when the rows are equal. */
+  overhangColumns: number[];
+  /** The longer (overhanging) row: `"top"`, `"bottom"`, or `"none"` if equal. */
+  overhangRow: "bottom" | "none" | "top";
+  /** Bottom-row item centers, left→right (one per bottom item). */
+  bottom: { x: number; y: number }[];
+  /** Top-row item centers, left→right (one per top item). */
+  top: { x: number; y: number }[];
+};
+
+type PairedColumnInput = {
+  /** Horizontal spacing between adjacent column centers. Default 130. */
+  columnGap?: number;
+  /** Vertical gap between the two rows (top sits at -rowGap/2, bottom at
+   *  +rowGap/2, so the pair is centered on local y=0). Default 150. */
+  rowGap?: number;
+};
+
+/**
+ * Aligns two rows of countables into shared vertical COLUMNS so partners sit
+ * directly above/below each other and the surplus overhangs as a ragged edge —
+ * the layout that makes "5 > 3" read as "two of these have no partner."
+ *
+ * Pure positioning, like `getStickPlacement` / `getFenHeDiagramAnchors`: it
+ * RENDERS NOTHING and returns local-space placements the scene composes from.
+ * Both rows are LEFT-aligned to column 0, so every overhanging item lands in a
+ * column with no partner across from it (the comparison reads as "extra on the
+ * end," never "shifted over"). The whole block is centered about local x=0.
+ *
+ * The scene then:
+ *   - places one countable per `top[i]` / `bottom[i]`,
+ *   - draws a `PairConnector` between `top[c]` and `bottom[c]` for each matched
+ *     column (`c` < min(topCount, bottomCount)),
+ *   - drops an `UnmatchedSlot` at each `columnX[c]` for `c` in `overhangColumns`,
+ *     on the row OPPOSITE `overhangRow` (the empty side).
+ *
+ * Lesson-agnostic: counts and spacing come from the caller; no topic, value,
+ * or absolute frame is baked in. Deterministic — same inputs, same output.
+ */
+export const getPairedColumnPlacement = (
+  topCount: number,
+  bottomCount: number,
+  opts: PairedColumnInput = {},
+): PairedColumnPlacement => {
+  const { columnGap = 130, rowGap = 150 } = opts;
+  const safeTop = Math.max(0, Math.floor(topCount));
+  const safeBottom = Math.max(0, Math.floor(bottomCount));
+  const columns = Math.max(safeTop, safeBottom);
+  const matched = Math.min(safeTop, safeBottom);
+
+  // Column centers, left→right, centered about x=0.
+  const columnX = Array.from(
+    { length: columns },
+    (_, index) => (index - (columns - 1) / 2) * columnGap,
+  );
+
+  const topY = -rowGap / 2;
+  const bottomY = rowGap / 2;
+  const top = Array.from({ length: safeTop }, (_, index) => ({
+    x: columnX[index],
+    y: topY,
+  }));
+  const bottom = Array.from({ length: safeBottom }, (_, index) => ({
+    x: columnX[index],
+    y: bottomY,
+  }));
+
+  const overhangRow =
+    safeTop === safeBottom ? "none" : safeTop > safeBottom ? "top" : "bottom";
+  const overhangColumns = Array.from(
+    { length: columns - matched },
+    (_, index) => matched + index,
+  );
+
+  return { bottom, columnX, overhangColumns, overhangRow, top };
 };
 
 export type RewardProgressTokenVariant = "badge" | "coin" | "node" | "star";
