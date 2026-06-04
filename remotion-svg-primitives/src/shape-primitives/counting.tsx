@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { colors } from "../theme";
+import { EASE } from "../motion-primitives/curves";
 import {
   CARD_RADIUS,
   NAVY_STROKE,
@@ -759,6 +760,135 @@ export const NumberCard = ({
             {value}
           </text>
         )}
+      </g>
+    </PlacedGroup>
+  );
+};
+
+// OrdinalLabelToken — a NumberCard surface carrying a TWO-PART label: a leading
+// PREFIX glyph (themed separately) + the VALUE glyph. It exists because the
+// 序数 vs 基数 contrast is carried ONLY by the prefix (第): "第5" and a bare
+// "5" share the same numeral, so the digit MUST match a same-size NumberCard
+// while the prefix reads as visually distinct (color + weight). NumberCard
+// renders one bare value at one fill/weight and cannot do this; the distinct
+// prefix IS the teaching point. Prop-driven + lesson-agnostic: the caller
+// passes the prefix node ('第' or any locale prefix; default none), so nothing
+// Chinese (or any topic/value) is baked in. NO time-based animation of its own
+// — entrance is the caller's PopIn at a cue offset; state is prop-driven.
+export type OrdinalLabelTokenProps = PrimitiveGroupProps &
+  PlacementProps &
+  SelectionProps & {
+    color?: ThemeColor; // value-glyph fill (defaults to the NumberCard navy)
+    height?: number;
+    prefix?: ReactNode; // the distinguishing glyph; caller localizes '第'
+    prefixColor?: ThemeColor; // emphasis fill on the prefix (default coral)
+    prefixWeight?: number; // emphasis weight on the prefix (default 900)
+    value?: NumberCardValue; // the digit — must read identical to a cardinal card
+    width?: number;
+  };
+
+export const OrdinalLabelToken = ({
+  color,
+  correct = false,
+  disabled = false,
+  focused = false,
+  height = 112,
+  prefix = null,
+  prefixColor,
+  prefixWeight = 900,
+  selected = false,
+  transform,
+  value = "",
+  width = 132,
+  wrong = false,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: OrdinalLabelTokenProps) => {
+  // Match NumberCard's glyph-sizing contract so the DIGIT here reads identical
+  // to a bare same-height NumberCard ("same number, only the prefix differs").
+  const cardShortSide = Math.min(width, height);
+  const isTwoDigit = typeof value === "number" && value >= 10;
+  const valueFontSize = cardShortSide * (isTwoDigit ? 0.46 : 0.56);
+  // The prefix is a label modifier: a touch smaller than the digit (so the
+  // digit stays the hero) but colored + heavy so it pops as the distinguishing
+  // mark. It scales with the card, never a literal.
+  const prefixFontSize = valueFontSize * 0.74;
+
+  const valueFill = resolveColor(color, colors.textNavy);
+  const prefixFill = resolveColor(prefixColor, colors.coral);
+
+  // Lay the two glyphs out as one centered cluster. SVG text advance widths are
+  // not measurable at build time, so we approximate each glyph's advance from
+  // its font size (full-width CJK ~1.0em; the value text-anchor handles its own
+  // half). The gap keeps prefix and digit from kissing at every size.
+  const hasPrefix = prefix !== null && prefix !== undefined && prefix !== "";
+  const prefixAdvance = hasPrefix ? prefixFontSize * 1.0 : 0;
+  const valueAdvance = String(value).length > 1 ? valueFontSize * 1.1 : valueFontSize * 0.62;
+  const gap = hasPrefix ? valueFontSize * 0.12 : 0;
+  const clusterWidth = prefixAdvance + gap + valueAdvance;
+  const prefixCenterX = -clusterWidth / 2 + prefixAdvance / 2;
+  const valueCenterX = clusterWidth / 2 - valueAdvance / 2;
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={stateOpacity(disabled)}
+      transform={transform}
+      x={x}
+      y={y}
+    >
+      <g style={shadowStyle()}>
+        <rect
+          className="base"
+          fill={colors.white}
+          height={height}
+          rx={CARD_RADIUS}
+          stroke={colors.textNavy}
+          strokeWidth={NAVY_STROKE}
+          width={width}
+          x={-width / 2}
+          y={-height / 2}
+        />
+        <SelectionRing
+          correct={correct}
+          disabled={disabled}
+          focused={focused}
+          height={height}
+          selected={selected}
+          width={width}
+          wrong={wrong}
+          x={-width / 2}
+          y={-height / 2}
+        />
+        {hasPrefix ? (
+          <text
+            className="prefix"
+            dominantBaseline="middle"
+            fill={prefixFill}
+            fontFamily={fontFamily}
+            fontSize={prefixFontSize}
+            fontWeight={prefixWeight}
+            textAnchor="middle"
+            x={prefixCenterX}
+            y={valueFontSize * 0.05}
+          >
+            {prefix}
+          </text>
+        ) : null}
+        <text
+          className="value"
+          dominantBaseline="middle"
+          fill={valueFill}
+          fontFamily={fontFamily}
+          fontSize={valueFontSize}
+          fontWeight={900}
+          textAnchor="middle"
+          x={hasPrefix ? valueCenterX : 0}
+          y={valueFontSize * 0.05}
+        >
+          {value}
+        </text>
       </g>
     </PlacedGroup>
   );
@@ -2737,6 +2867,220 @@ export const ConservationBundle = ({
           y={-bandHeight / 2}
         />
       </g>
+    </PlacedGroup>
+  );
+};
+
+// CountingBeadDevice — a single-rod bead counter (计数器) whose DISPLAYED count is
+// driven by a `count` prop, so pulling one more bead onto the rod makes the
+// number grow by exactly one (1→2→3→4→5). It is the "+1 is physical" teaching
+// atom for any 1~N number-sequence / 接着数 lesson: each next number is the
+// previous count plus this one newest bead. NOT the static `abacus` IconAsset —
+// that fixed-form decorative SVG has no count/progress/state prop; a count-driven
+// teaching object the child REASONS about must be a primitive (the asset fence).
+//
+// Reads as beads, not flat dots: each bead is a circle lit from above (a top
+// highlight + a seated contact shadow on the rod) with a navy outline, so the
+// silhouette is unmistakably a threaded bead at render size. Empty slots up to
+// `capacity` are faint ghost rings so the rod's room-to-grow is visible.
+//
+// One-more is unmistakable: the NEWEST bead (index = count-1) slides into place
+// from the open end of the rod via `revealProgress` (eased with EASE.enter), and
+// when `activeIndex` points at it a sunshine "just-moved" ring swells via
+// `activePulse` (0..1) — earlier beads sit settled in the resting bead color.
+// The optional value readout beside the rod (CountStepIndicator look) flips to
+// `count`, so "one more bead → the number grew by one" is one synchronized beat.
+//
+// LESSON-AGNOSTIC + prop-driven: count/capacity/colors/orientation all vary by
+// prop; NO baked value, topic, or Chinese string. ZERO frame literals + ZERO raw
+// motion literals — the caller passes revealProgress/activePulse derived from
+// atFrame (cue-relative offsets) and the only curve is the named EASE.enter.
+export type CountingBeadDeviceOrientation = "horizontal" | "vertical";
+
+export type CountingBeadDeviceProps = PrimitiveGroupProps &
+  PlacementProps & {
+    activeIndex?: number; // which bead just moved (0-based); -1/undefined = none
+    activePulse?: number; // 0..1 swell of the one-more ring (caller drives from atFrame)
+    beadColor?: ThemeColor; // resting bead fill (default reward orange)
+    beadRadius?: number; // bead radius in viewbox units
+    capacity?: number; // total slots on the rod (default 10)
+    count: number; // beads pulled/active, 0..capacity — DRIVES the shown number
+    highlightColor?: ThemeColor; // the just-moved ring + active bead accent (default sunshine)
+    orientation?: CountingBeadDeviceOrientation;
+    revealProgress?: number; // 0..1 newest bead sliding into place (caller drives from atFrame)
+    rodColor?: ThemeColor; // the rod line (default navy ink)
+    rodLength?: number; // length of the rod between its end caps
+    showValueLabel?: boolean; // optional digit readout beside the rod (default true)
+  };
+
+export const CountingBeadDevice = ({
+  activeIndex,
+  activePulse = 0,
+  beadColor,
+  beadRadius = 30,
+  capacity = 10,
+  count,
+  highlightColor,
+  orientation = "horizontal",
+  revealProgress = 1,
+  rodColor,
+  rodLength,
+  showValueLabel = true,
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: CountingBeadDeviceProps) => {
+  const slots = Math.max(1, Math.round(capacity));
+  const filled = Math.round(clampNumber(count, 0, slots));
+  const r = Math.max(6, beadRadius);
+  // The newest bead slides; EASE.enter shapes the raw 0..1 the caller passes so
+  // the bead settles to a stop. activePulse stays raw (caller-driven) so a still
+  // and a moving frame both read; this is the ONLY motion shaping here.
+  const slide = EASE.enter(clamp01(revealProgress));
+  const pulse = clamp01(activePulse);
+
+  const restingFill = resolveColor(beadColor, colors.reward);
+  const accent = resolveColor(highlightColor, colors.sunshine);
+  const rodStroke = resolveColor(rodColor, colors.textNavy);
+  const ghostStroke = colors.softGrayBlue;
+
+  // Bead pitch packs beads snugly toward the seated (filled) end with a hair of
+  // air between them so each stays its own circle. The rod spans all `slots`.
+  const pitch = r * 2 + Math.max(6, r * 0.32);
+  const span = rodLength ?? slots * pitch;
+  const halfSpan = span / 2;
+  const capOffset = r * 1.15; // end-cap knobs sit just past the bead row
+  // Filled beads seat from the START end; the newest occupies index filled-1.
+  const seatedCenter = (index: number) => -halfSpan + r + index * pitch;
+  // The sliding bead enters from the OPEN end and travels to its seat.
+  const openEnd = halfSpan - r;
+
+  // Geometry along a 1-D axis; orientation maps that axis to x or y. Horizontal
+  // grows left→right, vertical grows bottom→top (beads "stack up").
+  const place = (along: number, across = 0): readonly [number, number] =>
+    orientation === "vertical" ? [across, -along] : [along, across];
+
+  const lightOffset = -r * 0.34; // top-left highlight: one light source from above
+  const valueGap = r * 2.1; // readout sits clear of the rod, in its own zone
+
+  const beadNodes = Array.from({ length: filled }, (_, index) => {
+    const isNewest = index === filled - 1;
+    const seat = seatedCenter(index);
+    const along = isNewest ? openEnd + (seat - openEnd) * slide : seat;
+    const [bx, by] = place(along);
+    const isActive =
+      activeIndex !== undefined && activeIndex >= 0 && index === activeIndex;
+    // Active bead leans toward the accent as the pulse swells; the eye rests on
+    // "this is the one that just made the number grow".
+    const coreFill = isActive ? accent : restingFill;
+
+    return (
+      <g key={index} transform={`translate(${bx} ${by})`}>
+        {/* one-more swell ring — only on the active (just-moved) bead */}
+        {isActive && pulse > 0 ? (
+          <circle
+            cx={0}
+            cy={0}
+            fill="none"
+            opacity={(1 - pulse) * 0.85}
+            r={r + 4 + pulse * r * 0.9}
+            stroke={accent}
+            strokeWidth={5}
+          />
+        ) : null}
+        {/* seated contact shadow on the rod — "it doesn't float" */}
+        <ellipse
+          cx={0}
+          cy={r * 0.72}
+          fill={colors.textNavy}
+          opacity={0.16}
+          rx={r * 0.82}
+          ry={r * 0.26}
+        />
+        <circle
+          cx={0}
+          cy={0}
+          fill={coreFill}
+          r={r}
+          stroke={colors.textNavy}
+          strokeWidth={NAVY_STROKE}
+        />
+        {/* core-shadow band (inset, darker) keeps the sphere reading round */}
+        <path
+          d={`M ${-r * 0.7} ${r * 0.18} A ${r} ${r} 0 0 0 ${r * 0.7} ${r * 0.18}`}
+          fill="none"
+          opacity={0.22}
+          stroke={colors.textNavy}
+          strokeLinecap="round"
+          strokeWidth={r * 0.34}
+        />
+        {/* top highlight — single light source from above */}
+        <ellipse
+          cx={lightOffset}
+          cy={lightOffset}
+          fill={colors.white}
+          opacity={0.55}
+          rx={r * 0.4}
+          ry={r * 0.28}
+          transform={`rotate(-32 ${lightOffset} ${lightOffset})`}
+        />
+      </g>
+    );
+  });
+
+  const ghostNodes = Array.from(
+    { length: Math.max(0, slots - filled) },
+    (_, i) => {
+      const index = filled + i;
+      const [gx, gy] = place(seatedCenter(index));
+
+      return (
+        <circle
+          cx={gx}
+          cy={gy}
+          fill="none"
+          key={`ghost-${index}`}
+          opacity={0.5}
+          r={r * 0.82}
+          stroke={ghostStroke}
+          strokeDasharray="5 7"
+          strokeWidth={3}
+        />
+      );
+    },
+  );
+
+  const [rodStartX, rodStartY] = place(-halfSpan - capOffset);
+  const [rodEndX, rodEndY] = place(halfSpan + capOffset);
+  const [valueCx, valueCy] = place(halfSpan + capOffset + valueGap, 0);
+
+  return (
+    <PlacedGroup {...groupProps} transform={transform} x={x} y={y}>
+      {/* the rod the beads are threaded on */}
+      <line
+        stroke={rodStroke}
+        strokeLinecap="round"
+        strokeWidth={Math.max(6, r * 0.34)}
+        x1={rodStartX}
+        x2={rodEndX}
+        y1={rodStartY}
+        y2={rodEndY}
+      />
+      {/* end-cap knobs so it reads as a real rod, not a floating line */}
+      <circle cx={rodStartX} cy={rodStartY} fill={rodStroke} r={r * 0.32} />
+      <circle cx={rodEndX} cy={rodEndY} fill={rodStroke} r={r * 0.32} />
+      <g className="ghosts">{ghostNodes}</g>
+      <g className="beads">{beadNodes}</g>
+      {showValueLabel ? (
+        <CountStepIndicator
+          progress={1}
+          size={Math.max(44, r * 1.9)}
+          value={filled}
+          x={valueCx}
+          y={valueCy}
+        />
+      ) : null}
     </PlacedGroup>
   );
 };

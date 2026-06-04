@@ -1,8 +1,8 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { EASE, PopIn } from "../motion-primitives";
+import { ConservationMorphBundle, EASE } from "../motion-primitives";
 import {
-  BundleWrap,
   CountStepIndicator,
+  IconAsset,
   LabelCallout,
   StepTally,
   StickGroup,
@@ -16,15 +16,14 @@ import { colors, typography } from "../theme";
 import { tenOnesMakeOneTenAlignedCues } from "./generated/tenOnesMakeOneTenTiming";
 import {
   BADGE_Y,
+  BUNDLE_ASSET_WIDTH,
   BUNDLE_BADGE_FADE_DURATION,
   BUNDLE_COMPRESS_DURATION,
   BUNDLE_COMPRESS_REL_START,
-  BUNDLE_FINAL_WIDTH,
   BUNDLE_GAP,
-  BUNDLE_SPARKLE_DURATION,
-  BUNDLE_SPARKLE_REL_START,
-  BUNDLE_WRAP_DURATION,
-  BUNDLE_WRAP_REL_START,
+  BUNDLE_MORPH_DURATION,
+  BUNDLE_MORPH_REL_AT,
+  BUNDLE_MORPH_REL_START,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   COUNT_FLASH_DURATION,
@@ -275,43 +274,6 @@ const SketchMark = ({
 };
 
 // ---------------------------------------------------------------------------
-// Climax sparkle (one moment in the entire video — visual-design §3).
-// ---------------------------------------------------------------------------
-const Sparkle = ({
-  cx,
-  cy,
-  opacity,
-  radius,
-}: {
-  cx: number;
-  cy: number;
-  opacity: number;
-  radius: number;
-}) => {
-  if (opacity <= 0) {
-    return null;
-  }
-  const inner = radius * 0.46;
-  const points: string[] = [];
-  for (let i = 0; i < 10; i += 1) {
-    const angle = -Math.PI / 2 + (i * Math.PI) / 5;
-    const r = i % 2 === 0 ? radius : inner;
-    points.push(`${cx + Math.cos(angle) * r} ${cy + Math.sin(angle) * r}`);
-  }
-  const d = `M ${points.join(" L ")} Z`;
-  return (
-    <path
-      d={d}
-      fill={colors.sunshine}
-      opacity={opacity}
-      stroke={colors.textNavy}
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
-  );
-};
-
-// ---------------------------------------------------------------------------
 // Scene
 // ---------------------------------------------------------------------------
 export const TenOnesMakeOneTenLessonScene = () => {
@@ -330,17 +292,20 @@ export const TenOnesMakeOneTenLessonScene = () => {
   const recap = cue("recap");
 
   // -----------------------------------------------------------------------
-  // Layout transitions (scatter → row → bundle), all on the SAME StickGroup
-  // instance. We blend `compress` 0→1 during bundle-action so the row
-  // collapses inward as the rope tightens (per visual-design §5).
+  // Layout transitions (scatter → row → gather), all on the SAME StickGroup
+  // instance. We blend `compress` 0→1 across bundle-action's gather window so
+  // the row collapses inward into a tight cluster (per visual-design §5); that
+  // gathered cluster is the `from` the magic-transition morphs into the asset.
   // -----------------------------------------------------------------------
   const showScatter = frame < countOneByOne.startFrame + SCATTER_TO_ROW_REL_START;
-  const showBundle = frame >= bundleAction.startFrame + BUNDLE_WRAP_REL_START;
+  // The sticks switch to the converging "bundle" layout the moment the gather
+  // begins (compress drives the gap), so the cluster is tight by the morph.
+  const showGather = frame >= bundleAction.startFrame + BUNDLE_COMPRESS_REL_START;
 
   let layout: "scatter" | "row" | "bundle";
   if (showScatter) {
     layout = "scatter";
-  } else if (showBundle) {
+  } else if (showGather) {
     layout = "bundle";
   } else {
     layout = "row";
@@ -353,7 +318,7 @@ export const TenOnesMakeOneTenLessonScene = () => {
     OPENING_ENTER_DURATION,
   );
 
-  // Bundle compress 0→1 across bundle-action's first window.
+  // Bundle compress 0→1 across bundle-action's gather window.
   const compressWindow = clampToCue(
     bundleAction.startFrame + BUNDLE_COMPRESS_REL_START,
     BUNDLE_COMPRESS_DURATION,
@@ -366,34 +331,16 @@ export const TenOnesMakeOneTenLessonScene = () => {
     EASE.inOutCubic,
   );
 
-  // Wrap progress — drives the BundleWrap rope + bow.
-  const wrapWindow = clampToCue(
-    bundleAction.startFrame + BUNDLE_WRAP_REL_START,
-    BUNDLE_WRAP_DURATION,
-    bundleAction.endFrame,
-  );
-  const wrapProgress = progress(
-    frame,
-    wrapWindow.start,
-    wrapWindow.start + wrapWindow.duration,
-    EASE.outQuint,
-  );
-
-  // Climax sparkle.
-  const sparkleWindow = clampToCue(
-    bundleAction.startFrame + BUNDLE_SPARKLE_REL_START,
-    BUNDLE_SPARKLE_DURATION,
-    bundleAction.endFrame,
-  );
-  const sparkleRel = frame - sparkleWindow.start;
-  let sparkleOpacity = 0;
-  if (sparkleRel >= 0 && sparkleRel <= sparkleWindow.duration) {
-    const halfway = sparkleWindow.duration / 2;
-    sparkleOpacity =
-      sparkleRel <= halfway
-        ? sparkleRel / halfway
-        : 1 - (sparkleRel - halfway) / halfway;
-  }
+  // -----------------------------------------------------------------------
+  // Magic-transition: ten gathered ones BECOME the roped-bundle asset. The
+  // morph COMPLETES at morphAtFrame (gather done); its FX-masked crossfade
+  // window starts at morphWindowStart, where the persistent gathering
+  // StickGroup hands the `from` slot to ConservationMorphBundle. After the
+  // morph the asset is held — and the conservation peek x-rays it (below).
+  // -----------------------------------------------------------------------
+  const morphWindowStart = bundleAction.startFrame + BUNDLE_MORPH_REL_START;
+  const morphAtFrame = bundleAction.startFrame + BUNDLE_MORPH_REL_AT;
+  const bundleAssetActive = frame >= morphWindowStart;
 
   // -----------------------------------------------------------------------
   // Active-stick walk during count-to-ten. The cue is short (~77f), so we
@@ -510,8 +457,11 @@ export const TenOnesMakeOneTenLessonScene = () => {
   const labelFontSize = 64;
 
   // -----------------------------------------------------------------------
-  // "10" peek label during still-ten-ones — fades in with the rope dim and
-  // fades out as the rope re-solidifies.
+  // Conservation peek during still-ten-ones. We drive ONE 0→1→0 progress:
+  // it RISES over the peek-out window (the held bundle x-rays open to reveal
+  // the ten ones inside), HOLDS at 1, then FALLS back to 0 (the bundle
+  // re-solidifies). ConservationMorphBundle consumes this as `peekProgress` —
+  // it owns the asset↔x-ray crossfade. The "10" label fades in over the hold.
   // -----------------------------------------------------------------------
   const stillStart = stillTenOnes.startFrame;
   const stillEnd = stillTenOnes.endFrame;
@@ -525,19 +475,18 @@ export const TenOnesMakeOneTenLessonScene = () => {
   );
   const peekInEnd = Math.min(peekHoldEnd + STILL_PEEK_IN_DURATION, stillEnd);
 
-  let wrapOpacity = 1;
+  let peekProgress = 0;
   let peekLabelOpacity = 0;
   if (frame >= stillStart && frame < fasterCount.startFrame) {
     if (frame <= peekOutEnd) {
-      const t = progress(frame, stillStart, peekOutEnd, EASE.inOutCubic);
-      wrapOpacity = lerp(1, 0.35, t);
+      peekProgress = progress(frame, stillStart, peekOutEnd, EASE.inOutCubic);
     } else if (frame <= peekHoldEnd) {
-      wrapOpacity = 0.35;
+      peekProgress = 1;
     } else if (frame <= peekInEnd) {
-      const t = progress(frame, peekHoldEnd, peekInEnd, EASE.inOutCubic);
-      wrapOpacity = lerp(0.35, 1, t);
+      peekProgress =
+        1 - progress(frame, peekHoldEnd, peekInEnd, EASE.inOutCubic);
     } else {
-      wrapOpacity = 1;
+      peekProgress = 0;
     }
 
     const peekStart = stillStart + STILL_LABEL_REL_START;
@@ -548,9 +497,6 @@ export const TenOnesMakeOneTenLessonScene = () => {
         1 - progress(frame, peekHoldEnd, peekInEnd, EASE.inOutCubic);
     }
   }
-
-  // Once we reach bundle-action's wrap window, the rope exists.
-  const tieVisible = frame >= bundleAction.startFrame + BUNDLE_WRAP_REL_START;
 
   // -----------------------------------------------------------------------
   // Faster-count right-side "1" badge + "1 步" tally.
@@ -604,53 +550,67 @@ export const TenOnesMakeOneTenLessonScene = () => {
         viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
         width="100%"
       >
-        {/* ===== Persistent 10-stick group (the lesson's identity unit) ===== */}
+        {/* ===== Persistent identity unit (the lesson's "one ten"). =========
+            Before the magic-transition it is the live StickGroup (scatter →
+            row → count → gather). At the morph window the gathered ones BECOME
+            the roped-bundle ASSET via ConservationMorphBundle (AssetMorph's
+            FX-masked crossfade), which then HOLDS the asset and x-rays it open
+            for the conservation peek (still-ten-ones). The same group transform
+            slides it right (faster-count) and back (recap). ============== */}
         <g
           opacity={openingEntryOpacity}
           transform={`translate(${bundleGroupX} ${STICKS_ORIGIN_Y}) scale(${groupScale})`}
         >
-          <StickGroup
-            activeIndex={activeIndex}
-            bundleGap={BUNDLE_GAP}
-            color={colors.reward}
-            compress={compress}
-            count={STICK_COUNT}
-            layout={layout}
-            revealUpTo={revealUpTo}
-            rowGap={ROW_GAP}
-            scatterRadius={SCATTER_RADIUS}
-            scatterRotationRange={22}
-            seed={7}
-            stickLength={STICK_LENGTH}
-            stickThickness={STICK_THICKNESS}
-          />
-          {tieVisible ? (
-            <BundleWrap
-              color={colors.coral}
-              height={BUNDLE_FINAL_WIDTH * 0.32}
-              knotPosition="top"
-              opacity={wrapOpacity}
-              outlineColor={colors.textNavy}
-              style="rope"
-              width={BUNDLE_FINAL_WIDTH}
-              wrapProgress={wrapProgress}
+          {!bundleAssetActive ? (
+            <StickGroup
+              activeIndex={activeIndex}
+              bundleGap={BUNDLE_GAP}
+              color={colors.reward}
+              compress={compress}
+              count={STICK_COUNT}
+              layout={layout}
+              revealUpTo={revealUpTo}
+              rowGap={ROW_GAP}
+              scatterRadius={SCATTER_RADIUS}
+              scatterRotationRange={22}
+              seed={7}
+              stickLength={STICK_LENGTH}
+              stickThickness={STICK_THICKNESS}
             />
-          ) : null}
-          {sparkleOpacity > 0 ? (
-            <PopIn
-              delay={sparkleWindow.start}
-              motion="bouncy"
-              originX={0}
-              originY={-BUNDLE_FINAL_WIDTH * 0.32 - 18}
-            >
-              <Sparkle
-                cx={0}
-                cy={-BUNDLE_FINAL_WIDTH * 0.32 - 18}
-                opacity={sparkleOpacity}
-                radius={20}
-              />
-            </PopIn>
-          ) : null}
+          ) : (
+            <ConservationMorphBundle
+              asset={
+                <IconAsset
+                  name="stick-bundle-roped"
+                  variant="color"
+                  width={BUNDLE_ASSET_WIDTH}
+                />
+              }
+              centerX={0}
+              centerY={0}
+              count={STICK_COUNT}
+              from={
+                <StickGroup
+                  bundleGap={BUNDLE_GAP}
+                  color={colors.reward}
+                  compress={compress}
+                  count={STICK_COUNT}
+                  layout="bundle"
+                  seed={7}
+                  stickLength={STICK_LENGTH}
+                  stickThickness={STICK_THICKNESS}
+                />
+              }
+              morphAtFrame={morphAtFrame}
+              morphDurationInFrames={BUNDLE_MORPH_DURATION}
+              peekColor={colors.coral}
+              peekHighlightInside
+              peekProgress={peekProgress}
+              peekStickColor={colors.reward}
+              peekStickLength={STICK_LENGTH}
+              peekStickThickness={STICK_THICKNESS}
+            />
+          )}
         </g>
 
         {/* ===== Left-side ghost row during faster-count (same primitive!) ===== */}

@@ -26,8 +26,11 @@ export const RIGHT_HALF_CX = 900;
 export const LABEL_X = 640;
 export const LABEL_Y = 545;
 
+// The conservation-peek "10" sits ABOVE the bundle (over the revealed ten ones)
+// so it labels the count being x-rayed, and never overlaps the "一个十" unit
+// label that lingers BELOW the bundle (y=545) during the same window.
 export const PEEK_LABEL_X = 640;
-export const PEEK_LABEL_Y = 515;
+export const PEEK_LABEL_Y = 150;
 
 export const TALLY_X = 640;
 export const TALLY_Y = 490;
@@ -52,10 +55,17 @@ export const FEELS_SLOW_TALLY_DURATION = 14;
 export const BUNDLE_BADGE_FADE_DURATION = 12;
 export const BUNDLE_COMPRESS_REL_START = 0;
 export const BUNDLE_COMPRESS_DURATION = 28;
-export const BUNDLE_WRAP_REL_START = 12;
-export const BUNDLE_WRAP_DURATION = 40;
-export const BUNDLE_SPARKLE_REL_START = 52;
-export const BUNDLE_SPARKLE_DURATION = 14;
+// The magic-transition: ten gathered ones BECOME the roped-bundle asset. The
+// morph COMPLETES at bundle-action.start + BUNDLE_MORPH_REL_AT (after the gather
+// finishes), and AssetMorph's FX-masked crossfade occupies the BUNDLE_MORPH_DURATION
+// frames ending there. BUNDLE_MORPH_REL_START is the first frame the morph
+// window touches (where the persistent StickGroup hands off to the component).
+export const BUNDLE_MORPH_REL_AT = 40;
+export const BUNDLE_MORPH_DURATION = 12;
+export const BUNDLE_MORPH_REL_START = BUNDLE_MORPH_REL_AT - BUNDLE_MORPH_DURATION;
+// On-screen render width of the stick-bundle-roped asset, sized so its visible
+// bundle ≈ the gathered ten ones' bbox at the shared center (identity-preserving).
+export const BUNDLE_ASSET_WIDTH = 300;
 
 export const RENAME_LABEL_REL_START = 4;
 export const RENAME_LABEL_DURATION = 18;

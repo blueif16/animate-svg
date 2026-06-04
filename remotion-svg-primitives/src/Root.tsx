@@ -6,11 +6,41 @@ import {
   COMPONENT_GALLERY_WIDTH,
   componentGalleryDuration,
 } from "./component-gallery/ComponentGallery";
+import {
+  ABSTRACTION_LADDER_DEMO_DURATION,
+  AbstractionLadderColumn,
+  AbstractionLadderRow,
+} from "./scenes/AbstractionLadderDemo";
+import {
+  COUNTING_BEAD_HARDEST_DURATION,
+  COUNTING_BEAD_MULTIPLICITY_DURATION,
+  CountingBeadDeviceHardest,
+  CountingBeadDeviceMultiplicity,
+} from "./scenes/CountingBeadDeviceDemo";
 import { InkWashDemo } from "./scenes/InkWashDemo";
 import {
   AssetMorphDemo,
   ASSET_MORPH_DEMO_DURATION,
 } from "./scenes/AssetMorphDemo";
+import {
+  GLYPH_HARDEST_DURATION,
+  GLYPH_MULTIPLICITY_DURATION,
+  GLYPH_SYMBOLS_DURATION,
+  GlyphStrokeWriterHardest,
+  GlyphStrokeWriterMultiplicity,
+  GlyphStrokeWriterSymbols,
+} from "./scenes/GlyphStrokeWriterDemo";
+import {
+  ORDERED_ROW_SPOTLIGHT_DEMO_DURATION,
+  OrderedRowSpotlightFlip,
+  OrderedRowSpotlightMultiplicity,
+  OrderedRowSpotlightSplit,
+} from "./scenes/OrderedRowSpotlightDemo";
+import {
+  ORDINAL_LABEL_TOKEN_DEMO_DURATION,
+  OrdinalLabelTokenHardest,
+  OrdinalLabelTokenMultiplicity,
+} from "./scenes/OrdinalLabelTokenDemo";
 import {
   CountingDemo,
   CompleteComparisonLesson,
@@ -85,6 +115,30 @@ export const RemotionRoot: React.FC = () => {
         id="PathFollowDemo"
         component={PathFollowDemo}
         durationInFrames={video.sceneDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="AbstractionLadderRow"
+        component={AbstractionLadderRow}
+        durationInFrames={ABSTRACTION_LADDER_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="AbstractionLadderColumn"
+        component={AbstractionLadderColumn}
+        durationInFrames={ABSTRACTION_LADDER_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="CountingBeadDeviceHardest"
+        component={CountingBeadDeviceHardest}
+        durationInFrames={COUNTING_BEAD_HARDEST_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="CountingBeadDeviceMultiplicity"
+        component={CountingBeadDeviceMultiplicity}
+        durationInFrames={COUNTING_BEAD_MULTIPLICITY_DURATION}
         {...compositionDefaults}
       />
       <Composition
@@ -231,6 +285,54 @@ export const RemotionRoot: React.FC = () => {
         id="AssetMorphDemo"
         component={AssetMorphDemo}
         durationInFrames={ASSET_MORPH_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="GlyphStrokeWriterHardest"
+        component={GlyphStrokeWriterHardest}
+        durationInFrames={GLYPH_HARDEST_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="GlyphStrokeWriterMultiplicity"
+        component={GlyphStrokeWriterMultiplicity}
+        durationInFrames={GLYPH_MULTIPLICITY_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="GlyphStrokeWriterSymbols"
+        component={GlyphStrokeWriterSymbols}
+        durationInFrames={GLYPH_SYMBOLS_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="OrderedRowSpotlightSplit"
+        component={OrderedRowSpotlightSplit}
+        durationInFrames={ORDERED_ROW_SPOTLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="OrderedRowSpotlightMultiplicity"
+        component={OrderedRowSpotlightMultiplicity}
+        durationInFrames={ORDERED_ROW_SPOTLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="OrderedRowSpotlightFlip"
+        component={OrderedRowSpotlightFlip}
+        durationInFrames={ORDERED_ROW_SPOTLIGHT_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="OrdinalLabelTokenHardest"
+        component={OrdinalLabelTokenHardest}
+        durationInFrames={ORDINAL_LABEL_TOKEN_DEMO_DURATION}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="OrdinalLabelTokenMultiplicity"
+        component={OrdinalLabelTokenMultiplicity}
+        durationInFrames={ORDINAL_LABEL_TOKEN_DEMO_DURATION}
         {...compositionDefaults}
       />
       <Composition
