@@ -83,6 +83,20 @@
     },
     {
       "kind": "counting",
+      "id": "conservation-bundle",
+      "component": "ConservationBundle",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "conservation",
+        "x-ray",
+        "regroup"
+      ],
+      "useWhen": "Proving a bundled ten still contains ten ones: xrayProgress fades the wrap to a ghost outline and reveals the count inner sticks inside, defusing the 'a ten is just one thing now' misconception.",
+      "avoidWhen": "Showing ten ones BECOMING one ten (the wrap drawing on) rather than the ten still being ten ones — use BundleWrap with wrapProgress.",
+      "status": "experimental"
+    },
+    {
+      "kind": "counting",
       "id": "countable-object",
       "component": "CountableObject",
       "source": "src/shape-primitives/counting.tsx",
@@ -218,6 +232,20 @@
         ]
       },
       "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "place-value-mat",
+      "component": "PlaceValueMat",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "place-value",
+        "columns",
+        "digits"
+      ],
+      "useWhen": "Seating place-value contents in labeled tens/ones (optionally hundreds) columns under headers with a divider and optional written digit per column, to bridge a ten-bundle plus loose ones to the digits of a numeral; pass a child per column or perColumnCount placeholders, highlightColumn to focus one.",
+      "avoidWhen": "Showing bare countables or a ten-structure with no column/digit framing — use a CountableObject set or TenFrameRod.",
+      "status": "experimental"
     },
     {
       "kind": "counting",
