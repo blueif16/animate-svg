@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { colors } from "../theme";
+import { IconAsset } from "./asset";
 import {
   CARD_RADIUS,
   NAVY_STROKE,
@@ -363,6 +364,14 @@ export const PointerHandArrow = ({
   }
 
   if (variant === "hand") {
+    // The pointing-hand asset's index fingertip points RIGHT by default, so the
+    // shared `directionRotation` (right=0, down=90, left=180, up=-90) orients it
+    // exactly like the other variants — no per-direction art. The `color`
+    // variant reads clearly as a friendly peach pointing hand (coral finger,
+    // navy outline) at lesson scale, so it carries the signal on its own.
+    // Sized to ~110 local units so the fingertip footprint matches the
+    // procedural hand it replaces; the outer scale/nudge still come from
+    // `size` + `progress`.
     return (
       <PlacedGroup
         {...groupProps}
@@ -378,22 +387,7 @@ export const PointerHandArrow = ({
         x={x}
         y={y}
       >
-        <path
-          className="body"
-          d="M -34 10 C -40 -2 -30 -12 -17 -6 L 8 5 L 2 -31 C 0 -44 17 -48 22 -34 L 38 18 C 44 37 30 50 9 47 L -10 44 C -22 42 -30 31 -34 10 Z"
-          fill={colors.paleCream}
-          stroke={colors.textNavy}
-          strokeLinejoin="round"
-          strokeWidth={NAVY_STROKE}
-        />
-        <path
-          d="M -12 2 L 11 12 M 3 5 L 13 35"
-          fill="none"
-          opacity={0.34}
-          stroke={colors.textNavy}
-          strokeLinecap="round"
-          strokeWidth={3}
-        />
+        <IconAsset className="body" name="pointing-hand" variant="color" width={110} />
       </PlacedGroup>
     );
   }

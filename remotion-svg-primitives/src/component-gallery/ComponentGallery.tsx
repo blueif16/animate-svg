@@ -33,7 +33,17 @@ type RegistryEntry = {
   kind?: string;
   id: string;
   component: string;
+  status?: string;
+  supersededBy?: string;
 };
+
+// Deprecated entries are QUARANTINED: excluded from their family band AND the
+// recency band, and collected into a single greyed "Legacy / deprecated" band at
+// the very bottom. They keep their demoProps demo (the gallery gate stays happy)
+// — they just live in the legacy band, dimmed, with a "→ <supersededBy>" pointer.
+const isDeprecated = (e: RegistryEntry): boolean => e.status === "deprecated";
+const supersededByOf = (id: string): string =>
+  allRegistryEntries().find((e) => e.id === id)?.supersededBy ?? "";
 
 const familyOrder = [
   { key: "counting", label: "Counting & number", accent: colors.sunshine },
@@ -48,17 +58,26 @@ const familyOrder = [
 type FamilyKey = (typeof familyOrder)[number]["key"];
 
 // Group registry entries into the six families, preserving registry order.
+// Deprecated entries are EXCLUDED here (they render only in the bottom legacy band).
 const collectFamily = (key: FamilyKey): RegistryEntry[] => {
   if (key === "motion") {
-    return (registry.motionComponents as RegistryEntry[]) ?? [];
+    return ((registry.motionComponents as RegistryEntry[]) ?? []).filter(
+      (e) => !isDeprecated(e),
+    );
   }
   if (key === "fx") {
-    return (registry.fxComponents as RegistryEntry[]) ?? [];
+    return ((registry.fxComponents as RegistryEntry[]) ?? []).filter(
+      (e) => !isDeprecated(e),
+    );
   }
   return ((registry.primitives as RegistryEntry[]) ?? []).filter(
-    (p) => p.kind === key,
+    (p) => p.kind === key && !isDeprecated(p),
   );
 };
+
+// Every deprecated entry across all tiers — the bottom "Legacy / deprecated" band.
+const deprecatedEntries = (): RegistryEntry[] =>
+  allRegistryEntries().filter(isDeprecated);
 
 // ---- recency (git-sourced, src/capabilities/recency.json) ----
 type Recency = Record<string, { ts: number; iso: string }>;
@@ -75,7 +94,7 @@ const allRegistryEntries = (): RegistryEntry[] => [
 ];
 const recentEntries = (): RegistryEntry[] =>
   allRegistryEntries()
-    .filter((e) => recencyMap[e.id])
+    .filter((e) => recencyMap[e.id] && !isDeprecated(e))
     .sort(
       (a, b) =>
         (recencyMap[b.id]?.ts ?? 0) - (recencyMap[a.id]?.ts ?? 0) ||
@@ -103,6 +122,7 @@ type PlacedCell = {
   w: number;
   h: number;
   mapped: boolean;
+  legacy?: boolean;
 };
 
 type PlacedBand = {
@@ -124,6 +144,7 @@ const packBand = (
   bandTop: number,
   cells: PlacedCell[],
   bands: PlacedBand[],
+  legacy = false,
 ): number => {
   const headerBottom = bandTop + BAND_HEADER_H;
   let rowTop = headerBottom + 12;
@@ -142,6 +163,7 @@ const packBand = (
         w: CELL_W,
         h: rowHeight,
         mapped: Boolean(demoProps[entry.id]),
+        legacy,
       });
     });
     rowTop += rowHeight + ROW_GAP;
@@ -190,6 +212,22 @@ const layoutAll = () => {
     );
   }
 
+  // Bottom band: superseded capabilities, greyed. They are excluded from every
+  // family + the recency band above and quarantined here, each with a
+  // "→ <supersededBy>" pointer rendered in the cell.
+  const legacy = deprecatedEntries();
+  if (legacy.length) {
+    cursorY = packBand(
+      "Legacy / deprecated",
+      colors.softGrayBlue,
+      legacy,
+      cursorY,
+      cells,
+      bands,
+      true,
+    );
+  }
+
   return { bands, cells, totalHeight: cursorY + 40 };
 };
 
@@ -235,22 +273,26 @@ const Cell = ({ cell }: { cell: PlacedCell }) => {
   const demo = demoProps[cell.id];
   const centerX = cell.x + cell.w / 2;
   const centerY = cell.y + cell.h / 2 + 8; // a touch low to leave room for label
+  // Legacy cells are dimmed (grey surface, faded demo) and carry a
+  // "→ <supersededBy>" pointer to the sanctioned replacement.
+  const replacement = cell.legacy ? supersededByOf(cell.id) : "";
 
   return (
-    <g>
+    <g opacity={cell.legacy ? 0.55 : 1}>
       <rect
-        fill={cell.mapped ? colors.white : "#FFE2E2"}
+        fill={cell.legacy ? colors.cream : cell.mapped ? colors.white : "#FFE2E2"}
         height={cell.h}
         rx={18}
-        stroke={cell.mapped ? "#E3E8F0" : colors.coral}
-        strokeWidth={cell.mapped ? 2 : 4}
+        stroke={cell.legacy ? colors.softGrayBlue : cell.mapped ? "#E3E8F0" : colors.coral}
+        strokeDasharray={cell.legacy ? "10 8" : undefined}
+        strokeWidth={cell.legacy ? 2.5 : cell.mapped ? 2 : 4}
         width={cell.w}
         x={cell.x}
         y={cell.y}
       />
       {/* id label, top-left of cell */}
       <text
-        fill={cell.mapped ? colors.textNavy : colors.coral}
+        fill={cell.legacy ? colors.softGrayBlue : cell.mapped ? colors.textNavy : colors.coral}
         fontFamily={FONT}
         fontSize={22}
         fontWeight={900}
@@ -259,6 +301,19 @@ const Cell = ({ cell }: { cell: PlacedCell }) => {
       >
         {cell.id}
       </text>
+      {/* "→ <supersededBy>" replacement pointer (legacy cells only), top-left under the id */}
+      {cell.legacy && replacement ? (
+        <text
+          fill={colors.softGrayBlue}
+          fontFamily={FONT}
+          fontSize={18}
+          fontWeight={800}
+          x={cell.x + 18}
+          y={cell.y + 56}
+        >
+          {`→ ${replacement}`}
+        </text>
+      ) : null}
       <DateChip cell={cell} />
       {cell.mapped ? (
         <g transform={`translate(${centerX} ${centerY})`}>{demo.render()}</g>

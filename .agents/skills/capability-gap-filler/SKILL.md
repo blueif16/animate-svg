@@ -39,6 +39,8 @@ For every visual a KP needs, walk the rule and STOP at the first hit:
 
 A "gap" is only real when steps 1–2 miss. Over-building is the failure mode — most demands REUSE.
 
+**Never reach for a `status: deprecated` capability** — it is quarantined into the digest's "Deprecated" section and the gallery's Legacy band precisely because it is *not* the right way; use its `supersededBy` replacement instead (e.g. `bundle-wrap` → `asset-morph`).
+
 ---
 
 ## Reading the curriculum (the demand source)

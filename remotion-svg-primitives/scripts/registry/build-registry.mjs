@@ -76,12 +76,15 @@ const sourceFor = (barrelAbs, moduleSpec) => {
 };
 
 // Carry hand-authored prose forward by component id; (re)generate structure.
+// supersededBy is hand-authored (the deprecation pointer) — carry it forward too,
+// only when present, so a deprecated entry's replacement id survives regenerate.
 const proseFields = (prior) => ({
   intent: prior?.intent ?? [],
   useWhen: prior?.useWhen ?? "",
   avoidWhen: prior?.avoidWhen ?? "",
   ...(prior?.variants ? {variants: prior.variants} : {}),
   status: prior?.status ?? "undocumented",
+  ...(prior?.supersededBy ? {supersededBy: prior.supersededBy} : {}),
 });
 
 // --- primitives[] -----------------------------------------------------------
