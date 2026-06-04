@@ -63,6 +63,16 @@ Reserve emphasis (sparkle, scale pulse, color flash, `motion="bouncy"`) for ONE 
 - Marks anchor to zones (per `kids-eye` §1.5). Marks may TRACE OVER zone-objects (e.g. wrap-arc following a tie path) but never SIT INSIDE zone-labels or duplicate what a label says.
 - **Optional `boil` for marks that linger** — `<TeacherMark boil={{ magnitude: 1, holdFrames: 4 }}>` makes a long-held mark wobble subtly so it reads as a teacher's hand, not a frozen overlay. Decorative-only, opt-in, at most one or two per video. Full reach guide: `CAPABILITIES.md#sketch-boil`. See also `sketch-explainer-layer` §1.1.
 
+## Primitive form & shading
+
+The taste bar a primitive must meet to read as the thing it claims to be at real render size (source: `research/svg-illustration-craft-2026-06-03.md` §B/§D). A flat circle pretending to be a fruit fails this bar; the primitive-builder owns clearing it (CLAUDE.md "PRIMITIVE QUALITY IS OWNED BY WAVE 3").
+
+- **DESIGN THE SILHOUETTE / SHAPES FIRST.** Lock a readable shape before any detail — if the silhouette doesn't read at glance, no shading saves it.
+- **One light source, from above.** Every form is lit consistently; lighter = raised, darker = inset.
+- **Name the value zones and layer them:** highlight → core shadow (the terminator, the darkest band) → reflected light → contact/occlusion shadow (the dark seat where it meets the ground). The contact shadow is the cheapest "it doesn't float" win.
+- **Collapse to ~3 value groups** (lights / mediums / darks); squint-test the grouping. Softer edges read rounder.
+- **60-30-10 palette, judged relative to neighbors** — color reads differently in context; always test the primitive against its actual neighbors, not in isolation. (This composes with the 4-meaningful-color rule above.)
+
 ## Anti-patterns specific to early-math
 
 - **Cartoon characters as teacher proxies.** No mascots, no anthropomorphized sticks. The teacher is implicit (voice + sketch marks); the teaching object stays as itself.
