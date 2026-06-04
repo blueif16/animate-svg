@@ -33,6 +33,7 @@ const familyOrder = [
   { key: "literacy", label: "Literacy & pinyin", accent: colors.coral },
   { key: "interaction", label: "Interaction & sorting", accent: colors.sky },
   { key: "sketch", label: "Sketch / teacher marks", accent: colors.lavender },
+  { key: "asset", label: "Generated assets (traced flat SVG)", accent: colors.reward },
   { key: "motion", label: "Motion components", accent: colors.mint },
   { key: "fx", label: "FX components", accent: colors.reward },
 ] as const;

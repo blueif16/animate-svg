@@ -43,6 +43,7 @@
     "lesson:contact-sheet": "node scripts/make-contact-sheet.mjs",
     "lesson:animatic": "node scripts/lesson-animatic.mjs",
     "voice:lesson": "node node_modules/@studio/narration-kit/bin/generate-voice.mjs",
+    "icons:build": "node scripts/registry/build-icon-assets.mjs",
     "registry:build": "node scripts/registry/build-registry.mjs && node scripts/registry/catalog-digest.mjs && node --no-warnings=ExperimentalWarning scripts/registry/export-schema.mjs",
     "registry:check": "node scripts/registry/build-registry.mjs --check && node scripts/registry/catalog-digest.mjs --check && node --no-warnings=ExperimentalWarning scripts/registry/export-schema.mjs --check",
     "registry:digest": "node scripts/registry/catalog-digest.mjs",

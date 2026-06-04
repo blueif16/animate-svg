@@ -44,12 +44,13 @@ const componentTable = (entries) => {
   return lines.join("\n");
 };
 
-const KIND_ORDER = ["counting", "literacy", "interaction", "sketch"];
+const KIND_ORDER = ["counting", "literacy", "interaction", "sketch", "asset"];
 const KIND_TITLE = {
   counting: "Counting & number",
   literacy: "Literacy & pinyin",
   interaction: "Interaction & sorting",
   sketch: "Sketch / teacher marks",
+  asset: "Generated assets (traced flat SVG)",
 };
 
 const totalDocumented = (arr) => arr.filter((e) => e.useWhen && e.useWhen.trim()).length;

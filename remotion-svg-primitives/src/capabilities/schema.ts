@@ -40,18 +40,23 @@ const capabilityBase = {
 
 // ---------------------------------------------------------------------------
 // primitives[] — discriminated on `kind` (the source-file family).
-// Observed kinds: counting | literacy | interaction | sketch.
+// Observed kinds: counting | literacy | interaction | sketch | asset.
+// `asset` is the generated+traced flat-SVG family (src/shape-primitives/
+// asset.tsx, IconAsset) — fixed-form representational objects, not parametric
+// teaching primitives.
 // ---------------------------------------------------------------------------
 const countingPrimitiveSchema = z.object({kind: z.literal("counting"), ...capabilityBase});
 const literacyPrimitiveSchema = z.object({kind: z.literal("literacy"), ...capabilityBase});
 const interactionPrimitiveSchema = z.object({kind: z.literal("interaction"), ...capabilityBase});
 const sketchPrimitiveSchema = z.object({kind: z.literal("sketch"), ...capabilityBase});
+const assetPrimitiveSchema = z.object({kind: z.literal("asset"), ...capabilityBase});
 
 export const primitiveSchema = z.discriminatedUnion("kind", [
   countingPrimitiveSchema,
   literacyPrimitiveSchema,
   interactionPrimitiveSchema,
   sketchPrimitiveSchema,
+  assetPrimitiveSchema,
 ]);
 
 // ---------------------------------------------------------------------------

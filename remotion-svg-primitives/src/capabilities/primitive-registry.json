@@ -688,6 +688,26 @@
         ]
       },
       "status": "stable"
+    },
+    {
+      "kind": "asset",
+      "id": "icon-asset",
+      "component": "IconAsset",
+      "source": "src/shape-primitives/asset.tsx",
+      "intent": [
+        "asset",
+        "generated",
+        "representational"
+      ],
+      "useWhen": "Render a generated+traced flat SVG asset for a fixed-form representational object — a bundle, mascot, prop — that's too complex to hand-code; pass the asset name, placement, scale/size, and (color variant) on-palette theme fills, or variant=mono tinted via a theme token.",
+      "avoidWhen": "A PARAMETRIC teaching primitive that must count/morph/preserve identity — hand-code those; IconAsset is fixed-form decorative and cannot vary its count or split into parts.",
+      "variants": {
+        "variant": [
+          "color",
+          "mono"
+        ]
+      },
+      "status": "experimental"
     }
   ],
   "motionComponents": [

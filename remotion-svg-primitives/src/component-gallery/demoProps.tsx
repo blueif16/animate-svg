@@ -10,6 +10,7 @@ import {
   EquationStrip,
   FenHeDiagram,
   HanziCard,
+  IconAsset,
   LabelCallout,
   ListenIcon,
   MouthShapeIcon,
@@ -535,6 +536,30 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+  },
+
+  // -------------------------------------------------------------------- asset
+  "icon-asset": {
+    render: () => (
+      <Strip
+        gap={230}
+        items={[
+          {
+            caption: "color",
+            node: <IconAsset name="stick-bundle-roped" variant="color" width={190} />,
+          },
+          {
+            caption: "mono · navy",
+            node: <IconAsset name="stick-bundle-roped" variant="mono" tint="textNavy" width={190} />,
+          },
+          {
+            caption: "mono · coral",
+            node: <IconAsset name="stick-bundle-roped" variant="mono" tint="coral" width={190} />,
+          },
+        ]}
+      />
+    ),
+    tall: true,
   },
 
   // ------------------------------------------------------------------- motion

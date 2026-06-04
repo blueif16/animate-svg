@@ -6,7 +6,7 @@
 >
 > Source of truth for SHAPE: `src/capabilities/schema.ts`. Source of truth for WHAT EXISTS: the component barrels + `EASE`/`SPRING` keys. This menu is generated — never hand-edited.
 
-**Coverage:** 47/47 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
+**Coverage:** 48/48 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
 
 ## SVG teaching primitives
 
@@ -63,6 +63,12 @@
 | id | component | variants | use when |
 | --- | --- | --- | --- |
 | `teacher-mark` | `TeacherMark` | kind: underline \| wrap-arc \| label-arrow \| vs-mark | Hand-drawn teacher ink (underline, wrap-arc, label-arrow, vs-mark) that draws on via drawProgress with optional boil wobble and pen-settle. |
+
+### Generated assets (traced flat SVG) (`asset`)
+
+| id | component | variants | use when |
+| --- | --- | --- | --- |
+| `icon-asset` | `IconAsset` | variant: color \| mono | Render a generated+traced flat SVG asset for a fixed-form representational object — a bundle, mascot, prop — that's too complex to hand-code; pass the asset name, placement, scale/size, and (color variant) on-palette theme fills, or variant=mono tinted via a theme token. |
 
 ## Motion components
 
