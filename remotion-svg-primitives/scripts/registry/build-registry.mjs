@@ -54,8 +54,9 @@ const MODULE_KIND = {
   "./literacy": "literacy",
   "./interaction": "interaction",
   "./sketch": "sketch",
+  "./asset": "asset",
 };
-const KIND_ORDER = ["counting", "literacy", "interaction", "sketch"];
+const KIND_ORDER = ["counting", "literacy", "interaction", "sketch", "asset"];
 
 // PascalCase identifier -> kebab id. "FenHeDiagram" -> "fen-he-diagram",
 // "FXDefs" -> "fx-defs", "PopIn" -> "pop-in".

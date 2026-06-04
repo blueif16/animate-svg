@@ -1,0 +1,23 @@
+{
+  "name": "stick-bundle-roped",
+  "description": "a small neat bundle of about ten wooden counting sticks tied together with a rope",
+  "model": "gemini-3.1-flash-image",
+  "full_prompt": "A single, centered a small neat bundle of about ten wooden counting sticks tied together with a rope, drawn as ONE object only.\nStyle: flat papercraft vector sticker / children's-book cut-paper illustration. Bold, solid FLAT fills with absolutely NO gradients, NO shading, NO highlights, NO drop shadows, NO photographic realism, NO 3D, NO texture. Every shape is one uniform color. A clean, even, dark navy outline (deep navy #24324B) traces every shape with a consistent medium-thick line weight, like a coloring-book.\nColor palette \u2014 use ONLY these, flat and saturated: warm coral (#FF8A65), sunshine yellow (#FFD85A), sky blue (#5EC8F8), mint green (#66DDAA), with the dark navy (#24324B) reserved for the outline. Wood/natural elements may use a flat warm tan from the same family. Keep it to two or three fill colors total \u2014 simple.\nBackground: PLAIN PURE WHITE, completely empty, no scene, no surface, no shadow.\nThe object fills most of the frame, centered, friendly and rounded.\nNo text, no letters, no numbers, no labels, no watermark, no logo, no border.",
+  "date": "2026-06-03",
+  "source": "gemini-nano-banana",
+  "license": "Generated author-time by Google Gemini image model. Output is a static, committed asset; no per-use attribution required, subject to Google's generative-AI terms. Provenance recorded here for audit.",
+  "trace": {
+    "name": "stick-bundle-roped",
+    "layers": {
+      "coral": 1,
+      "yellow": 1,
+      "orange": 2,
+      "wood": 4,
+      "stroke": 2
+    },
+    "color_bytes": 10862,
+    "mono_bytes": 5910
+  },
+  "raw_png": "/Users/tk/Desktop/animation-test/remotion-svg-primitives/out/stick-bundle-roped.raw.png",
+  "retrace_note": "Re-traced from the existing keyed PNG after adding the --icon-wood palette swatch (#D89A50) to build_icon_svg.PALETTE_FILLS. No image API call; pixels unchanged."
+}

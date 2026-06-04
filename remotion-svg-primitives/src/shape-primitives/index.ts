@@ -121,6 +121,8 @@ export type {
   TeacherMarkPathParams,
   TeacherMarkProps,
 } from "./sketch";
+export { IconAsset } from "./asset";
+export type { IconAssetProps, IconAssetVariant } from "./asset";
 export type {
   PlacementProps,
   PrimitiveGroupProps,
