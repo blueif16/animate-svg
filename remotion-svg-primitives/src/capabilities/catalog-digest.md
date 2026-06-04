@@ -15,7 +15,6 @@
 | id | component | variants | use when |
 | --- | --- | --- | --- |
 | `answer-tile` | `AnswerTile` | — | A tappable answer or choice card holding a number, text, or icon child, with correct/wrong/selected/focused states and a state badge. |
-| `bundle-wrap` | `BundleWrap` | style: rope \| band \| ribbon; knotPosition: top \| left \| right | Wrapping a row of ten sticks into a bundle with a rope, band, or ribbon that draws on via wrapProgress to show ten ones becoming one ten. |
 | `comparison-symbol` | `ComparisonSymbol` | symbol: < \| = \| >; style: formal \| mouth | Placing a >, <, or = between two quantities, optionally as a hungry-mouth glyph or hidden behind a ? until revealed. |
 | `conservation-bundle` | `ConservationBundle` | — | Proving a bundled ten still contains ten ones: xrayProgress fades the wrap to a ghost outline and reveals the count inner sticks inside, defusing the 'a ten is just one thing now' misconception. |
 | `countable-object` | `CountableObject` | variant: animal \| banana \| block \| fish \| fruit \| star | A single cute countable thing (fish, star, fruit, etc.) to populate a counting or comparison set, with selected/dimmed/label states. |
@@ -132,4 +131,10 @@ Fixed-form decorative/representational objects (traced flat SVG, on-palette). RE
 - **object** — `bookmark`, `crayon`, `crystal-ball`, `dashboard-card`, `document-note`, `ear-listening`, `ear-soundwave`, `eraser`, `eye`, `flashcard-stack`, `gear`, `house`, `jigsaw-four-piece`, `journey-path-flag`, `layout-tiles`, `lightbulb-circuit`, `lightbulb-idea`, `magic-wand`, `magnet`, `microphone`, `open-book`, `pen`, `pencil`, `pencil-box`, `prism-rainbow`, `reward-chest-card`, `school-bag`, `scroll-document`, `shield-heart`, `stopwatch`, `treasure-chest`, `treasure-map`
 - **symbol** — `checkmark-circle`, `pause-button`, `play-button`, `question-mark-circle`, `replay-arrow`, `sound-wave-bars`, `speaker-volume`, `speech-bubble-dots`, `sync-arrows`, `tap-gesture`, `upload-arrow`
 - **tool** — `beaker`, `magnifying-glass`, `microscope`, `ruler-set-square`
+
+## Deprecated — superseded, do not use
+
+These capabilities still exist in code (legacy callers compile) but are NOT the right way to build new work. Reach for the `→ use` replacement instead.
+
+- `bundle-wrap` → use `asset-morph` — DEPRECATED — the old procedural rope/ribbon wrap. Superseded by AssetMorph morphing the sticks into the stick-bundle-roped IconAsset (the FX-masked magic-transition), which reads cleaner at render size. Do not reach for it in new work; use asset-morph. Legacy Kp2 lessons still import it.
 

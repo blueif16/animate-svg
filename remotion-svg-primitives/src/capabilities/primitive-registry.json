@@ -41,7 +41,7 @@
         "ten"
       ],
       "useWhen": "Wrapping a row of ten sticks into a bundle with a rope, band, or ribbon that draws on via wrapProgress to show ten ones becoming one ten.",
-      "avoidWhen": "Grouping objects with no physical wrap gesture, or drawing the sticks themselves — use StickGroup with layout=bundle.",
+      "avoidWhen": "DEPRECATED — the old procedural rope/ribbon wrap. Superseded by AssetMorph morphing the sticks into the stick-bundle-roped IconAsset (the FX-masked magic-transition), which reads cleaner at render size. Do not reach for it in new work; use asset-morph. Legacy Kp2 lessons still import it.",
       "variants": {
         "style": [
           "rope",
@@ -54,7 +54,8 @@
           "right"
         ]
       },
-      "status": "stable"
+      "status": "deprecated",
+      "supersededBy": "asset-morph"
     },
     {
       "kind": "counting",

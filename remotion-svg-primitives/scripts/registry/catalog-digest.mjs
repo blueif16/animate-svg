@@ -56,6 +56,14 @@ const KIND_TITLE = {
 const totalDocumented = (arr) => arr.filter((e) => e.useWhen && e.useWhen.trim()).length;
 const allEntries = [...reg.primitives, ...reg.motionComponents, ...reg.fxComponents];
 
+// Deprecated entries are QUARANTINED: dropped from every live family/component
+// table (the reuse menu an agent reads must never list a superseded cap as a
+// live option) and instead collected into the "Deprecated" section at the very
+// bottom. `live` is the menu filter; `isDeprecated` collects the quarantine set.
+const isDeprecated = (e) => e.status === "deprecated";
+const live = (arr) => arr.filter((e) => !isDeprecated(e));
+const deprecatedEntries = allEntries.filter(isDeprecated);
+
 const out = [];
 out.push(BANNER);
 out.push("");
@@ -75,7 +83,7 @@ out.push(
 // --- SVG primitives (the PRIMITIVE tier), grouped by family -----------------
 out.push("\n## SVG teaching primitives\n");
 for (const kind of KIND_ORDER) {
-  const entries = reg.primitives.filter((p) => p.kind === kind);
+  const entries = live(reg.primitives.filter((p) => p.kind === kind));
   if (!entries.length) continue;
   out.push(`### ${KIND_TITLE[kind]} (\`${kind}\`)\n`);
   out.push(componentTable(entries));
@@ -84,10 +92,10 @@ for (const kind of KIND_ORDER) {
 
 // --- motion + fx components -------------------------------------------------
 out.push("## Motion components\n");
-out.push(componentTable(reg.motionComponents));
+out.push(componentTable(live(reg.motionComponents)));
 out.push("");
 out.push("## FX components\n");
-out.push(componentTable(reg.fxComponents));
+out.push(componentTable(live(reg.fxComponents)));
 out.push("");
 
 // --- motion vocabulary ------------------------------------------------------
@@ -118,6 +126,24 @@ if (fs.existsSync(assetCatalogPath)) {
   );
   for (const [category, list] of Object.entries(ac.byCategory || {})) {
     out.push(`- **${category}** — ${list.map((n) => `\`${n}\``).join(", ")}`);
+  }
+  out.push("");
+}
+
+// --- deprecated (quarantine) ------------------------------------------------
+// Superseded capabilities, pulled OUT of the live menu above and listed here so
+// the reason + the replacement to reach for instead are both visible. An agent
+// reading the menu never sees these as a live option; if it lands on one, this
+// section tells it where to go.
+if (deprecatedEntries.length) {
+  out.push("## Deprecated — superseded, do not use\n");
+  out.push(
+    "These capabilities still exist in code (legacy callers compile) but are NOT " +
+      "the right way to build new work. Reach for the `→ use` replacement instead.\n",
+  );
+  for (const e of deprecatedEntries) {
+    const target = e.supersededBy ? `\`${e.supersededBy}\`` : "— (no replacement set) —";
+    out.push(`- \`${e.id}\` → use ${target} — ${cell(e.avoidWhen)}`);
   }
   out.push("");
 }

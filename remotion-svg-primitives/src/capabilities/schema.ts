@@ -35,7 +35,15 @@ const capabilityBase = {
   // Pure-derivable prop variants (e.g. {motion: ["snap","bouncy","settle"]}).
   // Hand-authored in cut 1; cross-checked report-only against the source union.
   variants: z.record(z.string(), z.array(z.string())).optional(),
+  // Lifecycle: "undocumented" (just discovered, no prose yet) | "experimental" |
+  // "stable" | "deprecated" (superseded — quarantined into the Legacy band of the
+  // gallery + the Deprecated section of the digest, never offered as a live reuse
+  // option). Kept a free string by DESIGN (the schema models structure; the .mjs
+  // gates own membership) — "deprecated" is just the sanctioned quarantine value.
   status: z.string(),
+  // When status === "deprecated", the id of the capability to reach for instead
+  // (e.g. bundle-wrap -> asset-morph). Optional; absent for non-deprecated entries.
+  supersededBy: z.string().optional(),
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -72,6 +80,8 @@ export const reusableComponentSchema = z
     avoidWhen: z.string(),
     variants: z.record(z.string(), z.array(z.string())).optional(),
     status: z.string(),
+    // See capabilityBase.supersededBy — the replacement id when status is "deprecated".
+    supersededBy: z.string().optional(),
   })
   .passthrough();
 
