@@ -132,7 +132,10 @@ export const IconAsset = ({
           own viewBox scales the traced paths to renderW × renderH. */}
       <g transform={`translate(${-renderW / 2} ${-renderH / 2})`}>
         <svg
+          fillRule="evenodd"
           height={renderH}
+          strokeLinecap="round"
+          strokeLinejoin="round"
           style={Object.keys(style).length ? style : undefined}
           viewBox={asset.viewBox}
           width={renderW}

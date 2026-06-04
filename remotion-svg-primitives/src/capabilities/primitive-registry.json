@@ -712,6 +712,25 @@
   ],
   "motionComponents": [
     {
+      "id": "asset-morph",
+      "component": "AssetMorph",
+      "source": "src/motion-primitives/AssetMorph.tsx",
+      "intent": [
+        "morph",
+        "transition",
+        "parametric-to-asset"
+      ],
+      "useWhen": "Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a SparkleBurst over the swap while the arriving element settles, so ten sticks BECOME one roped bundle (direction=bundle) or a bundle un-bundles into fanning sticks (direction=unbundle). Caller supplies from/to and a shared centerX/centerY (bbox-matched so identity is preserved); atFrame is cues[id].startFrame+offset.",
+      "avoidWhen": "Swapping two things that are NOT the same object (no identity to preserve) — use a plain cut or PopIn; or morphing at multiplicity where each unit needs its own highlight — keep those parametric. The teaching mechanics (the sticks gathering/counting) stay on the parametric from; AssetMorph only owns the masked swap.",
+      "variants": {
+        "direction": [
+          "bundle",
+          "unbundle"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
       "id": "drag",
       "component": "Drag",
       "source": "src/motion-primitives/Drag.tsx",

@@ -8,6 +8,10 @@ import {
 } from "./component-gallery/ComponentGallery";
 import { InkWashDemo } from "./scenes/InkWashDemo";
 import {
+  AssetMorphDemo,
+  ASSET_MORPH_DEMO_DURATION,
+} from "./scenes/AssetMorphDemo";
+import {
   CountingDemo,
   CompleteComparisonLesson,
   CompleteFenYuHeLesson,
@@ -221,6 +225,12 @@ export const RemotionRoot: React.FC = () => {
         id="InkWashDemo"
         component={InkWashDemo}
         durationInFrames={90}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="AssetMorphDemo"
+        component={AssetMorphDemo}
+        durationInFrames={ASSET_MORPH_DEMO_DURATION}
         {...compositionDefaults}
       />
       <Composition
