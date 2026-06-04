@@ -407,6 +407,26 @@
     },
     {
       "kind": "literacy",
+      "id": "listen-icon",
+      "component": "ListenIcon",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "speaker",
+        "audio-affordance",
+        "tap-to-hear"
+      ],
+      "useWhen": "Marking that a sound or syllable can be played — a small speaker icon whose sound arcs swell in state=playing (driven by progress) to signal audio is available here.",
+      "avoidWhen": "Teaching how a sound is articulated (lip position) — use MouthShapeIcon; ListenIcon is an audio affordance, not an articulation teaching icon.",
+      "variants": {
+        "state": [
+          "idle",
+          "playing"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "kind": "literacy",
       "id": "mouth-shape-icon",
       "component": "MouthShapeIcon",
       "source": "src/shape-primitives/literacy.tsx",
@@ -448,6 +468,29 @@
         ]
       },
       "status": "stable"
+    },
+    {
+      "kind": "literacy",
+      "id": "pitch-playhead",
+      "component": "PitchPlayhead",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "pitch",
+        "playhead",
+        "tone-trace"
+      ],
+      "useWhen": "Riding a moving dot along a Mandarin tone contour by progress (0..1) to show where the pitch is right now, layered over a ToneMarkGlyph of the same tone and size.",
+      "avoidWhen": "Drawing the tone contour shape itself — use ToneMarkGlyph, which draws the stroke this playhead travels along.",
+      "variants": {
+        "tone": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "status": "experimental"
     },
     {
       "kind": "literacy",
