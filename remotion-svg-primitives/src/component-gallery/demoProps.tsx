@@ -542,19 +542,19 @@ export const demoProps: Record<string, GalleryDemo> = {
   "icon-asset": {
     render: () => (
       <Strip
-        gap={230}
+        gap={210}
         items={[
           {
-            caption: "color",
-            node: <IconAsset name="stick-bundle-roped" variant="color" width={190} />,
+            caption: "stick-bundle-roped",
+            node: <IconAsset name="stick-bundle-roped" variant="color" width={180} />,
+          },
+          {
+            caption: "pointing-hand",
+            node: <IconAsset name="pointing-hand" variant="color" width={180} />,
           },
           {
             caption: "mono · navy",
-            node: <IconAsset name="stick-bundle-roped" variant="mono" tint="textNavy" width={190} />,
-          },
-          {
-            caption: "mono · coral",
-            node: <IconAsset name="stick-bundle-roped" variant="mono" tint="coral" width={190} />,
+            node: <IconAsset name="pointing-hand" variant="mono" tint="textNavy" width={180} />,
           },
         ]}
       />
