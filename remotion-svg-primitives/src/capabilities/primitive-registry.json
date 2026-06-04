@@ -121,6 +121,28 @@
     },
     {
       "kind": "counting",
+      "id": "counting-bead-device",
+      "component": "CountingBeadDevice",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "number-sequence",
+        "plus-one",
+        "counter",
+        "bead",
+        "one-more"
+      ],
+      "useWhen": "Making 'each next number is the previous plus one' physically visible on a single-rod bead counter (计数器): the displayed number is driven by count (0..capacity), and pulling one more bead onto the rod grows it by exactly one — 1→2→3→4→5. The newest bead (index count-1) slides into its seat via revealProgress (eased) and, when activeIndex points at it, swells a 'just-moved' ring via activePulse, while the value readout flips to the new count — so one more bead and a bigger number are one synchronized beat. Reach for it in any 1~N number-sequence / 接着数 / +1 lesson; horizontal grows left→right, vertical stacks bottom→top; beadColor/rodColor/capacity/beadRadius all vary by prop.",
+      "avoidWhen": "Showing a fixed-form decorative abacus with no count/progress (use the abacus IconAsset), or counting loose scattered objects with no ordered next-one (use StickGroup/CountStepIndicator). Not for place-value tens/ones (use PlaceValueMat) or a ten-fill grid (use TenFrameRod).",
+      "variants": {
+        "orientation": [
+          "horizontal",
+          "vertical"
+        ]
+      },
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
       "id": "count-step-indicator",
       "component": "CountStepIndicator",
       "source": "src/shape-primitives/counting.tsx",
@@ -208,6 +230,21 @@
       ],
       "useWhen": "Showing position, ticks, highlights, and animated arc jumps along a min-to-max number line with a current-value badge.",
       "avoidWhen": "Counting discrete objects with no linear scale — use a CountableObject set or StickGroup.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
+      "id": "ordinal-label-token",
+      "component": "OrdinalLabelToken",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": [
+        "ordinal",
+        "position-label",
+        "prefixed-numeral"
+      ],
+      "useWhen": "Marking a POSITION (序数) rather than a quantity (基数) with a two-part label whose PREFIX is visually distinct from the digit — a NumberCard surface carrying a caller-supplied prefix glyph (第 or any locale prefix, default none) in a separate prefixColor/prefixWeight beside the value digit. Reach for it whenever the teaching point is 'same number, only the prefix tells position from count': stand a 第N token beside a bare same-height NumberCard so the digit reads identical and ONLY the 第 differs, label members of an ordered queue (第1..第N) above the row, or tag any labeled-sequence position. Prop-driven and lesson-agnostic — value:number|string, prefix:ReactNode, prefixColor/prefixWeight emphasis, color for the digit, selected/focused/correct/wrong states, width/height + x/y/transform placement; bakes no Chinese, value, or topic. Entrance is the caller's PopIn at a cue offset; state is prop-driven (no own animation).",
+      "avoidWhen": "The label is a bare cardinal with one fill/weight — use NumberCard (no distinguished prefix). The whole ordered-counting beat (walk the row 1→N, spotlight the Nth, contrast 一共N vs 第N, renumber on a direction flip) is the demand — use OrderedRowSpotlight, which composes its own inline ordinal token. The label is an answer choice with an icon — use AnswerTile.",
       "variants": {},
       "status": "stable"
     },
@@ -712,6 +749,32 @@
   ],
   "motionComponents": [
     {
+      "id": "abstraction-ladder",
+      "component": "AbstractionLadder",
+      "source": "src/motion-primitives/AbstractionLadder.tsx",
+      "intent": [
+        "abstraction",
+        "cardinality",
+        "conservation",
+        "representation-ladder"
+      ],
+      "useWhen": "Revealing ONE quantity surviving across an ordered ladder of representations — 实物 → 小棒(1:1) → 圆点 → 数字 — in one continuous left→right (or top→down) reveal, so the SAME count is seen conserved at every step of abstraction and the child stops splitting 'counting objects' from 'the number symbol'. Faint 1:1 connectors tie like-index units between adjacent rungs, and every unit converges on the single numeral card — the 'N个XX用N表示' cardinality payoff. Prop-driven: count:number; stages (caller picks/orders the rungs, defaults the full ladder); objectVariant for the objects rung; atFrame+perStageDurationFrames (cue-relative, the component derives each rung's local progress); orientation row|column; tint; revealLabel per-stage caption nodes (caller passes the localized 'N个XX用N表示' string). A 6~10 lesson, or a same-count-across-different-kinds beat (label 2 geese AND 2 chairs with the same numeral), reuses it unchanged.",
+      "avoidWhen": "A single static representation (no abstraction step to show) — use the bare primitive (CountableObject / NumberCard); or a ten-ones→one-ten bundling where the units physically GATHER into one object — use AssetMorph; or counts so large the per-rung units fall below the kids-eye min size (keep count <= ~6 for the full 4-rung ladder at 1280-wide). It conserves a count across abstraction levels; it does NOT compose/decompose a whole into parts (use FenHeDiagram) or compare two different quantities (use a paired-column compare).",
+      "variants": {
+        "orientation": [
+          "row",
+          "column"
+        ],
+        "stages": [
+          "objects",
+          "sticks",
+          "dots",
+          "numeral"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
       "id": "asset-morph",
       "component": "AssetMorph",
       "source": "src/motion-primitives/AssetMorph.tsx",
@@ -728,6 +791,19 @@
           "unbundle"
         ]
       },
+      "status": "experimental"
+    },
+    {
+      "id": "conservation-morph-bundle",
+      "component": "ConservationMorphBundle",
+      "source": "src/motion-primitives/ConservationMorphBundle.tsx",
+      "intent": [
+        "morph",
+        "conservation",
+        "regrouping"
+      ],
+      "useWhen": "The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. Composes AssetMorph (the gathered parametric from BECOMES the held asset, FX-masked) + the held IconAsset + ConservationBundle (the x-ray peek): drive peekProgress 0..1 from the conservation cue and the held bundle crossfades down while the wrap ghosts to reveal the count ones living inside, then re-solidifies. Caller supplies from/asset/centerX/centerY (bbox-matched, like AssetMorph) and the count/colors of the inner ones; morphAtFrame + peekProgress are cue-relative.",
+      "avoidWhen": "Bundling with NO conservation peek (use AssetMorph alone), or a peek with no preceding morph (use ConservationBundle alone). Multiplicity where each inner one needs its own live highlight during the held phase — assets can't per-index highlight; keep that parametric. The gather-before / fan-after motion stays on the caller's parametric from — this owns only the masked swap + the asset↔x-ray crossfade.",
       "status": "experimental"
     },
     {
@@ -766,6 +842,42 @@
       "avoidWhen": "Drawing the path's ink rather than moving along it — use DrawPath.",
       "variants": {},
       "status": "stable"
+    },
+    {
+      "id": "glyph-stroke-writer",
+      "component": "GlyphStrokeWriter",
+      "source": "src/motion-primitives/GlyphStrokeWriter.tsx",
+      "intent": [
+        "stroke-order",
+        "handwriting",
+        "glyph-tracing",
+        "笔顺"
+      ],
+      "useWhen": "Teaching a child to WRITE a single glyph in the correct stroke order (笔顺) inside a writing cell — a numeral (1/2/3/4/5, or any digit) or a comparison symbol (= > <), or any future glyph. It traces the glyph stroke by stroke IN ORDER: stroke k starts only after stroke k-1 finishes (+ gap), each with a faint ghost-under guide, a moving pen cursor, and a 起笔/收笔 dot whose start marker pulses just before its stroke begins, so direction and order are unmistakable — the fix for the 2的弧线/3的两个半圆 写反/弧度变形 and the 把符号画成图/笔画不匀 misconceptions. Prop-driven and LESSON-AGNOSTIC: it bakes NO glyph — the caller passes the ordered `strokes` (looked up from the shared GLYPH_STROKES data keyed by the glyph char, via `glyphStrokesFor(char)`). `atFrame` is cues[id].startFrame+offset (the writer derives every stroke's local progress by index — ZERO frame literals); `perStrokeDurationFrames` + optional `interStrokeGapFrames` set the pace; `size` scales the normalized 0..100 stroke data to the cell; `grid`/`focusZone` pass through to StrokeGuideCell; `stroke`/`strokeWidth`/`cursor`/`showStartDots` style the pen. COMPOSES StrokeGuideCell (田字格/米字格 backdrop) + one AnimatedStrokePath per stroke (ghost + cursor + progress) + 起笔/收笔 dot markers. Drives 1–5 AND =,>,< AND any glyph with stroke data unchanged.",
+      "avoidWhen": "Showing a glyph that is already WRITTEN (no stroke-order teaching) — use NumberCard / ComparisonSymbol / a plain text glyph. Tracing a full hanzi character (the GLYPH_STROKES data ships digits 0-9 + comparison symbols; add the character's ordered paths to that shared data first — don't bake them into a scene). Animating a non-writing path reveal (a number-line arc, a teacher underline) — use DrawPath / AnimatedStrokePath / TeacherMark directly. The writer owns ORDERED multi-stroke glyph formation inside a cell; a single decorative draw-on is one AnimatedStrokePath.",
+      "status": "stable"
+    },
+    {
+      "id": "ordered-row-spotlight",
+      "component": "OrderedRowSpotlight",
+      "source": "src/motion-primitives/OrderedRowSpotlight.tsx",
+      "intent": [
+        "ordinal",
+        "cardinal-vs-ordinal",
+        "序数",
+        "relativity",
+        "参照点变化",
+        "count-walk"
+      ],
+      "useWhen": "Teaching the ordinal cluster on ONE ordered row of caller-supplied items (countables, faces, sticks): count the row 1→N with a moving finger (the 摆—数—说—写 count step), mark ONLY the Nth position as 第N (an ordinal spotlight ring + the 第N token), contrast circle-ALL ('一共5', a PartWholeBrace heap) vs spotlight-ONE ('第5'), and RENUMBER the row from the chosen end when a direction arrow flips — the same item gets its mirror position (第2 ↔ 第4) live, teaching relativity / 参照点变化 / turn-around. Prop-driven & LESSON-AGNOSTIC, bakes NO figure or string: items:ReactNode[] (the row members — identity is caller scene content); direction:'ltr'|'rtl' (which END is position 1 — the SINGLE place direction enters; flipping it re-derives every position via posOf=ltr?i+1:n-i); spotlightOrdinal (a 1-based POSITION, so it tracks a flip automatically); showCardinalBracket + cardinalLabel (the '一共N' heap half of the contrast); ordinalLabel:(pos)=>node (caller localizes '第'+pos — never baked); countWalk / pointerIndex (opt-in 1→N finger + running tally; a static panel shows neither); atFrame + stepDurationFrames (cue-relative — the component derives the pointer walk, spotlight pop, and arrow draw-on by index, ZERO frame literals); rowGap/itemRadius/arrowColor/spotlightColor. COMPOSES PointerHandArrow(hand) + StepTally + CountStepIndicator (per-item position numbers) + PartWholeBrace(up) + TeacherMark(label-arrow) + an inline 第N token, with named EASE.* motion. Any N (2..~8), any item kind, either direction, cardinal OR ordinal mode — one component drives 摆数说写, ordinal spotlight, cardinal/ordinal contrast, relativity, and turn-around.",
+      "avoidWhen": "An UNORDERED set where position is meaningless (pure 'how many' / cardinality across kinds) — use CountableObject rows + AbstractionLadder; comparing TWO different quantities by matching — use getPairedColumnPlacement + PairConnector / UnmatchedSlot; composing/decomposing a whole into parts — use FenHeDiagram; counting a row WITHOUT any ordinal/position claim — a bare CountStepIndicator walk is lighter. Keep N <= ~8 so items + position numbers stay above the kids-eye min size at 1280-wide. It owns the SAME-row ordinal/cardinal/relativity beat; it does NOT teach the digits' stroke order (GlyphStrokeWriter) or a parametric→asset morph (AssetMorph).",
+      "variants": {
+        "direction": [
+          "ltr",
+          "rtl"
+        ]
+      },
+      "status": "experimental"
     },
     {
       "id": "pop-in",

@@ -10,10 +10,11 @@ import type {
 import { tenOnesMakeOneTenAlignedCues } from "../generated/tenOnesMakeOneTenTiming";
 import {
   BADGE_Y,
+  BUNDLE_ASSET_WIDTH,
   BUNDLE_BADGE_FADE_DURATION,
-  BUNDLE_FINAL_WIDTH,
+  BUNDLE_COMPRESS_REL_START,
   BUNDLE_GAP,
-  BUNDLE_WRAP_REL_START,
+  BUNDLE_MORPH_REL_START,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   FASTER_GHOST_FADE_DURATION,
@@ -195,32 +196,6 @@ const openingEntryOpacityAt = (frame: number) =>
 const badgeFadeOutAt = (frame: number) =>
   1 - reveal(frame, bundleAction.startFrame, BUNDLE_BADGE_FADE_DURATION);
 
-const wrapOpacityAt = (frame: number): number => {
-  const stillStart = stillTenOnes.startFrame;
-  const stillEnd = stillTenOnes.endFrame;
-  const peekOutEnd = Math.min(stillStart + STILL_PEEK_OUT_DURATION, stillEnd);
-  const peekHoldEnd = Math.min(
-    peekOutEnd + STILL_PEEK_HOLD_DURATION,
-    stillEnd,
-  );
-  const peekInEnd = Math.min(peekHoldEnd + STILL_PEEK_IN_DURATION, stillEnd);
-  if (frame < stillStart || frame >= fasterCount.startFrame) {
-    return 1;
-  }
-  if (frame <= peekOutEnd) {
-    const t = progress(frame, stillStart, peekOutEnd, EASE.inOutCubic);
-    return lerp(1, 0.35, t);
-  }
-  if (frame <= peekHoldEnd) {
-    return 0.35;
-  }
-  if (frame <= peekInEnd) {
-    const t = progress(frame, peekHoldEnd, peekInEnd, EASE.inOutCubic);
-    return lerp(0.35, 1, t);
-  }
-  return 1;
-};
-
 const peekLabelOpacityAt = (frame: number): number => {
   const stillStart = stillTenOnes.startFrame;
   const stillEnd = stillTenOnes.endFrame;
@@ -288,11 +263,19 @@ const stepTallyPillWidth = (steps: number, size: number, hasLabel: boolean) => {
 // ---------------------------------------------------------------------------
 // Element bbox functions
 // ---------------------------------------------------------------------------
+// Frame at which the gathered ones hand off to the held roped-bundle asset.
+const morphHandoffFrame = bundleAction.startFrame + BUNDLE_MORPH_REL_START;
+
 const sticksRow: SceneElement = {
   id: "sticks-row",
   zone: "objects",
   bboxAt: (frame) => {
     if (frame < opening.startFrame) {
+      return null;
+    }
+    // Once the magic-transition takes over, the asset element (below) owns the
+    // footprint — the parametric sticks are gone (AssetMorph crossfades them out).
+    if (frame >= morphHandoffFrame) {
       return null;
     }
     const opacity = openingEntryOpacityAt(frame);
@@ -301,7 +284,8 @@ const sticksRow: SceneElement = {
     }
     const groupX = bundleGroupXAt(frame);
     const scale = bundleGroupScaleAt(frame);
-    const inBundle = frame >= bundleAction.startFrame + BUNDLE_WRAP_REL_START;
+    // The cluster converges to "bundle" layout once the gather begins.
+    const inBundle = frame >= bundleAction.startFrame + BUNDLE_COMPRESS_REL_START;
     const inScatter = frame < opening.endFrame;
     let halfWidth: number;
     let halfHeight: number;
@@ -323,31 +307,28 @@ const sticksRow: SceneElement = {
   },
 };
 
-const bundleWrapEl: SceneElement = {
-  id: "bundle-wrap",
+// The held roped-bundle ASSET (post-morph), and the conservation x-ray that
+// occupies the same center during the still-ten-ones peek. The IconAsset is
+// rendered at BUNDLE_ASSET_WIDTH, centered on the group origin; the swap to the
+// ConservationBundle peek crossfades in place, so the footprint stays present.
+const bundleAssetEl: SceneElement = {
+  id: "bundle-asset",
   zone: "objects",
   bboxAt: (frame) => {
-    const visStart = bundleAction.startFrame + BUNDLE_WRAP_REL_START;
-    if (frame < visStart) {
+    if (frame < morphHandoffFrame) {
       return null;
     }
-    const opacity = wrapOpacityAt(frame) * openingEntryOpacityAt(frame);
+    const opacity = openingEntryOpacityAt(frame);
     if (opacity <= 0) {
       return null;
     }
     const groupX = bundleGroupXAt(frame);
     const scale = bundleGroupScaleAt(frame);
-    const bandHeight = BUNDLE_FINAL_WIDTH * 0.32;
-    const w = BUNDLE_FINAL_WIDTH * scale;
-    // Rope spans ±bandHeight/2 (ropeStroke = bandHeight*0.6 plus offset). Bow
-    // sits above the rope at anchorY = ropeTop - knotBottom - 0.18*bandHeight,
-    // extending up by loopRy + loopCenterY magnitude ≈ bandHeight*0.7 above
-    // anchor. Total vertical extent: top ≈ -bandHeight*1.8, bottom ≈ bandHeight*0.6.
-    const top = -bandHeight * 1.8 * scale;
-    const bottom = bandHeight * 0.6 * scale;
-    const cy = STICKS_ORIGIN_Y + (top + bottom) / 2;
-    const h = (bottom - top);
-    return snapshot(centeredBox(groupX, cy, w, h), opacity);
+    // The asset is square (512×512 viewBox) rendered at BUNDLE_ASSET_WIDTH; its
+    // visible diagonal bundle fills most of the box. Use the render box.
+    const w = BUNDLE_ASSET_WIDTH * scale;
+    const h = BUNDLE_ASSET_WIDTH * scale;
+    return snapshot(centeredBox(groupX, STICKS_ORIGIN_Y, w, h), opacity);
   },
 };
 
@@ -445,7 +426,9 @@ const labelYigeshi: SceneElement = {
 
 const labelPeek10: SceneElement = {
   id: "label-peek-10",
-  zone: "labels",
+  // The peek "10" now sits above the bundle (PEEK_LABEL_Y), labelling the
+  // revealed ten ones in the badges band rather than stacking in the labels zone.
+  zone: "badges",
   bboxAt: (frame) => {
     const opacity = peekLabelOpacityAt(frame);
     if (opacity <= 0) {
@@ -655,13 +638,13 @@ const keyFrames: readonly KeyFrame[] = [
     id: "bundle-action:climax",
     cueId: "bundle-action",
     offset: 40,
-    label: "sticks compressed, rope partly wrapped; badges/tally faded out",
+    label: "sticks gathered + SparkleBurst masking the morph into the roped-bundle asset; badges/tally faded out",
   },
   {
     id: "bundle-action:post",
     cueId: "bundle-action",
     offset: 70,
-    label: "bundle tied with bow on top of rope; sparkle popping; arc traced over",
+    label: "roped-bundle ASSET fully present (IconAsset stick-bundle-roped); arc traced over",
   },
   {
     id: "rename-bundle:hold",
@@ -673,7 +656,7 @@ const keyFrames: readonly KeyFrame[] = [
     id: "still-ten-ones:peek",
     cueId: "still-ten-ones",
     offset: 50,
-    label: "bundle dimmed to 0.35; peek '10' label visible in zone-labels upper",
+    label: "bundle x-rayed open (ConservationBundle) revealing the ten ones inside; peek '10' label above the bundle (badges band)",
   },
   {
     id: "faster-count:contrast",
@@ -693,7 +676,7 @@ export const KEY_FRAMES = keyFrames;
 
 const elements: readonly SceneElement[] = [
   sticksRow,
-  bundleWrapEl,
+  bundleAssetEl,
   countBadgesEl,
   tally10El,
   tally1El,

@@ -7,6 +7,7 @@ import {
   ConservationBundle,
   CountStepIndicator,
   CountableObject,
+  CountingBeadDevice,
   EquationStrip,
   FenHeDiagram,
   HanziCard,
@@ -194,6 +195,40 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+  },
+  "counting-bead-device": {
+    render: () => (
+      <Strip
+        gap={520}
+        items={[
+          {
+            caption: "4→5 (newest mid-slide)",
+            node: (
+              <CountingBeadDevice
+                count={5}
+                capacity={5}
+                activeIndex={4}
+                activePulse={0.55}
+                revealProgress={0.6}
+                rodLength={520}
+              />
+            ),
+          },
+          {
+            caption: "10 of 10 (full rod)",
+            node: (
+              <CountingBeadDevice
+                count={10}
+                capacity={10}
+                beadRadius={26}
+                rodLength={620}
+              />
+            ),
+          },
+        ]}
+      />
+    ),
+    tall: true,
   },
   "equation-strip": {
     render: () => (
