@@ -2436,3 +2436,297 @@ export const FenHeDiagram = ({
     </PlacedGroup>
   );
 };
+
+// =========================================================================
+// PlaceValueMat — a labeled multi-column place-value mat.
+//
+// Seats place-value CONTENTS in named columns (tens | ones by default,
+// optionally hundreds) under drawn column headers and an optional written
+// digit below each column. Bridges concrete material (a ten-bundle + loose
+// ones) to the digits of a written numeral, e.g. "14" = 1 ten + 4 ones.
+//
+// Contents come from props, never baked in:
+//  - `children` is an array, one entry per column (left→right). The composer
+//    drops a <BundleWrap> (or <StickGroup>) into the tens slot and a row of
+//    <SmallStick>s into the ones slot. Each entry is centered in its column.
+//  - When a column has no child, `perColumnCount[i]` draws that many simple
+//    unit dots as a placeholder so the mat still reads as occupied.
+//
+// `showDigits` + `digits` write the numeral under each column. `highlightColumn`
+// (0-based, -1 = none) recolors one column's header + background to focus it.
+// Lesson-agnostic: column names, counts, and digits are all props.
+// =========================================================================
+
+export type PlaceValueMatProps = PrimitiveGroupProps &
+  PlacementProps & {
+    /** Background fill of an un-highlighted column. */
+    columnFill?: ThemeColor;
+    /** Column header labels, left→right. Default ["tens", "ones"]. */
+    columns?: string[];
+    /** Per-column content. One ReactNode per column, centered in its body.
+     *  A null/undefined entry falls back to `perColumnCount` placeholders. */
+    children?: ReactNode[];
+    /** Width of each column body in local SVG units. */
+    columnWidth?: number;
+    /** Written digit per column, left→right. Used when `showDigits`. */
+    digits?: number[];
+    /** Body height of each column (the region contents are seated in). */
+    height?: number;
+    /** Accent fill applied to the highlighted column's header + body. */
+    highlightColor?: ThemeColor;
+    /** 0-based column to focus; -1 = none. */
+    highlightColumn?: number;
+    /** Placeholder unit dots per column, used only where `children` is empty. */
+    perColumnCount?: number[];
+    /** Render a written digit under each column. */
+    showDigits?: boolean;
+  };
+
+export const PlaceValueMat = ({
+  children,
+  columnFill,
+  columns = ["tens", "ones"],
+  columnWidth = 180,
+  digits,
+  height = 220,
+  highlightColor,
+  highlightColumn = -1,
+  perColumnCount,
+  showDigits = false,
+  transform,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: PlaceValueMatProps) => {
+  const count = Math.max(1, columns.length);
+  const headerHeight = 48;
+  const digitHeight = showDigits ? 96 : 0;
+  const matWidth = count * columnWidth;
+  const surface = resolveColor(columnFill, colors.cream);
+  const accent = resolveColor(highlightColor, colors.sunshine);
+  const stroke = colors.textNavy;
+  // Origin centers the whole mat on (0,0). Header sits on top, the column
+  // bodies below it, and (when enabled) the written digits below the bodies.
+  const left = -matWidth / 2;
+  const headerTop = -(headerHeight + height + digitHeight) / 2;
+  const bodyTop = headerTop + headerHeight;
+  const bodyHeight = height;
+  const dotRadius = Math.max(8, columnWidth * 0.06);
+
+  return (
+    <PlacedGroup {...groupProps} transform={transform} x={x} y={y}>
+      <g className="body" style={shadowStyle()}>
+        {columns.map((columnLabel, index) => {
+          const columnLeft = left + index * columnWidth;
+          const columnCenter = columnLeft + columnWidth / 2;
+          const focused = index === highlightColumn;
+          const child = children?.[index];
+          const placeholderCount = Math.max(
+            0,
+            Math.floor(perColumnCount?.[index] ?? 0),
+          );
+
+          return (
+            <g key={`column-${index}`}>
+              {/* Column body background. */}
+              <rect
+                fill={focused ? accent : surface}
+                height={bodyHeight}
+                opacity={focused ? 0.55 : 1}
+                rx={CARD_RADIUS}
+                stroke={stroke}
+                strokeWidth={NAVY_STROKE}
+                width={columnWidth}
+                x={columnLeft}
+                y={bodyTop}
+              />
+              {/* Header band. */}
+              <rect
+                fill={focused ? accent : colors.white}
+                height={headerHeight}
+                rx={CARD_RADIUS}
+                stroke={stroke}
+                strokeWidth={NAVY_STROKE}
+                width={columnWidth}
+                x={columnLeft}
+                y={headerTop}
+              />
+              <PrimitiveLabel
+                fontSize={Math.min(26, headerHeight * 0.5)}
+                x={columnCenter}
+                y={headerTop + headerHeight / 2 + 1}
+              >
+                {columnLabel}
+              </PrimitiveLabel>
+              {/* Contents: a passed child centered in the body, else dots. */}
+              {child != null ? (
+                <g
+                  transform={`translate(${columnCenter} ${bodyTop + bodyHeight / 2})`}
+                >
+                  {child}
+                </g>
+              ) : (
+                Array.from({ length: placeholderCount }, (_, dotIndex) => {
+                  const perRow = Math.min(placeholderCount, 5);
+                  const rows = Math.ceil(placeholderCount / perRow);
+                  const column = dotIndex % perRow;
+                  const row = Math.floor(dotIndex / perRow);
+                  const totalRowDots = Math.min(
+                    placeholderCount - row * perRow,
+                    perRow,
+                  );
+                  const spacing = dotRadius * 2.6;
+
+                  return (
+                    <circle
+                      cx={
+                        columnCenter +
+                        (column - (totalRowDots - 1) / 2) * spacing
+                      }
+                      cy={
+                        bodyTop +
+                        bodyHeight / 2 +
+                        (row - (rows - 1) / 2) * spacing
+                      }
+                      fill={colors.coral}
+                      key={`dot-${dotIndex}`}
+                      r={dotRadius}
+                      stroke={stroke}
+                      strokeWidth={3}
+                    />
+                  );
+                })
+              )}
+              {/* Written digit under the column. */}
+              {showDigits ? (
+                <PrimitiveLabel
+                  fontSize={Math.min(72, digitHeight * 0.78)}
+                  x={columnCenter}
+                  y={bodyTop + bodyHeight + digitHeight / 2}
+                >
+                  {digits?.[index] ?? ""}
+                </PrimitiveLabel>
+              ) : null}
+            </g>
+          );
+        })}
+        {/* Dividers between adjacent columns. */}
+        {columns.slice(1).map((_, index) => {
+          const dividerX = left + (index + 1) * columnWidth;
+
+          return (
+            <line
+              key={`divider-${index}`}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeWidth={NAVY_STROKE}
+              x1={dividerX}
+              x2={dividerX}
+              y1={headerTop}
+              y2={bodyTop + bodyHeight}
+            />
+          );
+        })}
+      </g>
+    </PlacedGroup>
+  );
+};
+
+// =========================================================================
+// ConservationBundle — an x-ray of a "1 ten" bundle.
+//
+// Proves the regrouping invariant: a bundled ten STILL CONTAINS ten ones.
+// `xrayProgress` 0 = an opaque wrapped bundle; as it rises the wrap fades
+// toward a ghost outline and the `count` inner sticks become visible inside.
+// This defuses the "a ten is just one thing now" misconception by letting the
+// child see the ones living inside the bundle.
+//
+// Distinct from BundleWrap: BundleWrap shows ten ones BECOMING one ten
+// (wrapProgress draws the wrap on); ConservationBundle shows one ten still IS
+// ten ones (xrayProgress reveals the contents). Lesson-agnostic — `count`,
+// colors, and sizing are props.
+// =========================================================================
+
+export type ConservationBundleProps = PrimitiveGroupProps &
+  PlacementProps & {
+    /** Wrap (band) color. Defaults to coral, matching BundleWrap. */
+    color?: ThemeColor;
+    /** Inner stick count. Default 10 (one ten). */
+    count?: number;
+    /** Emphasize the revealed inner sticks (active highlight) once visible. */
+    highlightInside?: boolean;
+    /** Color of the ghosted inner sticks. */
+    stickColor?: ThemeColor;
+    /** Length of each inner stick. */
+    stickLength?: number;
+    /** Thickness of each inner stick. */
+    stickThickness?: number;
+    /** 0 = solid opaque bundle, 1 = wrap ghosted + inner sticks fully visible. */
+    xrayProgress?: number;
+  };
+
+export const ConservationBundle = ({
+  color,
+  count = 10,
+  highlightInside = false,
+  stickColor,
+  stickLength = 150,
+  stickThickness = 18,
+  transform,
+  x = 0,
+  y = 0,
+  xrayProgress = 0,
+  ...groupProps
+}: ConservationBundleProps) => {
+  const safeCount = Math.max(1, Math.floor(count));
+  const reveal = clamp01(xrayProgress);
+  const wrapFill = resolveColor(color, colors.coral);
+  const stroke = colors.textNavy;
+  // The inner sticks sit in a centered row; the wrap band crosses their middle.
+  const gap = stickThickness * 0.9;
+  const rowWidth =
+    safeCount * stickThickness + (safeCount - 1) * gap;
+  const bandHeight = stickLength * 0.34;
+  // The wrap is opaque at xrayProgress 0 and fades to a faint ghost outline as
+  // the x-ray rises; the inner sticks fade IN over the same window.
+  const wrapBodyOpacity = 1 - 0.82 * reveal;
+  const stickOpacity = clamp01((reveal - 0.1) / 0.9);
+
+  return (
+    <PlacedGroup {...groupProps} transform={transform} x={x} y={y}>
+      <g className="body" style={shadowStyle()}>
+        {/* Inner sticks — revealed as the x-ray rises. */}
+        <g className="inside" opacity={stickOpacity}>
+          {Array.from({ length: safeCount }, (_, index) => (
+            <SmallStick
+              color={stickColor}
+              highlight={highlightInside ? "active" : "counted"}
+              key={index}
+              length={stickLength}
+              thickness={stickThickness}
+              x={
+                -rowWidth / 2 +
+                stickThickness / 2 +
+                index * (stickThickness + gap)
+              }
+              y={0}
+            />
+          ))}
+        </g>
+        {/* Wrap band — opaque at first, ghosted as the contents show through. */}
+        <rect
+          fill={wrapFill}
+          height={bandHeight}
+          opacity={wrapBodyOpacity}
+          rx={bandHeight / 2}
+          stroke={stroke}
+          strokeOpacity={0.35 + 0.65 * (1 - reveal)}
+          strokeWidth={NAVY_STROKE}
+          width={rowWidth + stickThickness * 2}
+          x={-(rowWidth + stickThickness * 2) / 2}
+          y={-bandHeight / 2}
+        />
+      </g>
+    </PlacedGroup>
+  );
+};
