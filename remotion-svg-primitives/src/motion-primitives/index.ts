@@ -8,6 +8,14 @@ export { AssetMorph } from "./AssetMorph";
 export type { AssetMorphDirection, AssetMorphProps } from "./AssetMorph";
 export { ConservationMorphBundle } from "./ConservationMorphBundle";
 export type { ConservationMorphBundleProps } from "./ConservationMorphBundle";
+export { DialogueExchange } from "./DialogueExchange";
+export type {
+  DialogueExchangeProps,
+  DialogueSide,
+  DialogueSpeaker,
+  DialogueSpeakerGesture,
+  DialogueTurn,
+} from "./DialogueExchange";
 export { GlyphStrokeWriter } from "./GlyphStrokeWriter";
 export type { GlyphStrokeWriterProps } from "./GlyphStrokeWriter";
 // The shared stroke-order data is the reusable artifact that pairs with the
@@ -22,6 +30,33 @@ export type {
   OrderedRowDirection,
   OrderedRowSpotlightProps,
 } from "./OrderedRowSpotlight";
+export { VocabFlashcard } from "./VocabFlashcard";
+export type {
+  VocabFlashcardMode,
+  VocabFlashcardProps,
+} from "./VocabFlashcard";
+export { MatchPairsBoard } from "./MatchPairsBoard";
+export type {
+  MatchPair,
+  MatchPairsBoardProps,
+  MatchPairsConnectorStyle,
+  MatchPairsMode,
+} from "./MatchPairsBoard";
+export { ReadAlongHighlight } from "./ReadAlongHighlight";
+export type {
+  ReadAlongCursor,
+  ReadAlongHighlightProps,
+} from "./ReadAlongHighlight";
+export { PartWholeComposer } from "./PartWholeComposer";
+export type {
+  PartWholeComposerMode,
+  PartWholeComposerProps,
+} from "./PartWholeComposer";
+export { PictographEvolution } from "./PictographEvolution";
+export type {
+  PictographEvolutionMode,
+  PictographEvolutionProps,
+} from "./PictographEvolution";
 export { glyphStrokesFor } from "./glyphStrokes";
 export type {
   GlyphPoint,
