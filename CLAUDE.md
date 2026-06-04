@@ -116,6 +116,7 @@ The single registry of reusable craft tools the lesson pipeline ships with: `.ag
 - **magic-fx-library** — `<Sparkle>` / `<ShineSweep>` / `<GlintFlash>` / `<GlowPulse>` / `<Breathe>` + `<FXDefs>`
 - **motion-smear** — `<Smear>` as motion-blur substitute
 - **motion-drag-stagger** — `<Drag>` appendage stagger helper
+- **generated decorative SVG assets** — `<IconAsset>` + `gen_asset_svg.py`; generate fixed-form decorative objects, never teaching primitives (see `## Generated decorative SVG assets`)
 
 ## Styles
 
@@ -135,6 +136,26 @@ The lesson repo consumes `@studio/three-effects` (the kit at `~/Desktop/shared-3
 - **Frame discipline extends to 3D.** The same `cues[id].startFrame + offset` rule applies — pass `entranceFrame={cues.foo.startFrame + 6}` into a 3D component, never an absolute literal.
 
 Kids preset is the canonical kids 3D theme. The vlog repo (render-lab) used to have a kids preset; that one was deleted. If anyone reaches for kids in the vlog repo, they are wrong — point them here.
+
+## Generated decorative SVG assets
+
+Fixed-form DECORATIVE objects (a roped bundle, a pointing hand, a mascot, a prop) are GENERATED, not hand-coded: describe → Gemini image → trace → flat SVG. Pipeline is author-time, at `/Users/tk/Desktop/Omniscience/scripts/gen_asset_svg.py` (Gemini "Nano-Banana" via `google-genai` + `GOOGLE_API_KEY` → flat-papercraft prompt → potrace trace; the palette already = our `theme.ts`).
+
+```bash
+<omni>/agent/.venv/bin/python scripts/gen_asset_svg.py --name <kebab> --description "<object>" \
+  --color-out remotion-svg-primitives/public/icons \
+  --mono-out remotion-svg-primitives/public/icons/mono \
+  --keep-png remotion-svg-primitives/out
+cd remotion-svg-primitives && npm run icons:build   # regenerates src/shape-primitives/iconAssetData.ts
+```
+
+Render via `<IconAsset name="<kebab>" variant="color"|"mono" tint=... />`.
+
+- **Visual-source order, ALWAYS:** reuse/compose existing primitives → hand-code a PARAMETRIC primitive → generate. (Procedural SVG-filter craft for representational objects is a low ceiling — generation is the path.)
+- **GENERATE only when ALL hold:** fixed form (no count/progress/state prop); decorative (NOT the teaching primitive the child reasons about — same fence as 3D-decorative-only); recognizability is the bug at render size.
+- **NEVER generate** countables, anything with a progress/count/state prop, identity-preserving morphs, or text/numerals — those stay hand-coded SVG.
+- Owned by Wave 3 primitive-builder (never the composer). Assets live at `public/icons/<name>.svg` (+ `mono/` + `.meta.json` provenance) and ARE committed (tiny + canonical).
+- Recolor only via theme tokens — SVG fills are `var(--icon-*, <hex>)` / mono `currentColor`, and `<IconAsset tint>` does this. NEVER hardcode hex that bypasses it.
 
 ## Skills
 

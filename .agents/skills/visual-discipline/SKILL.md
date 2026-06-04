@@ -126,6 +126,8 @@ Every visible string must carry information not already shown.
 
 Two strings saying the same thing in different formatting is the most common kid-component sin.
 
+**Never duplicate the same information WITHIN a single component or card.** A number card shows its value once; a labeled tile does not repeat its label as caption; a focus card carries one piece of information, not the same fact twice. Decide the ONE thing each element communicates — redundant on-card text/number is noise, not reinforcement (Mayer redundancy/coherence). Example: a `<NumberCard value={5}>` already shows "5" — do not stack a "= 5" caption beneath it.
+
 ## 8. Render and Self-Critique (mandatory for composer)
 
 After Wave 4 composer writes the scene, the composer does not declare done from the JSX alone. It runs the loop:
