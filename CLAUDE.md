@@ -205,6 +205,18 @@ Why: the research brief is the audit trail for what we promised ourselves to act
 
 How to apply: any time a research-driven change ships (capability, skill edit, primitive tweak), edit the originating research file in the same commit. If the change spans multiple research files, log into each.
 
+## Production executor — pi agents (`pi-runner/`)
+
+The lesson-build workflow has TWO executors. **Dev:** Claude Code's Workflow tool (`.claude/workflows/lesson-build.js`). **Production:** a fleet of **pi agents** (pi.dev / `earendil-works/pi`) running cheap non-Claude coding-plan models, driven by `pi-runner/`. The workflow is deterministic, so the split is fixed: a plain-code **driver owns the graph** (stage order, parallel lanes, status); **pi is the per-node executor** (one `pi -p` per wave). Nodes coordinate via the filesystem exactly as the waves do.
+
+- **`lesson-build.js` is the SINGLE SOURCE OF TRUTH — never hand-sync pi.** pi-runner does not re-define waves: `pi-runner/extract.mjs` *executes* `lesson-build.js` under recording stubs (the Workflow hooks) to derive the exact prompts + DAG (execute-and-record). So authoring/proving the Claude Code Workflow is the ONLY edit; pi runs identical prompts automatically — no drift, no codegen, all 14 waves + skill refs included. Skill *content* edits already flow to both (nodes read `SKILL.md` by path).
+
+- **ALWAYS the orchestrator runs everything; the user runs NOTHING.** Claude Code executes every `pi-runner` command itself and checks status itself — never hand the user a command, never ask whether a run is still alive. You are expected to know the exact live status at all times.
+- **ALWAYS run with `--debug`.** Debug mode prints a 4s heartbeat (elapsed · events · tool count · last event · Δ-since-last-event · stall flag), refreshes `out/<id>/run-status.json` continuously, and hard-kills a node after `--node-timeout` (default 600s) so a hang is visible in seconds, never minutes. Production mode is lean (10s status refresh, no console heartbeat) for the unattended fleet. Status is VERIFIED — a node is `ok` only if its declared artifacts exist on disk.
+- **Model + credential are saved as defaults**, set once in gitignored `pi-runner/.env` (DashScope-intl OpenAI-compatible; default `qwen3.7-max`). Never specify per-run; change rarely. Swapping providers = editing `.env`, never code or prompts.
+- **Headless pi invariants** (a silent ~10-min startup hang taught these): close stdin, pass `--offline` and `--no-extensions` (the explicit `-e` provider extension still loads). Full spec: `pi-runner/README.md`.
+- Run: `node pi-runner/run.mjs --lesson <id> --until <wave> --debug`. Fleet: one driver per lesson in the background; poll each `run-status.json` for only the important info.
+
 ## Dev
 
 - `npm run dev` — Remotion studio
