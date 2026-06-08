@@ -6,7 +6,7 @@
 >
 > Source of truth for SHAPE: `src/capabilities/schema.ts`. Source of truth for WHAT EXISTS: the component barrels + `EASE`/`SPRING` keys. This menu is generated — never hand-edited.
 
-**Coverage:** 61/61 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
+**Coverage:** 62/62 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
 
 ## SVG teaching primitives
 
@@ -41,6 +41,7 @@
 | --- | --- | --- | --- |
 | `animated-stroke-path` | `AnimatedStrokePath` | — | Drawing a single hanzi stroke on via durationInFrames or progress, with a faint ghost guide underneath and an optional pen-tip cursor. |
 | `hanzi-card` | `HanziCard` | picture: book \| heart \| moon \| person \| sun \| tree \| water | Presenting a Chinese character (one per card; compose several side by side for a contrasting SET — e.g. a tone minimal pair 妈/麻/马/骂) with optional pinyin, word, and a small pictograph hint, in selected/focused states. |
+| `lesson-intro-card` | `LessonIntroCard` | — | Opening a lesson with the normalized topic-intro card CLAUDE.md mandates (title + section/unit eyebrow + one-line KP teaser): lays out an optional SECTION eyebrow, the TITLE (largest line), and an optional TEASER centered top-to-bottom with a write-on accent underline under the title, all revealing in via ONE progress (0..1) — the three rows fade+rise in a short stagger and the underline draws on. Lesson-agnostic & prop-driven: title/section/teaser are caller ReactNodes (bakes NO copy, NO topic, NO Chinese/English string); progress is derived from cues[id].startFrame+offset (ZERO frame literals). The card surface defaults OFF so the lesson canvas stays the only background (decoration budget) — flip card on for a held title card; titleSize/titleColor/subColor/accentColor/underline + cardFill/cardStroke/cardWidth/cardHeight + x/y/transform style and place it. The SAME primitive drives a Math title, a Chinese title, an English greetings title. |
 | `listen-icon` | `ListenIcon` | state: idle \| playing | Marking that a sound or syllable can be played — a small speaker icon whose sound arcs swell in state=playing (driven by progress) to signal audio is available here. |
 | `mouth-shape-icon` | `MouthShapeIcon` | state: open \| round \| smile \| teeth | A face icon whose mouth shows the articulation (open, round, smile, teeth) for teaching a pinyin sound's lip position. |
 | `pinyin-syllable-card` | `PinyinSyllableCard` | highlight: final \| initial \| none \| tone | Showing a pinyin syllable split into initial and final tiles plus a tone mark, with the initial, final, or tone segment highlightable. |
@@ -117,14 +118,14 @@
 | `default` | Canonical lesson appearance — no aesthetic overlay. | stable |
 | `ink-wash` | Sumi-e ink on warm rice paper aesthetic overlay. | experimental |
 
-## Generated asset library — `<IconAsset name=... />` (89)
+## Generated asset library — `<IconAsset name=... />` (90)
 
 Fixed-form decorative/representational objects (traced flat SVG, on-palette). REUSE these before hand-coding or generating. Not teaching primitives — see `icon-asset` above for the fence.
 
 - **animal** — `owl-reading`, `paw-print`
 - **celebration** — `award-ribbon`, `confetti-burst`, `shining-star-orbit`, `sparkle-star`, `star`
 - **character-face** — `boy-face`, `robot-face-round`, `robot-face-square`, `sad-cloud-face`
-- **generated** — `pointing-hand`, `stick-bundle-roped`
+- **generated** — `girl-face`, `pointing-hand`, `stick-bundle-roped`
 - **literacy** — `ancient-glyph-ear`, `ancient-glyph-eye`, `ancient-glyph-field`, `ancient-glyph-fire`, `ancient-glyph-foot`, `ancient-glyph-grain`, `ancient-glyph-hand`, `ancient-glyph-moon`, `ancient-glyph-mountain`, `ancient-glyph-mouth`, `ancient-glyph-stone`, `ancient-glyph-sun`, `ancient-glyph-water`
 - **math** — `abacus`, `add-blocks`, `balance-scale`, `bar-line-chart`, `basic-shapes`, `donut-chart`, `fraction-quarters`, `greater-less-compare`, `pattern-sequence`, `sort-shapes-bins`, `subtract-blocks`
 - **nature** — `atom`, `flame`, `leaf-water-drop`, `planet-saturn`, `sprout`

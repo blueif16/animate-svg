@@ -13,6 +13,7 @@ import {
   HanziCard,
   IconAsset,
   LabelCallout,
+  LessonIntroCard,
   ListenIcon,
   MouthShapeIcon,
   NumberCard,
@@ -429,6 +430,50 @@ export const demoProps: Record<string, GalleryDemo> = {
           { caption: "ri 日", node: <HanziCard char="日" pinyin="rì" word="sun" picture="sun" /> },
           { caption: "selected", node: <HanziCard char="月" pinyin="yuè" word="moon" picture="moon" selected /> },
           { caption: "focused", node: <HanziCard char="水" pinyin="shuǐ" word="water" picture="water" focused /> },
+        ]}
+      />
+    ),
+    tall: true,
+  },
+  "lesson-intro-card": {
+    render: () => (
+      <Strip
+        gap={760}
+        items={[
+          {
+            caption: "card off (settled)",
+            node: (
+              <LessonIntroCard
+                section="Unit 1 · Hello!"
+                teaser="say hello, say who you are, say goodbye"
+                title="Hello & Greetings"
+                titleSize={64}
+              />
+            ),
+          },
+          {
+            caption: "card on",
+            node: (
+              <LessonIntroCard
+                card
+                cardWidth={680}
+                section="第一单元"
+                teaser="把五分开，再合起来"
+                title="五的分与合"
+                titleSize={64}
+              />
+            ),
+          },
+          {
+            caption: "title only · p .6",
+            node: (
+              <LessonIntroCard
+                progress={0.6}
+                title="Today's Job"
+                titleSize={64}
+              />
+            ),
+          },
         ]}
       />
     ),

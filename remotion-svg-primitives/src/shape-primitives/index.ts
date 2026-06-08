@@ -68,6 +68,7 @@ export type {
 export {
   AnimatedStrokePath,
   HanziCard,
+  LessonIntroCard,
   ListenIcon,
   MouthShapeIcon,
   PinyinSyllableCard,
@@ -80,6 +81,7 @@ export type {
   AnimatedStrokePathProps,
   HanziCardProps,
   HanziPictureVariant,
+  LessonIntroCardProps,
   ListenIconProps,
   ListenIconState,
   MouthShapeIconProps,
