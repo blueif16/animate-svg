@@ -30,7 +30,7 @@
 
 import {
   cueToCaption,
-  findBoundarySilence,
+  reconcileCueTimeline,
   type AlignedLessonCue,
   type CaptionCue,
 } from "@studio/narration-kit";
@@ -70,84 +70,18 @@ const VISUAL_MOTION_SECONDS: Record<string, number> = {
 // Source ASR cues in storyboard order — the frozen audio is canonical.
 const sourceCues = fenYuHeAlignedCues as readonly AlignedLessonCue[];
 
-// Pick the genuine breath before the next sentence: the LATEST detected silence
-// whose END sits at/before the next cue's audio onset AND at/after this cue's
-// motion minimum (so the cut never undercuts the motion budget). Walking from
-// the next-onset backwards makes this robust to ASR overshoot — the real breath
-// can end BEFORE the ASR's reported cue end, so a lookup keyed on that end
-// misses it (see header). Returns undefined when no qualifying silence exists.
-const findBreathBeforeNext = (
-  motionMinFrame: number,
-  nextNarrationStart: number,
-): { endFrame: number } | undefined => {
-  let best: { endFrame: number } | undefined;
-  for (const silence of fenYuHeSilences) {
-    if (
-      silence.endFrame <= nextNarrationStart &&
-      silence.endFrame >= motionMinFrame &&
-      (!best || silence.endFrame > best.endFrame)
-    ) {
-      best = silence;
-    }
-  }
-  return best;
-};
-
-const reconcile = (): AlignedLessonCue[] => {
-  const out: AlignedLessonCue[] = [];
-  // Chain from the lead silence: the WAV opens with silence before the first
-  // word (ASR onset at frame 8), so the shared timeline starts at frame 0.
-  let cursor = 0;
-
-  for (let index = 0; index < sourceCues.length; index += 1) {
-    const cue = sourceCues[index];
-    const budgetSeconds = VISUAL_MOTION_SECONDS[cue.id];
-    if (budgetSeconds === undefined) {
-      throw new Error(
-        `fen-yu-he reconcile: no visualMotionSeconds for cue "${cue.id}"`,
-      );
-    }
-
-    const motionFrames = Math.round(budgetSeconds * FPS) + TAIL_FRAMES;
-
-    // Where the next word starts (next cue's ASR start), or source audio end
-    // for the final cue. This bounds the silence search and is the fallback.
-    const nextNarrationStart =
-      index + 1 < sourceCues.length
-        ? sourceCues[index + 1].startFrame
-        : fenYuHeAlignedDuration;
-
-    // Primary: the latest real breath before the next sentence, at/after the
-    // motion minimum (robust to ASR overshoot). Secondary: a silence keyed on
-    // the ASR end (back-compat for cues where ASR aligns cleanly). Final
-    // fallback: the next cue's ASR start.
-    const motionMinFrame = cursor + motionFrames;
-    const breath =
-      findBreathBeforeNext(motionMinFrame, nextNarrationStart) ??
-      findBoundarySilence(fenYuHeSilences, cue.endFrame, nextNarrationStart);
-    const audioBoundaryFrame = breath ? breath.endFrame : nextNarrationStart;
-
-    // The cue window must hold the audio through the boundary AND give the
-    // motion its full budget — whichever is longer wins.
-    const audioSpanFrames = audioBoundaryFrame - cursor;
-    const cueFrames = Math.max(motionFrames, audioSpanFrames);
-
-    const startFrame = cursor;
-    const endFrame = cursor + cueFrames;
-
-    out.push({
-      ...cue,
-      startFrame,
-      endFrame,
-      startSeconds: Number((startFrame / FPS).toFixed(3)),
-      endSeconds: Number((endFrame / FPS).toFixed(3)),
-    });
-
-    cursor = endFrame;
-  }
-
-  return out;
-};
+// Reconcile the per-cue timeline via the shared kit (math ported verbatim from
+// this lesson — see @studio/narration-kit reconcileTimeline.ts). VISUAL_MOTION_
+// SECONDS is the lesson-authored per-cue budget input; the kit owns the
+// max(motion, audio-span)-to-the-real-breath chaining and the duration.
+const reconciled = reconcileCueTimeline({
+  alignedCues: sourceCues,
+  silences: fenYuHeSilences,
+  visualBudgets: VISUAL_MOTION_SECONDS,
+  alignedDuration: fenYuHeAlignedDuration,
+  fps: FPS,
+  tailFrames: TAIL_FRAMES,
+});
 
 // On-screen caption KEYWORD per cue (redundancy principle — see
 // ../lesson-media/captionKeywords). The spoken narration is unchanged (frozen
@@ -172,13 +106,12 @@ const FEN_YU_HE_CAPTION_KEYWORDS: CaptionKeywordMap = {
 // verification redundancy gate (which reads manifest.cues[].caption) see the
 // short anchor, not the verbatim narration.
 export const fenYuHeCues: AlignedLessonCue[] = withCaptionKeywords(
-  reconcile(),
+  reconciled.cues,
   FEN_YU_HE_CAPTION_KEYWORDS,
 );
 
-// Total composition length = last reconciled cue's endFrame.
-export const fenYuHeDuration: number =
-  fenYuHeCues[fenYuHeCues.length - 1].endFrame;
+// Total composition length = the kit's reconciled duration (last cue endFrame).
+export const fenYuHeDuration: number = reconciled.durationFrames;
 
 // One continuous voiceover span: lead-silence start (frame 0) → source audio
 // end. The WAV plays top-to-bottom as one Sequence; the span is used for BGM
