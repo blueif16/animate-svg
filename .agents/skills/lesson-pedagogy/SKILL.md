@@ -74,6 +74,8 @@ Good:
 
 Rule: the narration **prepares or names**; the picture **delivers**. If the narration delivers, the picture is decoration.
 
+**Language / L2 carve-out.** This rule assumes the discovery is something the *picture* makes the child notice (a count, a relation, a transformation). When the discovery IS an utterance — a word or sound the child must acquire (an English "I'm", a pinyin tone) — *voicing the target is the delivery, not leakage.* The teacher must say it for the child to hear and copy it; a silent picture of a meeting teaches no pronunciation. There the division of labor flips: the **voice delivers the sound**, the **picture delivers the moment** (who says it, when, to whom). See §9. The leakage rule still bites for everything that is NOT the target utterance — do not narrate the count, the relation, or the answer the picture is built to reveal.
+
 ## 5. One cognitive task per beat
 
 Each cue asks the child to do **one** mental thing. Common pairs that look like one task but are two:
@@ -106,7 +108,39 @@ A small but load-bearing instance of §1: when a beat involves counting, the on-
 
 This is just §1 enforced for the smallest unit (the count). Apply it whenever a number is being said aloud.
 
-## 8. Where this lives in the pipeline
+## 8. Reinforcement and rhythm — reason about it, never template it
+
+Deciding *what* the child discovers (§1) is half the job. The other half is deciding **how much encountering that discovery needs before the child owns it** — and at what pace. A single clean pass (show it once, move on) is a slideshow, not a lesson. Children learn a new thing by **meeting it more than once**: hearing it again, seeing it again, doing it, with a beat to let it land. A lesson that races through one exposure per idea has *covered* the content and *taught* none of it.
+
+This is a **judgment, not a recipe. Never hard-code "repeat each thing N times."** Reason about THIS discovery:
+
+- **How new and how hard is it for this child?** A brand-new foreign *sound* the mouth has never made ("I'm"), a counter-intuitive relation, a tricky tone — these need several exposures and a slow model. Something the child half-knows, or that the brief says is obvious, needs little or none. Reinforcement is **proportional to difficulty and novelty**, decided per discovery.
+- **Is the difficulty *acquisition* or *insight*?** Acquisition (a thing to be drilled into memory/muscle — a word, a sound, a fact) wants repetition and practice. Insight (a thing that clicks once — a relation, a "so that's why") wants one clean delivery plus a later recall. Most language/L2 content is acquisition — see §9.
+- **Pace for absorption.** Leave time after a delivery for it to land; do not cut to the next idea on the same breath. Equally, do not pad a thin discovery to fill time. **The lesson's length EMERGES from the reinforcement its content genuinely needs** — never rushed to a target, never padded to one. (The brief's Length is a hint, not a budget.)
+
+Reinforcement moves are a **palette the planner picks from by reasoning** — none mandatory, none default:
+
+- **Replay / replicate.** Meet the exact same beat again — replay the same clip (its audio AND its visual), identical. Cheapest and most consistent; strong for a target word or sound being memorized. Replicating a prior cue's clip costs no new generation.
+- **Choral invitation.** The teacher models, then invites the echo — "跟我说：Hello." Sets the call-and-response rhythm even before a literal answer-gap is recorded.
+- **Gradual release (I do → we do → you do).** Model it, do it together, hand it to the child — when a skill is being *practiced*, not merely met. One option where it fits, **not** the shape of every lesson.
+- **Spaced recall.** Bring the target back later (a recap, a callback) so it is *retrieved*, not just re-shown. Retrieval beats re-exposure for retention.
+- **Contrast / minimal pair.** Put the right beside the wrong when the difficulty is a confusion (the "I'm" /aɪm/ vs the wrong [em]).
+- **(Future, not yet built) learner-response gap.** A silent beat where the child answers before the reveal. Note where the lesson wants it; the timeline mechanism comes later.
+
+Decide the moves and their placement by reasoning about the specific discoveries, and **write the reasoning down** (Wave-0 output below) so downstream waves build the rhythm you chose instead of defaulting to one-pass coverage. A different lesson, child, or difficulty → a different rhythm. That variability is the point; freezing it into a fixed template is the bug.
+
+## 9. Language and L2 lessons
+
+Math lessons teach an *insight the picture reveals*, and §4 keeps the narration from giving it away. **Language lessons are different in kind** — do not force them through the math mold:
+
+- **The discovery is often the utterance itself** — a word, a phrase, a sound. The child acquires it by **hearing it and copying it**, so the teacher **must voice the target** (the §4 carve-out). A picture of two kids meeting teaches the *moment*; only the *voice* teaches how "Hello" sounds.
+- **Division of labor flips:** the **voice delivers the target sound**; the **picture delivers the moment** (who says it, when, to whom) plus a trackable form (a read-along the child follows). Both needed; neither decoration.
+- **Acquisition ⇒ reinforcement-heavy (§8).** A child cannot acquire a new sound from one hearing. Expect language beats to want replay, choral repeats, and spaced recall far more than a math insight beat does — this is the canonical §8 case, and why a real language lesson runs much longer than a one-pass slideshow.
+- **L1 + L2 mix is normal and fully supported.** Teacher framing in the child's language with target words in the L2, in the *same* narration line, is the natural shape and the voice+ASR stack handles it (the model is bilingual; alignment matches both). Do **not** strip the L2 word out of narration to satisfy a single-language assumption — voicing it IS the lesson. (See `lesson-audio-captions` and the voice config's mixed-language `tokenPattern`.)
+
+When a lesson is language/L2, declare it in `pedagogy.md` so every downstream wave plans for the spoken target + the heavier reinforcement, instead of a silent-picture math beat.
+
+## 10. Where this lives in the pipeline
 
 ```
 Wave 0 — lesson-pedagogy  ← THIS SKILL
@@ -123,21 +157,28 @@ Wave 4 — composer
 
 ### Wave 0 output (`lesson-data/<id>/pedagogy.md`)
 
-One paragraph per cue. Each paragraph has three lines, in this exact order:
+First, a one-line header declaring the lesson kind, so downstream waves plan the right shape:
 
 ```
-discovery:  <one sentence — what the child discovers at this beat that they didn't know walking in>
-stage:      <concrete | represent | symbolize — per §3>
-focal:      <the one element whose change carries the discovery; everything else is supporting>
+lesson kind: <math-insight | language/L2 | ...>   (per §9 — drives reinforcement weight + the §4 carve-out)
 ```
 
-If `discovery` is fuzzy or doesn't fit one of the three shapes in §1, the cue isn't done. Tighten it or fold it.
+Then one paragraph per cue. Each paragraph has these lines, in this exact order:
+
+```
+discovery:     <one sentence — what the child discovers at this beat that they didn't know walking in>
+stage:         <concrete | represent | symbolize — per §3>
+focal:         <the one element whose change carries the discovery; everything else is supporting>
+reinforcement: <how much this discovery needs + which move(s), per §8 — or "none (insight, one pass)">
+```
+
+If `discovery` is fuzzy or doesn't fit one of the three shapes in §1, the cue isn't done. Tighten it or fold it. The `reinforcement` line is REASONED per cue (§8), never a copied template — a lesson with several acquisition beats will have several cues that replay/practice, and that is what makes it long enough to teach.
 
 ### Downstream gate
 
 `lesson-storyboard`, `visual-design`, and `remotion-lesson-composer` refuse to advance if `pedagogy.md` is missing or any cue's `discovery` line is empty. The orchestrator does not delegate the §1 question — it is the orchestrator's first decision, before any subagent is spawned.
 
-## 9. Audit (run before each downstream wave reports back)
+## 11. Audit (run before each downstream wave reports back)
 
 A subagent that produces visual content confirms in its own words:
 
@@ -149,6 +190,6 @@ A subagent that produces visual content confirms in its own words:
 
 If any of the five fails, **redesign the contract** — do not patch the choreography. Patching choreography against a wrong teaching object is how lessons reach Wave 6 still teaching the wrong thing.
 
-## 10. Final rule
+## 12. Final rule
 
 The lesson is what the child discovers, not what the script says or the picture shows. If the child watched the cue and learned nothing new, the cue does not exist — no matter how clean the JSX, how aligned the ASR, how saturated the color. Decide the discovery first. Then design the picture that delivers it. Then write the JSX that draws it.

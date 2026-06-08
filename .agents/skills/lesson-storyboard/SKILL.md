@@ -1,14 +1,47 @@
 ---
 name: lesson-storyboard
-description: Use when planning a concise Remotion education video storyboard for an early math lesson, especially a one-to-one comparison lesson such as 5 > 3.
+description: Wave 1 — turn pedagogy.md into the cue spine for ANY lesson (math, language/L2, …): cue IDs in order, per-cue narration-beat INTENT (no copy), and required visuals (real component vocabulary). This is where the pedagogy's reinforcement rhythm becomes an actual sequence of cues. NO durations, NO frames, NO code.
 ---
 
 # Lesson Storyboard
 
-Purpose: Shape the lesson beats before any Remotion implementation.
+Shape the lesson's beats before any visual design or implementation. The storyboard is the **cue spine** — the ordered list of cues every later wave binds to (visuals, voice, captions, timing all key off these IDs). It is subject-agnostic: the same skill serves a counting lesson and an English-greetings lesson.
 
-<!-- TODO: Define the learner goal for one-to-one comparison: 5 > 3. -->
-<!-- TODO: Break the video into opening question, paired counting, comparison reveal, teacher explanation, and recap. -->
-<!-- TODO: Note required visuals: Remotion SVG primitives plus sketch/Skelly/Excalidraw-style teacher explanation. -->
-<!-- TODO: Mark where teacher narration, background music, and captions should support each beat. -->
-<!-- TODO: Keep the storyboard short enough for a complete education video, not a broad curriculum plan. -->
+## Input
+
+- `lesson-data/<id>/pedagogy.md` — the gate output: `lesson kind`, and per cue a `discovery` / `stage` / `focal` / `reinforcement` line. **Read it fully.** The storyboard realizes the rhythm pedagogy reasoned about; it does not re-decide the teaching.
+- `lesson-data/<id>/brief.md` — knowledge point, audience, out-of-scope fence.
+
+## Output (`lesson-data/<id>/storyboard.md`)
+
+A short lesson-shape paragraph, then one `### <cue-id>` block per cue **in play order**, each with:
+
+- **discovery ref** — the exact `discovery` sentence from pedagogy.md this cue serves (verbatim). One cue, one discovery.
+- **stage** — carried from pedagogy.md (no cue may exceed it).
+- **narration beat (INTENT, no copy)** — what the narration is *for* at this beat (name the moment / model the target / invite the echo / recap). NEVER the actual words and NEVER a duration — copy is Wave 2b, timing is Wave 3.5.
+- **required visual** — the real component/primitive vocabulary the beat needs (e.g. `DialogueExchange` turn, `ReadAlongHighlight` sweep, a count badge). Name existing capabilities where you can; flag a genuine gap for Wave 3 (named as a demand, not built).
+
+No durations. No frames. No code. No invented copy.
+
+## The cue spine carries the reinforcement rhythm
+
+This is the heart of the skill, and the most common failure: producing **one cue per idea** — present it, next slide. That yields a narrated slideshow that *covers* the content and *teaches* none of it (and runs absurdly short). The storyboard is where pedagogy's `reinforcement` reasoning becomes **real cues**.
+
+- Read each cue's `reinforcement` line. If a discovery needs reinforcement, **allocate the cues that deliver it** — a model cue, then a replay/practice cue, then (later) a recall cue. The rhythm is a *sequence of cues*, not a note inside one.
+- **Reason per discovery; never apply a fixed template.** An acquisition beat (a new word/sound — most language/L2 content) typically becomes several cues: present → model again / choral → spaced recall in the recap. An insight beat (a relation that clicks) is often one cue plus a callback. A different lesson → a different spine. Do not stamp "I-do/we-do/you-do" on everything; use it only where pedagogy called for practice.
+- **Replay can be a replicate, not a re-author.** A reinforcement cue may simply *replay an earlier cue* — same target, same intent — so the child meets it again identically. Note it as `replay of <cue-id>` so Wave 2b/3 can reuse the same voiced clip + visual instead of generating new ones (cheap, consistent). This is the easiest reinforcement and often the right one.
+- **A cumulative recap** that re-practices the lesson's targets together (spaced recall) is almost always warranted — it is retrieval, not decoration.
+- **Pace is a downstream consequence, not your job to pad** — you set how many beats the teaching needs; the length emerges at Wave 3.5. Don't pad cues to hit a length; don't starve the teaching to keep it short.
+
+## Discipline
+
+- Keep pedagogy's cue order and discoveries; do not invent, merge, or silently drop a discovery.
+- A cue whose only purpose is to say a sentence (no discovery, no reinforcement role) is filler — fold or cut it (pedagogy §1).
+- Every lesson opens with a short topic-intro beat (title + section + KP teaser) — see CLAUDE.md. The cast/teaching objects should not crowd the title; sequence them (title reads first, then the lesson begins). Flag this as a beat ordering note for the composer, not just a single frame.
+- Language/L2 spine: the target word/sound is delivered by the **voice** (pedagogy §4 carve-out / §9); the **picture** delivers the moment + a trackable read-along. Plan beats that let the child *hear it, see it, and meet it again* — not one flashcard per word.
+
+## Report back
+
+- The ordered cue list (ids) + each cue's discovery ref.
+- Which cues are reinforcement cues (and which are `replay of <id>`), with the one-line reasoning tying them to pedagogy's `reinforcement` lines.
+- Any required-visual gaps flagged for Wave 3 (named demands only).

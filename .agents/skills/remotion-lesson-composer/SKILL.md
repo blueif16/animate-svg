@@ -100,6 +100,14 @@ Read `visual-design.md` for the identity-invariant line. Common invariants for e
 
 The composer enforces these by structure: one `<StickGroup count={10}>` mounted at the root of the scene, parameterized per cue by its `layout` and `revealUpTo` props. NOT ten `<StickGroup>`s per cue.
 
+## Intro card choreography (don't stack the cast on the title)
+
+Every lesson opens with a topic-intro beat (title + section + KP teaser). The classic failure — shipped and caught only by a human — is rendering the **intro card and the teaching cast in the same instant at overlapping positions**, so the figures sit on top of the title and hide its letters.
+
+- **Sequence, don't pile.** The title resolves and is **readable on its own first**; the cast/teaching objects enter **after** (a beat later), or live in a disjoint zone that never overlaps the title's box. A title and a figure must not share the same screen band at the same time.
+- The intro is a tiny choreography (title in → hold to read → cast in), not one static frame with everything at once. If everything appears on frame 1, the title never gets its moment and you get the overlap.
+- This is a layout/timing decision the composer owns, derived from cue-relative offsets like everything else (`introCardEnd`, `castEntranceStart = cues.intro.startFrame + AFTER_TITLE_FRAMES`). No frame literals.
+
 ## File outputs
 
 Mirror the existing lesson pattern. For lesson id `<lesson-id>` (kebab) → `<camelId>` → `<PascalId>`:
@@ -142,14 +150,15 @@ Before the full MP4 render, the composer runs `npm run lesson:animatic -- --conf
 After writing the scene, the composer:
 
 1. Runs `npm run lint`. Must pass.
-2. Renders ONE still frame of the climax cue:
+2. Renders **several** still frames — never just the climax. The climax-only still is how the intro title-occlusion shipped: a one-frame check is blind to overlaps that happen elsewhere or only at full opacity. At minimum render: the **intro at full cast opacity** (a late-intro frame, after every intro element has ramped to opacity 1 — NOT frame 30 when the cast is faint), the **climax cue mid-frame**, and **one peak-opacity frame per cue** where multiple load-bearing elements coexist:
    ```
-   cd remotion-svg-primitives && npx remotion still src/index.ts Complete<PascalId>Lesson out/<lesson-id>/climax-still.png --frame=<climax mid-frame>
+   cd remotion-svg-primitives && npx remotion still src/index.ts Complete<PascalId>Lesson out/<lesson-id>/qa-f<frame>.png --frame=<frame>
    ```
-3. Grades the still against the Visual Contract:
+3. Grades each still against the Visual Contract:
    - Are the zones respected? (cover the captions — does the picture still teach?)
    - Is the teaching unit ≥ minimum size from kids-eye §1?
    - Is the identity-invariant visible (e.g. same orange sticks before and after, just composed differently)?
+   - **Is any load-bearing text/title occluded by a figure at full opacity?** (The intro title under the cast is the canonical miss — check it explicitly on the full-opacity intro frame.)
    - Is there any label overlapping the teaching object?
 4. If the still fails the contract: **redesign the failing region.** Do not patch with a wrapper. Do not declare done from code inspection.
 5. Re-render. Re-grade. Stop only when the still IS the contract.
