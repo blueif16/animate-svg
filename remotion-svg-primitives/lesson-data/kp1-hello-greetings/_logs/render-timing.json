@@ -1,0 +1,31 @@
+{
+  "lessonId": "kp1-hello-greetings",
+  "generatedAt": "2026-06-05T02:02:21.565Z",
+  "totalMs": 23607,
+  "steps": [
+    {
+      "step": "Silence detection",
+      "ms": 342
+    },
+    {
+      "step": "Typecheck + lint",
+      "ms": 4518
+    },
+    {
+      "step": "Bundle",
+      "ms": 2827
+    },
+    {
+      "step": "Render MP4",
+      "ms": 9920
+    },
+    {
+      "step": "Loudnorm (-16 LUFS / -1 dBTP)",
+      "ms": 1078
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 4922
+    }
+  ]
+}
