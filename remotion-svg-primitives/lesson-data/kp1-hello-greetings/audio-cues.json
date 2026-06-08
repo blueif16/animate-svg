@@ -1,0 +1,14 @@
+{
+  "lessonId": "kp1-hello-greetings",
+  "bed": "literacy-playful-76",
+  "toneSafe": false,
+  "intro": { "sting": "kids-section-lift" },
+  "outro": { "resolve": true },
+  "sfx": [
+    { "cue": "intro", "event": "transition", "sound": "whoosh" },
+    { "cue": "meet-hello", "event": "popin", "sound": "pop" },
+    { "cue": "intro-self", "event": "popin", "sound": "pop" },
+    { "cue": "part-goodbye", "event": "popin", "sound": "pop" },
+    { "cue": "recap", "event": "reward", "sound": "chime" }
+  ]
+}

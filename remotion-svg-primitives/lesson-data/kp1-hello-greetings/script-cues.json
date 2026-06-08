@@ -1,0 +1,37 @@
+{
+  "lessonId": "kp1-hello-greetings",
+  "cues": [
+    {
+      "id": "intro",
+      "narration": "今天，我们学三句英语。",
+      "phrase": "今天我们学三句英语",
+      "caption": "今天，我们学三句英语。"
+    },
+    {
+      "id": "meet-hello",
+      "narration": "看，他们见面，打招呼：Hello！",
+      "phrase": "看他们见面打招呼 Hello",
+      "caption": "看，他们见面，打招呼：Hello！"
+    },
+    {
+      "id": "intro-self",
+      "narration": "现在，轮到自我介绍：I'm Sam。",
+      "phrase": "现在轮到自我介绍 I'm Sam",
+      "caption": "现在，轮到自我介绍：I'm Sam。",
+      "emphasis": true
+    },
+    {
+      "id": "part-goodbye",
+      "narration": "时间到了，该说再见：Goodbye！",
+      "phrase": "时间到了该说再见 Goodbye",
+      "caption": "时间到了，该说再见：Goodbye！"
+    },
+    {
+      "id": "recap",
+      "narration": "见面说 Hello。介绍说 I'm。再见说 Goodbye。",
+      "phrase": "见面说 Hello 介绍说 I'm 再见说 Goodbye",
+      "caption": "见面说 Hello。介绍说 I'm。再见说 Goodbye。",
+      "emphasis": true
+    }
+  ]
+}

@@ -101,6 +101,7 @@ import {
   CompleteComparisonLesson,
   CompleteFenYuHeLesson,
   CompleteKp1FenYuHeIntroLesson,
+  CompleteKp1HelloGreetingsLesson,
   CompleteKp2CountingByTensLesson,
   CompleteKp2v2CountingByTensLesson,
   CompleteMakeTenLesson,
@@ -117,11 +118,14 @@ import {
   PrimitiveCheckKp1FenHeDiagramHardest,
   PrimitiveCheckKp1FenHeDiagramMigration,
   PrimitiveCheckKp1FenHeDiagramMultiplicity,
+  PrimitiveCheckKp1HelloGreetingsHardest,
+  PrimitiveCheckKp1HelloGreetingsMultiplicity,
   PrimitiveCheckTenOnesMakeOneTenBundleWrap,
   PrimitiveCheckTenOnesMakeOneTenStickRow,
   ShapePrimitiveGallery,
   StrokeTraceDemo,
   primitiveCheckKp1FenHeDuration,
+  primitiveCheckKp1HelloDuration,
   primitiveCheckTenOnesMakeOneTenDuration,
   completeComparisonLessonDefaultProps,
   completeComparisonLessonDuration,
@@ -129,6 +133,8 @@ import {
   completeFenYuHeLessonDuration,
   completeKp1FenYuHeIntroLessonDefaultProps,
   completeKp1FenYuHeIntroLessonDuration,
+  completeKp1HelloGreetingsLessonDefaultProps,
+  completeKp1HelloGreetingsLessonDuration,
   completeKp2CountingByTensLessonDefaultProps,
   completeKp2CountingByTensLessonDuration,
   completeKp2v2CountingByTensLessonDefaultProps,
@@ -275,6 +281,13 @@ export const RemotionRoot: React.FC = () => {
         {...compositionDefaults}
       />
       <Composition
+        id="CompleteKp1HelloGreetingsLesson"
+        component={CompleteKp1HelloGreetingsLesson}
+        durationInFrames={completeKp1HelloGreetingsLessonDuration}
+        defaultProps={completeKp1HelloGreetingsLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
         id="CompleteKp2CountingByTensLesson"
         component={CompleteKp2CountingByTensLesson}
         durationInFrames={completeKp2CountingByTensLessonDuration}
@@ -316,6 +329,18 @@ export const RemotionRoot: React.FC = () => {
         id="PrimitiveCheckKp1FenHeDiagramMigration"
         component={PrimitiveCheckKp1FenHeDiagramMigration}
         durationInFrames={primitiveCheckKp1FenHeDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckKp1HelloGreetingsHardest"
+        component={PrimitiveCheckKp1HelloGreetingsHardest}
+        durationInFrames={primitiveCheckKp1HelloDuration}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="PrimitiveCheckKp1HelloGreetingsMultiplicity"
+        component={PrimitiveCheckKp1HelloGreetingsMultiplicity}
+        durationInFrames={primitiveCheckKp1HelloDuration}
         {...compositionDefaults}
       />
       <Composition

@@ -116,11 +116,21 @@ export {
   completeKp1FenYuHeIntroLessonDuration,
 } from "./lessons/CompleteKp1FenYuHeIntroLesson";
 export {
+  CompleteKp1HelloGreetingsLesson,
+  completeKp1HelloGreetingsLessonDefaultProps,
+  completeKp1HelloGreetingsLessonDuration,
+} from "./lessons/CompleteKp1HelloGreetingsLesson";
+export {
   PRIMITIVE_CHECK_FEN_HE_DURATION as primitiveCheckKp1FenHeDuration,
   PrimitiveCheckKp1FenHeDiagramHardest,
   PrimitiveCheckKp1FenHeDiagramMigration,
   PrimitiveCheckKp1FenHeDiagramMultiplicity,
 } from "./lessons/kp1FenYuHeIntro/primitiveChecks";
+export {
+  PRIMITIVE_CHECK_KP1_HELLO_DURATION as primitiveCheckKp1HelloDuration,
+  PrimitiveCheckKp1HelloGreetingsHardest,
+  PrimitiveCheckKp1HelloGreetingsMultiplicity,
+} from "./lessons/kp1HelloGreetings/primitiveChecks";
 export {
   CompletePinyinToneLesson,
   completePinyinToneLessonDefaultProps,

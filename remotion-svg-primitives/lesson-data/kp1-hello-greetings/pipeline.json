@@ -1,0 +1,16 @@
+{
+  "lessonId": "kp1-hello-greetings",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKp1HelloGreetingsLesson",
+  "cuePlan": "lesson-data/kp1-hello-greetings/script-cues.json",
+  "output": "out/kp1-hello-greetings/kp1-hello-greetings.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kp1-hello-greetings-voice.wav",
+    "metaOut": "out/kp1-hello-greetings/gemini-voice.json",
+    "alignOutJson": "out/kp1-hello-greetings/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kp1HelloGreetingsTiming.ts",
+    "constPrefix": "kp1HelloGreetings"
+  }
+}
