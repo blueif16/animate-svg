@@ -445,6 +445,22 @@
     },
     {
       "kind": "literacy",
+      "id": "lesson-intro-card",
+      "component": "LessonIntroCard",
+      "source": "src/shape-primitives/literacy.tsx",
+      "intent": [
+        "intro",
+        "title",
+        "topic",
+        "lesson-open",
+        "heading"
+      ],
+      "useWhen": "Opening a lesson with the normalized topic-intro card CLAUDE.md mandates (title + section/unit eyebrow + one-line KP teaser): lays out an optional SECTION eyebrow, the TITLE (largest line), and an optional TEASER centered top-to-bottom with a write-on accent underline under the title, all revealing in via ONE progress (0..1) — the three rows fade+rise in a short stagger and the underline draws on. Lesson-agnostic & prop-driven: title/section/teaser are caller ReactNodes (bakes NO copy, NO topic, NO Chinese/English string); progress is derived from cues[id].startFrame+offset (ZERO frame literals). The card surface defaults OFF so the lesson canvas stays the only background (decoration budget) — flip card on for a held title card; titleSize/titleColor/subColor/accentColor/underline + cardFill/cardStroke/cardWidth/cardHeight + x/y/transform style and place it. The SAME primitive drives a Math title, a Chinese title, an English greetings title.",
+      "avoidWhen": "Naming a single on-screen object mid-lesson (one centered word + underline) — use LabelCallout. A decorative 3D ceramic title moment with no readable text-prop surface — use the 3D TopicIntroCard (lessons/transitions). Repeating the lesson title as per-cue chrome after the intro — the intro card resolves out and hands off; later cues carry no title.",
+      "status": "stable"
+    },
+    {
+      "kind": "literacy",
       "id": "listen-icon",
       "component": "ListenIcon",
       "source": "src/shape-primitives/literacy.tsx",

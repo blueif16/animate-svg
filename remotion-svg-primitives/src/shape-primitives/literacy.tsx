@@ -1147,3 +1147,228 @@ export const ListenIcon = ({
     </PlacedGroup>
   );
 };
+
+export type LessonIntroCardProps = PrimitiveGroupProps &
+  PlacementProps & {
+    /**
+     * The lesson title — the largest line. A localized ReactNode (a string, or
+     * a <tspan>-wrapped node for multi-line / styled titles). NEVER baked: the
+     * caller passes "五的分与合" / "Hello & Greetings" / any node.
+     */
+    title: ReactNode;
+    /**
+     * Optional section / unit eyebrow above the title (e.g. "Unit 1 · Hello!"
+     * or "第一单元"). Places the lesson in its curriculum slot. Omit for none.
+     * Localized caller node — never baked.
+     */
+    section?: ReactNode;
+    /**
+     * Optional one-line KP teaser below the title (e.g. "say hello, say who you
+     * are, say goodbye"). Localized caller node — never baked. Omit for none.
+     */
+    teaser?: ReactNode;
+    /**
+     * Reveal driver, 0..1 — derived by the caller from
+     * `cues[id].startFrame + offset` (ZERO frame literals here). The three rows
+     * fade+rise in a short stagger and the underline draws on as progress runs.
+     * At 0 nothing shows; at 1 the card is fully settled.
+     */
+    progress?: number;
+    /**
+     * Title cap-height in px. Default 96 (well above the 48px primary-label
+     * kids-eye minimum). The section + teaser scale relative to this.
+     */
+    titleSize?: number;
+    /** Title ink color. Default textNavy. */
+    titleColor?: ThemeColor;
+    /** Section eyebrow + teaser ink color. Default softGrayBlue. */
+    subColor?: ThemeColor;
+    /**
+     * Color of the write-on underline under the title — the teaching/speaking
+     * accent. Default reward. Drop the underline entirely with
+     * `underline={false}`.
+     */
+    accentColor?: ThemeColor;
+    /** Draw the write-on underline under the title. Default true. */
+    underline?: boolean;
+    /**
+     * Render a rounded card surface behind the text. Default false — most
+     * lessons keep the canvas as the only background (decoration budget). Flip
+     * on for a held title card.
+     */
+    card?: boolean;
+    /** Card fill when `card` is on. Default white. */
+    cardFill?: ThemeColor;
+    /** Card stroke when `card` is on. Default textNavy. */
+    cardStroke?: ThemeColor;
+    /** Card width when `card` is on. Default 1180. */
+    cardWidth?: number;
+    /** Card height when `card` is on. Default 360. */
+    cardHeight?: number;
+  };
+
+/**
+ * LessonIntroCard — the normalized topic-intro card every lesson opens with
+ * (CLAUDE.md: every lesson opens with a short text intro announcing the topic —
+ * title + section + KP teaser). Lays out, centered top-to-bottom: an optional
+ * SECTION / unit eyebrow, the TITLE (largest line), an optional one-line KP
+ * TEASER, with a write-on accent underline under the title — all revealing in
+ * via ONE `progress` (0..1): the three rows fade + rise in a short stagger and
+ * the underline draws on.
+ *
+ * Lesson-AGNOSTIC & prop-driven — bakes NO copy, NO topic, NO Chinese/English
+ * string: `title` / `section` / `teaser` are caller ReactNodes. ZERO frame
+ * literals — the caller passes `progress` derived from `cues[id].startFrame +
+ * offset`; this primitive reads no master-timeline frame. The card surface
+ * defaults OFF so the lesson canvas stays the only background (decoration
+ * budget); flip `card` on for a held title card. The SAME primitive drives a
+ * Math title, a Chinese title, an English greetings title — only the props vary.
+ *
+ * Composes the shared text idiom (fontFamily) + a `<line>` draw-on underline
+ * (the same write-on idiom as TeacherMark's underline, kept self-contained so
+ * the intro card has no motion-primitive import cycle).
+ */
+export const LessonIntroCard = ({
+  title,
+  section,
+  teaser,
+  progress = 1,
+  titleSize = 96,
+  titleColor = "textNavy",
+  subColor = "softGrayBlue",
+  accentColor = "reward",
+  underline = true,
+  card = false,
+  cardFill = "white",
+  cardStroke = "textNavy",
+  cardWidth = 1180,
+  cardHeight = 360,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: LessonIntroCardProps) => {
+  const p = clamp01(progress);
+
+  // Row vertical rhythm, measured from the card center (y = 0 local).
+  const sectionSize = Math.round(titleSize * 0.34);
+  const teaserSize = Math.round(titleSize * 0.44);
+  const sectionY = section ? -titleSize * 0.86 : 0;
+  const titleY = section ? -titleSize * 0.04 : -titleSize * 0.18;
+  const underlineY = titleY + titleSize * 0.62;
+  const teaserY = underlineY + teaserSize * 1.28;
+
+  // Underline half-width derived from the title size (a heading-length rule),
+  // so callers don't hand-tune it. The caller can still place the whole card.
+  const underlineHalf = titleSize * 1.9;
+
+  // Staggered per-row reveal — each row fades + rises within its own slice of
+  // `progress` so the eye lands section → title → underline → teaser in order.
+  // Pure functions of `p`; no frame literals.
+  const rowReveal = (start: number, end: number) =>
+    clamp01((p - start) / Math.max(0.0001, end - start));
+
+  const sectionR = rowReveal(0, 0.4);
+  const titleR = rowReveal(0.12, 0.62);
+  const underlineR = rowReveal(0.5, 0.92);
+  const teaserR = rowReveal(0.6, 1);
+
+  const titleInk = resolveColor(titleColor, colors.textNavy);
+  const subInk = resolveColor(subColor, colors.softGrayBlue);
+  const accentInk = resolveColor(accentColor, colors.reward);
+
+  const Row = ({
+    reveal,
+    children,
+  }: {
+    reveal: number;
+    children: ReactNode;
+  }) => (
+    <g
+      opacity={reveal}
+      transform={`translate(0 ${interpolate(reveal, [0, 1], [14, 0])})`}
+    >
+      {children}
+    </g>
+  );
+
+  return (
+    <PlacedGroup transform={groupProps.transform} x={x} y={y} {...groupProps}>
+      {card ? (
+        <rect
+          fill={resolveColor(cardFill, colors.white)}
+          height={cardHeight}
+          opacity={p}
+          rx={CARD_RADIUS + 10}
+          stroke={resolveColor(cardStroke, colors.textNavy)}
+          strokeWidth={NAVY_STROKE}
+          width={cardWidth}
+          x={-cardWidth / 2}
+          y={-cardHeight / 2}
+        />
+      ) : null}
+
+      {section ? (
+        <Row reveal={sectionR}>
+          <text
+            dominantBaseline="middle"
+            fill={subInk}
+            fontFamily={fontFamily}
+            fontSize={sectionSize}
+            fontWeight={800}
+            letterSpacing={2}
+            textAnchor="middle"
+            x={0}
+            y={sectionY}
+          >
+            {section}
+          </text>
+        </Row>
+      ) : null}
+
+      <Row reveal={titleR}>
+        <text
+          dominantBaseline="middle"
+          fill={titleInk}
+          fontFamily={fontFamily}
+          fontSize={titleSize}
+          fontWeight={900}
+          textAnchor="middle"
+          x={0}
+          y={titleY}
+        >
+          {title}
+        </text>
+      </Row>
+
+      {underline ? (
+        <line
+          opacity={underlineR}
+          stroke={accentInk}
+          strokeLinecap="round"
+          strokeWidth={Math.max(6, titleSize * 0.09)}
+          x1={-underlineHalf}
+          x2={-underlineHalf + underlineHalf * 2 * underlineR}
+          y1={underlineY}
+          y2={underlineY}
+        />
+      ) : null}
+
+      {teaser ? (
+        <Row reveal={teaserR}>
+          <text
+            dominantBaseline="middle"
+            fill={subInk}
+            fontFamily={fontFamily}
+            fontSize={teaserSize}
+            fontWeight={800}
+            textAnchor="middle"
+            x={0}
+            y={teaserY}
+          >
+            {teaser}
+          </text>
+        </Row>
+      ) : null}
+    </PlacedGroup>
+  );
+};
