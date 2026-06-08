@@ -16,7 +16,7 @@
     "joiner": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/joiner-epoch-99-avg-1.int8.onnx",
     "sampleRate": 16000,
     "timingImportPath": "@studio/narration-kit",
-    "tokenPattern": "[\\u3400-\\u9fff]",
+    "tokenPattern": "[\\u3400-\\u9fff]|[A-Za-z']+",
     "tokens": "/Users/tk/Desktop/Omniscience/agent/models/voice/asr/tokens.txt"
   }
 }
