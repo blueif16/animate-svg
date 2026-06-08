@@ -1,31 +1,31 @@
 {
-  "lessonId": "pinyin-four-tones",
-  "generatedAt": "2026-05-29T20:07:22.869Z",
-  "totalMs": 17015,
+  "lessonId": "ten-ones-make-one-ten",
+  "generatedAt": "2026-06-04T05:43:36.976Z",
+  "totalMs": 26860,
   "steps": [
     {
       "step": "Silence detection",
-      "ms": 332
+      "ms": 321
     },
     {
       "step": "Typecheck + lint",
-      "ms": 4079
+      "ms": 3803
     },
     {
       "step": "Bundle",
-      "ms": 2414
+      "ms": 1675
     },
     {
       "step": "Render MP4",
-      "ms": 8714
+      "ms": 12207
     },
     {
       "step": "Loudnorm (-16 LUFS / -1 dBTP)",
-      "ms": 1086
+      "ms": 1591
     },
     {
       "step": "Contact sheet",
-      "ms": 390
+      "ms": 7263
     }
   ]
 }

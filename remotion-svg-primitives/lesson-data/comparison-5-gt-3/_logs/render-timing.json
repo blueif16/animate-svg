@@ -1,27 +1,31 @@
 {
   "lessonId": "comparison-5-gt-3",
-  "generatedAt": "2026-05-29T18:55:39.360Z",
-  "totalMs": 11724,
+  "generatedAt": "2026-05-29T21:48:37.686Z",
+  "totalMs": 15017,
   "steps": [
     {
       "step": "Silence detection",
-      "ms": 403
+      "ms": 335
+    },
+    {
+      "step": "Typecheck + lint",
+      "ms": 4114
     },
     {
       "step": "Bundle",
-      "ms": 3383
+      "ms": 2480
     },
     {
       "step": "Render MP4",
-      "ms": 6792
+      "ms": 6952
     },
     {
       "step": "Loudnorm (-16 LUFS / -1 dBTP)",
-      "ms": 742
+      "ms": 731
     },
     {
       "step": "Contact sheet",
-      "ms": 404
+      "ms": 405
     }
   ]
 }
