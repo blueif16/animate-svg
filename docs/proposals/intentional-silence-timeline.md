@@ -1,6 +1,6 @@
 # Intentional silence is typed — the gap (proposal → shipped)
 
-**Status:** shipped 2026-06-08. Supersedes `learner-response-gap-timeline.md` (single-purpose draft, removed). Author: 2026-06-08.
+**Status:** shipped 2026-06-08, then partly superseded the same day by **v4 cue-anchored audio** (`pipeline-architecture.md` v4 changelog). The typed `gap` data model (`CueGap`, open `GapReason`, "silence is free / never an empty spoken cue") is UNCHANGED and canonical. What changed: a gap is no longer **baked into the WAV** (decision #1 below) — in v4 it is a **typed timeline HOLD** the per-cue reconcile adds to the cue window with no audio scheduled across it (the clip plays at the cue start, the picture holds). Read decisions #1/#4 as "the gap is local, free, and lives in the shared cue window" — true in both versions; only the *seam* (WAV-bake → timeline-hold) moved. Author: 2026-06-08.
 **Scope:** make *intentional silence* a first-class, **typed** timeline element so the comprehension-floor **wait-time** (`lesson-pedagogy` §8) — and any other reason the voice goes empty — actually occupies real seconds in the rendered lesson, at zero TTS cost. Closes the deferred follow-up in `.agents/skill-system-map.md`.
 
 **Decisions locked (this session, user-approved):**

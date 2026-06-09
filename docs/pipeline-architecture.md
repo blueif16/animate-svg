@@ -108,7 +108,7 @@ Wave 0 (pedagogy), Wave 3.5 (reconcile), and the orchestrator's pre-render revie
 
 After Wave 3a generates voice:
 
-- The WAV file at `public/audio/<id>-voice.wav` is the canonical audio. It plays once, top-to-bottom, as one `<Sequence>` in `LessonAudioLayer`.
+- **[Superseded by v4 — see changelog.]** ~~The WAV file at `public/audio/<id>-voice.wav` is the canonical audio. It plays once, top-to-bottom, as one `<Sequence>` in `LessonAudioLayer`.~~ In v4 the audio is **per-cue clips**, each mounted in its own `<Sequence from={cue.startFrame}>`; the continuous WAV is QA-only. The freeze still holds (clips are canonical once accepted).
 - If a cue's TTS comes out badly mis-aligned (e.g., ASR matchScore < 0.7 or audible truncation), Wave 2b may retighten THAT ONE CUE'S text and Wave 3a regenerates THAT ONE CUE. This is a re-take, not a re-design.
 - Once Wave 3.5 emits the reconciled cue-timeline, the audio's per-cue durations are inputs to that file. Changing them later means re-running Wave 3.5.
 
@@ -258,6 +258,29 @@ Both keep the **one-timeline invariant** (§1): the silence lives in the shared 
 - `remotion-svg-primitives/scripts/render-complete-lesson.mjs` — loudnorm pass + `--skip-loudnorm`.
 - `remotion-svg-primitives/public/audio/_beds|_sfx|_stings/` — curated library (placeholders + `_SOURCING.md`).
 - Design: `docs/proposals/sound-layer-integration.md`. Research: `research/music-sound-{design,palette-2026-05-29}.md`.
+
+### v4 — 2026-06-08 — Cue-anchored audio (the audio reads the timeline)
+
+**What changed**
+- The narration is no longer ONE continuous WAV played from frame 0. Each cue owns its **own measured audio clip**, mounted in its own `<Sequence from={cue.startFrame}>` by the kit `AudioLayer` (new `voiceClips` prop). The §1 invariant — *the cue is the unit; audio shares its window* — is now **true for audio**, the way it was already true for captions.
+- W3a voice generation TRIMS each clip's TTS padding and emits a per-cue **clip module** `src/lessons/generated/<X>Clips.ts` (`ClipCue[]`: `clipSrc` + EXACT `narrationFrames` + typed `gap`) — the audio truth. The continuous WAV is kept only as a QA/scrub master; ASR (`<X>Timing.ts`) demotes to QA (matchScore) — its frames are no longer used for timing.
+- W3.5 reconcile becomes a trivial, deterministic chain via the new kit `reconcileClipTimeline`: `cueFrames = max(narrationFrames + gapFrames, motionFrames) + tail`. It also emits the `<X>VoiceClips` placement array. **Deleted:** `detect-silences` / `<X>Silences.ts` from the lesson path, the silence-boundary snapping, and the per-lesson `ASR_CORRECTIONS` table (the reconcile no longer guesses where a clip sits in a continuous WAV — it knows the exact length).
+- A `gap` is now a **typed timeline HOLD**, not baked WAV silence: the clip plays at the cue start, then the window holds open for `gap.seconds` with NO audio scheduled across it (truly free — not even `Buffer.alloc`). v3's WAV-baked gap is gone.
+- New **deterministic audio gate** (`npm run lesson:audio-gate`, auto-run after voice): a held-vowel **drone** detector (sustained loud low-zero-crossing audio — the `I'm…… Sam` ellipsis defect) + an untrimmed-dead-air check. Catches the defect in seconds, before render, by tool — never waiting for a human to listen.
+- Held-vowel ellipsis is banned at the source: `lesson-audio-captions` / `cue-plan-author` / TEACHING-ACTIONS `model-target-slow` — an intra-cue pause is a typed gap or sub-beats, never in-text dots; the generator also collapses ellipsis runs defensively.
+
+**Why**
+- Despite v1's "reconcile the visual to the audio," the reconcile's own `max(motion, narration)` *created* motion-driven cues whose visual window exceeds the audio. A single continuous WAV has no idea where the cue boundaries are, so it played the next clip early — the exact kp1-fen-yu-he drift class returned (measured ~5s mid-lesson on `kptest-greetings-verify`: the "你来试试" prompt heard before its visual). v1 only ever worked when every cue was audio-driven. Anchoring each clip to its cue makes the drift **structurally impossible** — a clip cannot cross a boundary.
+- Bonus: the fragile inference layer (silence detection + ASR-boundary correction) that existed *only* to locate clips in a continuous WAV is deleted; durations are now measured exactly at generation.
+
+**Trade-offs accepted**
+- N small clip files per lesson (gitignored) instead of one WAV. Worth it: each cue is self-contained, ASR QA is per-clip (no cross-clip contamination), and the reconcile + timeline collapse to ~30 trivial lines.
+- The legacy `reconcileCueTimeline` (+ `detect-silences`) stays in the kit for pre-v4 lessons (fen-yu-he) — both reconciles coexist; new lessons use `reconcileClipTimeline`.
+
+**Files touched**
+- `@studio/narration-kit`: `types.ts` (`ClipCue`, `VoiceClip`, `clip-measured`); `reconcileTimeline.ts` (`reconcileClipTimeline` + test); `AudioLayer.tsx` (`voiceClips` mount); `bin/generate-voice.mjs` (per-cue trimmed clips + `<X>Clips.ts` + ellipsis guard); skills `cue-plan-author`.
+- Lesson repo: `<X>LessonTimeline.ts` (reconcileClipTimeline), `Complete<X>Lesson.tsx` + `LessonAudioLayer` (voiceClips), `scripts/lesson-audio-gate.mjs` (new) + `render-complete-lesson.mjs` (v4-aware, runs the gate) + `_padded-cues-extract.ts` (reads exact narration window — fixes the contact-sheet marker bug).
+- Skills/laws: `.claude/workflows/lesson-build.js` (laws + W3a/W3.5/W4a), `lesson-audio-captions`, `remotion-lesson-composer`, `.agents/TEACHING-ACTIONS.md`, this doc.
 
 ### v3 — 2026-06-08 — Intentional silence is typed (the gap)
 
