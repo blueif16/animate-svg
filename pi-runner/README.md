@@ -82,11 +82,22 @@ tokens) lands in `run-status.json` in **both** modes, computed live from the str
   lines *grow*, never repeat; that is the cumulative bloat the slimming handles.)
 - **Status is verified, not trusted:** a node is `ok` only if the artifacts it reports actually
   exist on disk.
+- **Output Contract — required, not just reported:** a producing node may declare in its prompt the
+  files it MUST leave on disk (`DRIVER-ARTIFACTS:`) and the only paths it may write (`DRIVER-OWNS:`),
+  both absolute, same marker convention as `DRIVER-PREFLIGHT:`. The driver verifies the **required**
+  set independent of the self-report — a clean exit missing a required artifact is `blocked` (a
+  `contract breach` issue), and a self-reported write outside the owned paths is a `contract warn`.
+  The workflow emits these via a one-line `contract({ artifacts, owns })` helper that also renders
+  the Definition-of-Done prose. This closes the false-OK class the no-return-block fix did not (a
+  node that parsed a clean return but produced the wrong/empty artifacts — the W2c contamination
+  case). Spec: `~/.claude/skills/transform-workflow-to-pi/reference/artifact-contract.md`.
 
 Per-node digest fields in `run-status.json`: `status`, `durationMs`, `toolCalls`, `toolBreakdown`
 (`{read,bash,write,…}` counts), `thinking` (`{deltas, chars, spanMs}`), `tokens` (`{input, output,
 billable=input+output, contextPeak=max cumulative context, cost}`), `eventCount`, `artifacts[]`
-(stat()'d on disk), `summary`, `issues[]`, `pipelineFindings[]`.
+(self-reported, stat()'d on disk), `requiredArtifacts[]` (the declared `DRIVER-ARTIFACTS` contract,
+stat()'d), `ownsBreach[]` (self-reported writes outside `DRIVER-OWNS`, if any), `summary`,
+`issues[]`, `pipelineFindings[]`.
 
 ## Generic engine — wiring `.env` is the only per-repo file; credential is pi-native
 
