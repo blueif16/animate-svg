@@ -118,7 +118,7 @@ This is a **judgment, not a recipe. Never hard-code "repeat each thing N times."
 - **Is the difficulty *acquisition* or *insight*?** Acquisition (a thing to be drilled into memory/muscle — a word, a sound, a fact) wants repetition and practice. Insight (a thing that clicks once — a relation, a "so that's why") wants one clean delivery plus a later recall. Most language/L2 content is acquisition — see §9.
 - **Pace for absorption.** Leave time after a delivery for it to land; do not cut to the next idea on the same breath. Equally, do not pad a thin discovery to fill time. **The lesson's length EMERGES from the reinforcement its content genuinely needs** — never rushed to a target, never padded to one. (The brief's Length is a hint, not a budget.)
 
-Reinforcement moves are a **palette the planner picks from by reasoning** — none mandatory, none default:
+Reinforcement moves are a **palette the planner picks from by reasoning** — none mandatory, none default. (These, plus the *delivery* moves — announce-topic, model-target-slow, gloss, reveal, count-on, track-read-along — make up the full teaching-move menu in `.agents/TEACHING-ACTIONS.md`, where each move's capability requirement is declared. **Here** we reason WHICH moves and HOW MANY; **there** is what each one REQUIRES.)
 
 - **Replay / replicate.** Meet the exact same beat again — replay the same clip (its audio AND its visual), identical. Cheapest and most consistent; strong for a target word or sound being memorized. Replicating a prior cue's clip costs no new generation.
 - **Choral invitation.** The teacher models, then invites the echo — "跟我说：Hello." Sets the call-and-response rhythm even before a literal answer-gap is recorded.
