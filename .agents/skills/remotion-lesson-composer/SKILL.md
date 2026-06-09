@@ -15,7 +15,7 @@ Compose, do not invent. Every visual concept comes from primitives in `src/shape
 - `lesson-data/<id>/audio-captions.md` — caption styling intent, SFX, music plan (NOT absolute frames)
 - `lesson-data/<id>/audio-cues.json` — the sound manifest (bed key, intro/outro, SFX→beat map). SEMANTIC, no frames — you supply the frames. (Wave 2c; optional — a silent lesson has none.)
 - `lesson-data/<id>/sketch-overlay.md` — teacher marks scheduled in CUE-RELATIVE frames
-- `lesson-data/<id>/script-cues.json` — narration text, phrase, caption per cue
+- `lesson-data/<id>/script-cues.json` — narration text, phrase, caption, and any `gap` ({seconds, reason}) per cue
 - `src/lessons/generated/<camelLessonId>Timing.ts` — ASR-aligned cue boundaries (MUST exist; produced by Wave 3 voice + ASR). If this file is a manual-provisional stub, the composer refuses and asks the orchestrator to run Wave 3 first.
 
 ## ZERO FRAME LITERALS RULE
@@ -71,6 +71,14 @@ export const myLessonCues: AlignedLessonCue[] = buildReconciledCues({
 ```
 
 The `buildReconciledCues` helper computes per-cue `endFrame = startFrame + max(narrationFrames, visualMotionFrames) + tailFrames`, then chains cues end-to-end. If `visualMotionByCueId` is undefined for a cue, the cue length = narration + tail (narration-driven cue).
+
+### Honor intentional silence — the gap reason
+
+A cue may carry a `gap` ({seconds, reason}) — a stretch where the voice is deliberately empty (`docs/pipeline-architecture.md` §10). The silence is already in the WAV and in the cue window; the composer's job is to make that window **read as intentional, never as a frozen dead frame**:
+
+- **`reason: "learner-response"`** (the wait-time after "跟我说…") — hold a clear **"your turn" affordance** through the gap window: a gentle pulse on the prompt / read-along row, a mic-or-ear cue — the child should feel invited to speak, not stalled. **Default = compose existing primitives** (`PulseCircle` + the prompt text + `ReadAlongHighlight`), per the REUSE-first law; only flag a `<ResponseGapPrompt>` capability gap to Wave 3 if that composition genuinely can't read at render size. Do **not** stack narration-driven motion or start the next target inside a response window.
+- **`reason: "animation-hold"`** — let the focal visual *breathe* and complete; this is the picture teaching. Use the moving-hold wrap (rule #6) so a static stretch isn't dead-still.
+- All gap frames are cue-relative (`cues['echo-hello'].startFrame + offset`) — zero literals, as everywhere.
 
 ## Named motion vocabulary
 

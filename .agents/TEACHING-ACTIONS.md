@@ -71,8 +71,8 @@ Model the target, then **invite the child to repeat** ("跟我说：Hello"). Set
 rhythm. · *when:* acquisition reinforcement (`lesson-pedagogy` §8 choral move). · *pace:* model →
 **a real ≥3–5s SILENT child-response gap** (the wait-time — see `learner-response-gap`), then
 reveal; choral repeats themselves run ~3–5s × 2. · *requires:* **audio** = model line + a held
-silent beat (the genuine zero-narration gap is a reconcile follow-up — note where it's wanted);
-**visual/layout** = a clear "your turn" cue.
+silent beat realized as the echo cue's `gap: { reason: "learner-response" }` (baked into the WAV at
+zero TTS cost — `docs/pipeline-architecture.md` §10); **visual/layout** = a clear "your turn" cue.
 
 ### track-read-along
 Surface the **exact phrase as it is spoken** and move a cursor across it, so the child follows the
@@ -111,12 +111,16 @@ most consistent reinforcement. · *when:* a target being memorized (`lesson-peda
 *requires:* nothing new — the storyboard marks the cue `replay of <cue-id>`; W2b/W3a reuse the clip.
 
 ### learner-response-gap
-A planned silent beat where the child answers **before** the reveal — the **wait-time**. · *when:*
+A planned silent beat where the child answers **before** the reveal — the **wait-time**. One
+*reason* among several for intentional, typed silence (others live outside the teaching menu:
+letting an animation land, a breath, a beat — see `docs/pipeline-architecture.md` §10). · *when:*
 every acquisition target, paired with `invite-echo`. · *pace:* **≥3–5s of held SILENCE** (longer
 for L2); prompt (~2s) → silent gap (3–5s) → reveal (~3s). · *requires:* **audio** = a true
-zero-narration window — note where it belongs; its first-class SILENT-timeline mechanism (a beat
-that is neither narration nor motion) is a **reconcile follow-up**, so for now realize it as
-`invite-echo`'s held beat and mark the genuine gap for the timeline.
+zero-narration window, now a SHIPPED mechanism (no longer a follow-up): the storyboard gives the
+echo+wait its **own `echo-*` cue**, and audio-captions puts a `gap: { seconds, reason:
+"learner-response" }` on it. The voice generator bakes that as **zero-cost local silence** into the
+frozen WAV (never a TTS call), the reconcile absorbs it into the cue window, and the composer holds
+a "your turn" affordance through it. **visual/layout** = a clear "your turn" cue through the gap.
 
 ## Adding a move
 

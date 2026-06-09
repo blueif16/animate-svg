@@ -33,6 +33,7 @@ This is the heart of the skill, and the most common failure: producing **one cue
 - **Reason per discovery; never apply a fixed template.** An acquisition beat (a new word/sound — most language/L2 content) typically becomes several cues: present → model again / choral → spaced recall in the recap. An insight beat (a relation that clicks) is often one cue plus a callback. A different lesson → a different spine. Do not stamp "I-do/we-do/you-do" on everything; use it only where pedagogy called for practice.
 - **Replay can be a replicate, not a re-author.** A reinforcement cue may simply *replay an earlier cue* — same target, same intent — so the child meets it again identically. Note it as `replay of <cue-id>` so Wave 2b/3 can reuse the same voiced clip + visual instead of generating new ones (cheap, consistent). This is the easiest reinforcement and often the right one.
 - **A cumulative recap** that re-practices the lesson's targets together (spaced recall) is almost always warranted — it is retrieval, not decoration.
+- **An invite-echo gets its OWN cue (the wait-time is a real beat).** When a cue invites the child to repeat (`invite-echo` / `learner-response-gap`), make the prompt its own `echo-<target>` cue — the *reveal* / next target is the following cue. A two-variant echo (Goodbye, then Bye-Bye) → **two** `echo-*` cues, each followed by its own wait. This is what lets the ≥3–5s wait-time become real silence downstream (audio-captions puts a `learner-response` `gap` on the echo cue; it bakes into the WAV at zero cost — `docs/pipeline-architecture.md` §10). Don't bury the echo+wait inside a model cue.
 - **Pace is a downstream consequence, not your job to pad** — you set how many beats the teaching needs; the length emerges at Wave 3.5. Don't pad cues to hit a length; don't starve the teaching to keep it short.
 
 ## Discipline
@@ -42,8 +43,20 @@ This is the heart of the skill, and the most common failure: producing **one cue
 - Every lesson opens with a short topic-intro beat (the `announce-topic` move) — see CLAUDE.md. Its `requires` is binding: the title/teaser **reads alone first**, the cast/teaching objects **enter after** (never overlaid on the title). Flag this as a beat-ordering note for the composer, not just a single frame.
 - Language/L2 spine: the target word/sound is delivered by the **voice** (pedagogy §4 carve-out / §9); the **picture** delivers the moment + a trackable read-along. Plan beats that let the child *hear it, see it, and meet it again* — not one flashcard per word.
 
+## Exposure ledger (machine-readable, for the comprehension-floor advisory)
+
+End the storyboard with a small `exposures` block: per acquisition target, the count of spaced encounters across the spine (model + choral + individual + recap all count). This is what the Wave-3.5 reconcile reads to WARN when an acquisition lesson lands under its `lesson-pedagogy` §8 floor — so keep it accurate to the actual cues, not aspirational.
+
+```
+exposures:
+  I'm: 8
+  Hello: 7
+  Goodbye: 5
+```
+
 ## Report back
 
 - The ordered cue list (ids) + each cue's discovery ref + its teaching action(s).
 - Which cues are reinforcement cues (and which are `replay of <id>`), with the one-line reasoning tying them to pedagogy's `reinforcement` lines.
+- The `exposures` ledger (per target).
 - Any required-visual gaps flagged for Wave 3 (named demands only) — sourced from the teaching actions' `requires`.
