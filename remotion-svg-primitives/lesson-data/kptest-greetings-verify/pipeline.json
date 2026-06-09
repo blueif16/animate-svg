@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-greetings-verify",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestGreetingsVerifyLesson",
+  "cuePlan": "lesson-data/kptest-greetings-verify/script-cues.json",
+  "output": "out/kptest-greetings-verify/kptest-greetings-verify.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-greetings-verify-voice.wav",
+    "metaOut": "out/kptest-greetings-verify/gemini-voice.json",
+    "alignOutJson": "out/kptest-greetings-verify/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestGreetingsVerifyTiming.ts",
+    "constPrefix": "kptestGreetingsVerify"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "lessonId": "kptest-greetings-verify",
+  "cues": [
+    {
+      "id": "intro",
+      "narration": "来学英语打招呼。",
+      "phrase": "来学英语打招呼",
+      "caption": "来学英语打招呼。"
+    },
+    {
+      "id": "meet-hello",
+      "narration": "看，他们打招呼：Hello！你好！跟我说：Hello！",
+      "phrase": "看他们打招呼 Hello 你好 跟我说 Hello",
+      "caption": "看，他们打招呼：Hello！你好！\n跟我说：Hello！"
+    },
+    {
+      "id": "hi-intro",
+      "narration": "她叫Sam。Hi, I'm Sam。I'm……",
+      "phrase": "她叫 Sam Hi I'm Sam I'm",
+      "caption": "她叫Sam。Hi, I'm Sam。\nI'm……",
+      "emphasis": true
+    },
+    {
+      "id": "im-echo",
+      "narration": "听这个音：I'm——爱姆。一个音。I'm。跟我说：I'm。",
+      "phrase": "听这个音 I'm 爱姆 一个音 I'm 跟我说 I'm",
+      "caption": "听这个音：I'm——爱姆。一个音。\nI'm。跟我说：I'm。",
+      "emphasis": true,
+      "notes": "IPA /aɪm/ in this field is for TTS reference only — Gemini reads it as the English sound. '爱姆' is the Chinese phonetic approximation (ài mǔ). ASR aligner should use phrase field (no IPA slashes). If '爱姆' alignment matchScore < 0.75, replace it with 'I'm' in phrase only."
+    },
+    {
+      "id": "part-goodbye",
+      "narration": "该说再见了——Goodbye！Bye-Bye！跟我说：Goodbye！",
+      "phrase": "该说再见了 Goodbye Bye Bye 跟我说 Goodbye",
+      "caption": "该说再见了——Goodbye！Bye-Bye！\n跟我说：Goodbye！"
+    },
+    {
+      "id": "recap-encounter",
+      "narration": "打招呼、介绍自己、说再见——三步！你会用英语交朋友了！",
+      "phrase": "打招呼 介绍自己 说再见 三步 你会用英语交朋友了",
+      "caption": "打招呼、介绍自己、说再见——三步！\n你会用英语交朋友了！"
+    }
+  ]
+}
