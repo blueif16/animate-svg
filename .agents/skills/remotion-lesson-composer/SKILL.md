@@ -84,7 +84,7 @@ export const myLessonDuration = reconciled.durationFrames;
 
 A cue may carry a `gap` ({seconds, reason}) — a stretch where the voice is deliberately empty (`docs/pipeline-architecture.md` §10). The silence is already in the WAV and in the cue window; the composer's job is to make that window **read as intentional, never as a frozen dead frame**:
 
-- **`reason: "learner-response"`** (the wait-time after "跟我说…") — hold a clear **"your turn" affordance** through the gap window: a gentle pulse on the prompt / read-along row, a mic-or-ear cue — the child should feel invited to speak, not stalled. **Default = compose existing primitives** (`PulseCircle` + the prompt text + `ReadAlongHighlight`), per the REUSE-first law; only flag a `<ResponseGapPrompt>` capability gap to Wave 3 if that composition genuinely can't read at render size. Do **not** stack narration-driven motion or start the next target inside a response window.
+- **`reason: "learner-response"`** (the wait-time after a "now you say it" prompt) — hold a **LEGIBLE "your turn" affordance** through the gap window, made of THREE readable parts: (1) a localized prompt LABEL the child can read (a "your turn" phrase in the lesson's framing language), (2) a `PulseCircle` or breathing ring drawing the eye to the read-along row the child should echo, and (3) a simple speech / mic glyph. A **bare low-opacity glow with no label and no icon is FORBIDDEN** — it reads as dead air, not an invitation. **Default = compose existing primitives** (`PulseCircle` + the prompt label + a glyph + `ReadAlongHighlight`), per the REUSE-first law; only if that composition genuinely cannot read at render size, flag a `<ResponseGapPrompt>` capability gap to Wave 3 — never hand-roll a one-off faint glow. Do **not** stack narration-driven motion or start the next target inside a response window.
 - **`reason: "animation-hold"`** — let the focal visual *breathe* and complete; this is the picture teaching. Use the moving-hold wrap (rule #6) so a static stretch isn't dead-still.
 - All gap frames are cue-relative (`cues['echo-hello'].startFrame + offset`) — zero literals, as everywhere.
 
@@ -181,10 +181,15 @@ After writing the scene, the composer:
 
 The composer reports back with the path to the still and a 1-line grade per Contract bullet.
 
+## On-screen target text must match the cue's own audio
+
+Every on-screen target STRING — a `DialogueExchange` `line`, a `ReadAlongHighlight` word glyph, a name tag — must be a token the **current cue's own voice clip actually speaks**. Derive it from THAT cue's `phrase` / `narration` in `script-cues.json` (the frozen audio truth), NEVER re-author it from the brief's prose or from an adjacent cue. The failure mode is a bubble that shows a word this cue's audio never speaks — a phrase carried over from an earlier cue, or lifted from the brief — so the picture displays text the child does not hear (and the burned-in caption may show yet a third string). On-screen target strings must be a SUBSET of the cue's spoken phrase, in spoken order. A word that must appear on screen but is NOT in this cue's audio belongs in the cue where it IS spoken — or needs its own cue: kick back to storyboard / audio-captions, do not paper over it in the scene.
+
 ## What the composer must NOT do
 
 - Modify any file under `src/shape-primitives/` (primitives are Wave 3's domain)
 - Introduce new pedagogy / new copy / new cues not in script-cues.json
+- Put a word on screen that the current cue's voice clip does not speak — on-screen target strings (bubble lines, read-along glyphs, name tags) ⊆ the cue's spoken `phrase` from script-cues.json
 - Hardcode any hex color (use `colors.*` from theme)
 - Hardcode any frame number not derived from `cues[id]`
 - Hardcode any `Easing.bezier(...)` numbers or spring `{ damping, stiffness, mass }` literal in a scene file — use `EASE.*` / `SPRING.*` from `motion-primitives/curves.ts`
