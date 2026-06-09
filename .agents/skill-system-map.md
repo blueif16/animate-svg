@@ -53,7 +53,7 @@ Three tiers (CLAUDE.md "Observability"), cheapest first, plus the products:
 - **Prior diagnostics on file:** `docs/lesson-build-shakedown-fixlog.md` (first e2e run fix log).
 
 ## Diagnostics log (append-only — makes this map more certain)
-_One line per fix: `date — owner — rule (skillsys <sha>)`._
+_The **product-quality ledger**: one line per skill/workflow edit that changes what the artifact-production pipeline PRODUCES (`date — owner — rule (skillsys <sha>)`). Stewardship-process/method edits and other-repo edits are NOT logged here — `git log` is their record._
 - 2026-06-08 — (bootstrap) map created from `lesson-build.js` + CLAUDE.md. No `skillsys` edits yet.
 - prior — see `docs/lesson-build-shakedown-fixlog.md` (shakedown diagnostics, first e2e `kp1-hello-greetings`, W6 YELLOW, 2026-06-04).
 - prior (not skillsys-tagged) — kp1 flaw 1 (L2 treated differently from L1) + flaw 2b (slideshow rhythm): L2 carve-out + tokenPattern widen + pedagogy §8/§9 reinforcement + storyboard cue-spine, committed `0bccd7a` + `911edf8`.
