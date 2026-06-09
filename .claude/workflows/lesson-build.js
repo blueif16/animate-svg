@@ -167,6 +167,12 @@ const PREFLIGHT_RESULT = {
 // PRODUCTION executor (pi agents, which extract.mjs derives from this file and which NEVER load
 // CLAUDE.md) receives them through their only channel. CLAUDE.md mirrors these laws as the ambient
 // summary for Claude-Code-only sessions; on any disagreement THIS file wins — edit it first.
+//
+// VERIFY EVERY EDIT WITH `node pi-runner/extract.mjs` — NOT `node --check`. extract.mjs parses the
+// body the way pi does (de-export meta → new AsyncFunction(body)); `node --check` ESM-parses the
+// file and SILENTLY tolerates an unclosed template literal (e.g. a `${...}` string closed with `'`
+// instead of a backtick) that makes extraction — and therefore every pi run — fail. A green
+// `node --check` is NOT sufficient; a clean `extract.mjs` (prints all N nodes/stages) is.
 function discipline(extra) {
   return [
     'You are ONE node in the lesson-build workflow. Your operating system-prompt is the SKILL file(s) listed below — Read them FIRST and follow them literally. Also Read this lesson\'s pedagogy.md (once it exists) — every visual/audio choice must serve a named discovery in it.',
