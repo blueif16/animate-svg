@@ -107,7 +107,31 @@ Per-node digest fields in `run-status.json`: `status`, `durationMs`, `toolCalls`
 billable=input+output, contextPeak=max cumulative context, cost}`), `eventCount`, `artifacts[]`
 (self-reported, stat()'d on disk), `requiredArtifacts[]` (the declared `DRIVER-ARTIFACTS` contract,
 stat()'d), `ownsBreach[]` (self-reported writes outside `DRIVER-OWNS`, if any), `summary`,
-`issues[]`, `pipelineFindings[]`.
+`issues[]`, `pipelineFindings[]`, and (when escalation is armed) `attempts[]` (per-attempt
+`{model, provider, status, durationMs, tokens}`) + `escalated`.
+
+## Opt-in: escalation gate + node-contract extension + tool gating
+
+Three additions, all OFF by default (flip in `.env`), all engine-baked in the byte-identical `run.mjs`
+(the extension ships in `extensions/`). Full specs in the global skill
+(`~/.claude/skills/transform-workflow-to-pi/reference/{escalation,artifact-contract}.md`).
+
+- **Escalation (`PI_RUNNER_ESCALATE=1`)** — *advisor inversion*. The cheap model runs every node; on a
+  VERIFIED failure (artifact-contract breach / stuck-loop / timeout / degenerate — never self-
+  confidence) the driver consults a stronger model ONCE, fed the failure evidence (`consultPreamble`).
+  `cp`'s `qwen3.7-max` is already its top tier, so the consult is CROSS-family:
+  `PI_RUNNER_ESCALATE_PROVIDER=minimax` / `PI_RUNNER_ESCALATE_MODEL=MiniMax-M3` (reasoning, already in
+  `~/.pi/agent/models.json`). `PI_RUNNER_MAX_RETRIES` (default 1) is the same-model transient-retry
+  budget. `DRIVER-NO-ESCALATE` opts a pure gate out. Driver-side — no pi extension.
+- **Node-contract extension (`PI_RUNNER_CONTRACT_EXT=1`)** — loads `extensions/node-contract.ts` via
+  `-e`: a typed `submit_result` tool (structured return — the driver reads `result.details` off the
+  `tool_execution_end` event, fenced-JSON parser as fallback) + an in-loop owned-paths `tool_call`
+  block (PREVENTS an out-of-lane `write`/`edit`, from the node's `DRIVER-OWNS`). **Spike-verified
+  2026-06-09** on qwen headless (tool called reliably; `details` at `ev.result.details`; out-of-lane
+  blocked, in-lane allowed). Keep OFF until a full lesson run confirms no over-blocking.
+- **Per-node tool gating** — `DRIVER-TOOLS:` / `DRIVER-EXCLUDE-TOOLS:` markers in a node's prompt →
+  `--tools` / `--exclude-tools` on that node's spawn (shrinks a check node's wander surface). No env;
+  active whenever the workflow emits the marker. Default (no marker) = full toolset, unchanged.
 
 ## Generic engine — wiring `.env` is the only per-repo file; credential is pi-native
 
