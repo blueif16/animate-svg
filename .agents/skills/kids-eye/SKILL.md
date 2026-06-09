@@ -7,7 +7,7 @@ description: Viewer-first discipline for early-childhood Remotion lesson scenes.
 
 `visual-discipline` enforces layout mechanics. `early-childhood-visual-taste` sets palette and tone. This file enforces **viewing**: the discipline of designing for the eye of a six-year-old, at the actual composition size, before any frame of motion is choreographed.
 
-It exists because subagents keep producing scenes that pass the layout rules but **a child cannot see**. Symptoms: a label rendered on top of the bundle it names; ten gray ticks meant to represent "ten ones" but reading as a barcode; a "tied bundle" that looks like a rod impaling sticks because no one tested whether the rope reads as a rope.
+It exists because subagents keep producing scenes that pass the layout rules but **a child cannot see**. Symptoms: a label rendered on top of the bundle it names (or, inversely, a cast character pasted on top of the title text — see §1.5 z-order legibility); ten gray ticks meant to represent "ten ones" but reading as a barcode; a "tied bundle" that looks like a rod impaling sticks because no one tested whether the rope reads as a rope.
 
 The root failure is not implementation. It is that the subagent never put itself inside the kid's eye. It added elements because it had props. It used the canvas as a stage instead of as a viewing distance.
 
@@ -53,6 +53,8 @@ What this enforces:
 
 Overlap of a label and its referent (`一个十` rendered ON the bundle) is not a layout bug; it is a missing zone declaration.
 
+**Z-order legibility — the general law (runs in BOTH directions, for ALL readable content).** Not just labels-over-objects: **nothing readable is ever occluded by anything drawn on top of it — text most of all.** A decorative element (a cast character, a prop, a sticker, a 3D card) may never sit over a title, a caption, a label, a read-along phrase, or the teaching glyph. When two zones would overlap, the one carrying readable content wins z-order — the other moves to its own zone, or the two are **sequenced in time** so the readable one reads first/alone (the intro title reads *before* the cast enters — the `announce-topic` move's `requires` in `.agents/TEACHING-ACTIONS.md`). Note: the linear collision manifest can MISS this when the occluder fades in over the text (it samples a low-opacity keyframe and sees no overlap), so this is a **design-time discipline**, not something to leave to the gate.
+
 ## 2. One element, one unique signal
 
 Before you add any element to the picture, complete this sentence:
@@ -96,7 +98,7 @@ Required:
 Before any visual-touching subagent (visual-design, sketch-layer, primitive-builder, composer) reports back, confirm in its own words:
 
 1. The kid's-eye measurement block from §1 has been written, and every measured number meets the minimums.
-2. The zones from §1.5 are declared, disjoint, and every scene element belongs to a named zone.
+2. The zones from §1.5 are declared, disjoint, and every scene element belongs to a named zone — and no readable content (title, label, caption, read-along, teaching glyph) is occluded by any element drawn over it (§1.5 z-order legibility), checked across the cue's motion, not just one keyframe.
 3. Every element answers §2's sentence. No duplicates, no chrome.
 4. The §3 finger-cover test has been simulated — both directions (cover each, cover all-except-teaching-object).
 5. If the scene shows a transformation, identity is preserved across it (§4).
