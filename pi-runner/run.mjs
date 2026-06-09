@@ -153,6 +153,8 @@ function selectStages(stages, until) {
   return stages.slice(0, idx + 1);
 }
 
+const RUN_T0 = Date.now();
+let stageT0 = 0;
 const status = {
   run: args.run,
   lessonId: args.wfArgs.lessonId || null,
@@ -164,12 +166,18 @@ const status = {
   debug: DEBUG,
   startedAt: nowISO(),
   updatedAt: nowISO(),
+  elapsedMs: 0,        // live wall-clock since start — answers "is a run going, and for how long?"
   done: false,
   ok: null,
+  durationMs: null,    // final wall-clock at completion
+  stage: null,         // { index, total, phase, nodes, startedAt, elapsedMs } while a stage runs
+  totals: null,        // { nodes, toolCalls, tokensBillable } at completion
   nodes: {},
 };
 function writeStatus() {
   status.updatedAt = nowISO();
+  status.elapsedMs = Date.now() - RUN_T0;
+  if (status.stage) status.stage.elapsedMs = Date.now() - stageT0;
   ensureDir(path.dirname(statusPath));
   fs.writeFileSync(statusPath, JSON.stringify(status, null, 2));
 }
@@ -294,9 +302,13 @@ async function runNode(node) {
       if (finished) return;
       refresh(true);
       if (DEBUG) {
+        // Console shows only ACTIONABLE signal: how long, what it's doing now, work/cost so far,
+        // and liveness (Δ since last event + stall). Raw event count + event-type strings stay in
+        // the polled `live` block, not the console — they are noise to a human watching.
         const el = (n.live.elapsedMs / 1000).toFixed(0), dl = (n.live.sinceEventMs / 1000).toFixed(0);
         const think = thinkingChars > 999 ? `${(thinkingChars / 1000).toFixed(1)}k` : `${thinkingChars}`;
-        console.log(`    · ${node.id} t=${el}s ev=${eventCount} tools=${toolCalls} cur=${n.live.currentTool || "-"} think=${think} tok=${tokens.billable} last=${n.live.lastEvent} Δ=${dl}s${n.live.stalled ? "  ⚠ STALLED" : ""}`);
+        const tok = tokens.billable > 999 ? `${(tokens.billable / 1000).toFixed(1)}k` : `${tokens.billable}`;
+        console.log(`    · ${node.id}  t=${el}s  cur=${n.live.currentTool || "-"}  think=${think} tok=${tok}  Δ=${dl}s${n.live.stalled ? "  ⚠ STALLED" : ""}`);
       }
       if (n.live.elapsedMs > NODE_TIMEOUT_S * 1000) {
         console.error(`    ✕ ${node.id} exceeded --node-timeout ${NODE_TIMEOUT_S}s — killing pi`);
@@ -341,7 +353,9 @@ async function runNode(node) {
       delete n.live;
       writeStatus();
       const mark = st === "ok" ? "✓" : st === "error" || st === "blocked" ? "✕" : "•";
-      console.log(`    ${mark} ${node.label} → ${st} (${(n.durationMs / 1000).toFixed(1)}s, ev=${eventCount}, tools=${toolCalls}, tok=${tokens.billable}) — ${(n.summary || "").split("\n")[0].slice(0, 100)}`);
+      const tokK = tokens.billable > 999 ? `${(tokens.billable / 1000).toFixed(1)}k` : `${tokens.billable}`;
+      const thinkK = thinkingChars > 999 ? `${(thinkingChars / 1000).toFixed(1)}k` : `${thinkingChars}`;
+      console.log(`    ${mark} ${node.label} → ${st}  (${(n.durationMs / 1000).toFixed(1)}s · tools=${toolCalls} · think=${thinkK} · tok=${tokK}) — ${(n.summary || "").split("\n")[0].slice(0, 100)}`);
       resolve(n);
     });
   });
@@ -371,18 +385,34 @@ async function runNode(node) {
 
   for (let i = 0; i < stages.length; i++) {
     const s = stages[i];
+    stageT0 = Date.now();
+    status.stage = { index: i + 1, total: stages.length, phase: s.phase, nodes: s.nodes.map((x) => x.id), startedAt: nowISO(), elapsedMs: 0 };
     console.log(`[stage ${i + 1}/${stages.length}] [${s.phase}] ${s.nodes.map((x) => x.id).join(" ∥ ")}`);
     const results = await Promise.all(s.nodes.map((node) => runNode(node)));
+    console.log(`  └ stage ${i + 1}/${stages.length} done in ${((Date.now() - stageT0) / 1000).toFixed(1)}s  ·  run elapsed ${((Date.now() - RUN_T0) / 1000).toFixed(1)}s`);
     const bad = results.find((r) => r.status === "error" || r.status === "blocked");
     if (bad && !args.dryRun) {
-      status.done = true; status.ok = false; writeStatus();
-      console.error(`\n✕ halted at ${bad.id} (${bad.status}). See ${statusPath}\n`);
+      status.stage = null;
+      status.done = true; status.ok = false; status.durationMs = Date.now() - RUN_T0; writeStatus();
+      console.error(`\n✕ halted at ${bad.id} (${bad.status}) after ${((Date.now() - RUN_T0) / 1000).toFixed(1)}s. See ${statusPath}\n`);
       process.exit(1);
     }
   }
 
+  status.stage = null;
   status.done = true;
   status.ok = args.dryRun ? null : true;
+  status.durationMs = Date.now() - RUN_T0;
+  // Run-level rollup — cost/effort at a glance. Wall-clock total ≠ Σ(node durations): parallel
+  // lanes overlap, so durationMs is true elapsed while tokens/tools sum the work done.
+  const nodeVals = Object.values(status.nodes);
+  status.totals = {
+    nodes: nodeVals.length,
+    toolCalls: nodeVals.reduce((a, x) => a + (x.toolCalls || 0), 0),
+    tokensBillable: nodeVals.reduce((a, x) => a + ((x.tokens && x.tokens.billable) || 0), 0),
+  };
   writeStatus();
-  console.log(`\n${args.dryRun ? "DRY-RUN complete" : "✓ complete"} — ${stages.flatMap((s) => s.nodes).length} nodes. status: ${statusPath}\n`);
+  const totS = (status.durationMs / 1000).toFixed(1), totMin = (status.durationMs / 60000).toFixed(1);
+  const totTokK = status.totals.tokensBillable > 999 ? `${(status.totals.tokensBillable / 1000).toFixed(1)}k` : `${status.totals.tokensBillable}`;
+  console.log(`\n${args.dryRun ? "DRY-RUN complete" : "✓ complete"} — ${status.totals.nodes} nodes in ${totS}s (${totMin}m) · ${status.totals.toolCalls} tools · ${totTokK} tok · status: ${statusPath}\n`);
 })();

@@ -58,13 +58,27 @@ node pi-runner/run.mjs --lesson <id> --until verify --debug      # full pipeline
 
 ## Debug vs production mode
 
+`--debug` is the **single flip** between a verbose forensic mode and a lean fleet mode. It gates the
+heavy artifacts only — the distilled per-node telemetry (timing, status, tool breakdown, thinking,
+tokens) lands in `run-status.json` in **both** modes, computed live from the stream.
+
 - **`--debug` (always while developing):** 4s heartbeat (`t=elapsed · ev · tools · cur=tool ·
-  last=event · Δ=since-last-event · ⚠STALLED`), continuous `run-status.json` refresh, per-node
-  `*.debug.log`, **stall flag at >45s**, and a hard `--node-timeout` (default 600s) that kills a
-  runaway node. A hang is visible in seconds, never minutes.
-- **Production (no `--debug`):** lean — 10s status refresh, no console heartbeat — for the fleet.
+  think=chars · tok=billable · last=event · Δ=since-last-event · ⚠STALLED`), continuous
+  `run-status.json` refresh, **stall flag at >45s**, a hard `--node-timeout` ($PI_RUNNER_NODE_TIMEOUT
+  or 1800s) that kills a runaway node, AND the full forensic archive: the raw `_pi/<node>.events.jsonl`
+  (every pi event, for exact reproduction) + the `_pi/<node>.debug.log` timeline. A hang is visible in
+  seconds, never minutes.
+- **Production (no `--debug`):** lean — 10s status refresh, no console heartbeat, and **no raw event
+  archive**. The raw stream is cumulative (pi re-embeds the whole accumulated message on every delta),
+  so a single node can reach **100s of MB** — production skips it entirely. The digest's distilled
+  aggregates are the production telemetry; re-run one node with `--debug` to recover its raw archive.
 - **Status is verified, not trusted:** a node is `ok` only if the artifacts it reports actually
   exist on disk.
+
+Per-node digest fields in `run-status.json`: `status`, `durationMs`, `toolCalls`, `toolBreakdown`
+(`{read,bash,write,…}` counts), `thinking` (`{deltas, chars, spanMs}`), `tokens` (`{input, output,
+billable=input+output, contextPeak=max cumulative context, cost}`), `eventCount`, `artifacts[]`
+(stat()'d on disk), `summary`, `issues[]`, `pipelineFindings[]`.
 
 ## Generic engine — `.env` is the only per-repo file
 
