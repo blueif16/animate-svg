@@ -161,6 +161,40 @@ function artifactStateAbs(p) {
   catch { return { path: p, exists: false, bytes: 0 }; }
 }
 
+// OUTPUT CONTRACT (the "artifact contract") — the generic marker layer Claude Code leaves to the
+// orchestrator. Native Claude gives a skill `description` (requirements), `## Inputs`/`## Output`
+// prose (I/O), and a JSON `schema` (the RETURN shape, validated + retried) — but it verifies the
+// returned MESSAGE, never the FILESYSTEM. A producing node may therefore DECLARE, in its prompt,
+// the files it is REQUIRED to leave on disk (`DRIVER-ARTIFACTS`) and the only paths it may write
+// (`DRIVER-OWNS`) — both space-separated absolute paths/globs, same marker convention as
+// `DRIVER-PREFLIGHT`. The workflow author writes ONE `contract({...})` declaration that renders
+// both the Definition-of-Done prose (for the model) AND these markers (for this driver). Unlike
+// `outputArtifacts` (self-reported, honest only when the model is), the driver verifies the
+// REQUIRED set itself — a clean exit that did NOT produce a required artifact is a contract BREACH,
+// not an ok. Full spec: transform-workflow-to-pi/reference/artifact-contract.md.
+function markerPaths(prompt, key) {
+  const m = new RegExp(`(?:^|\\n)\\s*${key}:\\s*(.+?)\\s*(?:\\n|$)`).exec(prompt || "");
+  if (!m) return null;
+  const paths = m[1].split(/\s+/).filter(Boolean);
+  return paths.length ? paths : null;
+}
+// Resolve a possibly-relative path to absolute the SAME forgiving way artifactState does, so the
+// owned-path check and the existence check agree on where a file is.
+function toAbsForgiving(p) {
+  if (path.isAbsolute(p)) return p;
+  for (const c of [path.join(RUN_CWD, p), path.join(ROOT, p)]) { try { fs.statSync(c); return c; } catch {} }
+  return path.join(RUN_CWD, p);
+}
+// Is an absolute path inside one of the owned globs? Supports a trailing /* or /** (a directory the
+// node owns) and exact files; everything else is treated as a file or a directory prefix.
+function withinOwned(p, globs) {
+  const ap = toAbsForgiving(p);
+  return globs.some((g) => {
+    if (/\/\*\*?$/.test(g)) { const base = g.replace(/\/\*\*?$/, ""); return ap === base || ap.startsWith(base + "/"); }
+    return ap === g || ap.startsWith(g.replace(/\/$/, "") + "/");
+  });
+}
+
 // pi has no schema-forced return, so each node ends with a fenced JSON block the driver parses;
 // the driver ALSO stat()s the reported artifacts on disk (verified, not trusted).
 function returnProtocol(label) {
@@ -175,6 +209,9 @@ function returnProtocol(label) {
     ),
     "```",
     "The driver stat()s outputArtifacts on disk; status=ok REQUIRES them present.",
+    "If this node's prompt carries a DRIVER-ARTIFACTS line, the driver ALSO verifies those EXACT files",
+    "exist regardless of what you list — a missing one is a contract breach (status=blocked). Produce",
+    "every one, or set status=blocked and say why; never exit clean having skipped a required artifact.",
   ].join("\n");
 }
 
@@ -444,8 +481,29 @@ async function runNode(node) {
       // self-reported status — forcing "blocked" on every zero-artifact node wrongly fails
       // legitimate gates (e.g. a mid-chain-resume preflight that only verifies upstream files).
       const declaredMissing = n.artifacts.length > 0 && !n.artifacts.every((a) => a.exists);
+      // OUTPUT CONTRACT enforcement: verify the REQUIRED artifacts the node's prompt declared
+      // (DRIVER-ARTIFACTS), independent of the self-report. This closes the false-OK hole the
+      // no-return-block fix did NOT cover — a node that parses a clean return but produced an empty
+      // or wrong artifact set (the W2c contamination class). A missing required artifact is a breach.
+      const requiredPaths = markerPaths(node.prompt, "DRIVER-ARTIFACTS");
+      let contractMissing = [];
+      if (requiredPaths) {
+        const reqChecks = requiredPaths.map(artifactStateAbs);
+        n.requiredArtifacts = reqChecks;
+        contractMissing = reqChecks.filter((c) => !c.exists).map((c) => c.path);
+      }
+      // Soft owned-path containment on the SELF-REPORTED writes (the hard cross-contamination gate —
+      // git diff ⊆ owns — arrives with per-stage commits; until then this catches a node that ADMITS
+      // a write outside its lane).
+      const ownedGlobs = markerPaths(node.prompt, "DRIVER-OWNS");
+      let ownsBreach = [];
+      if (ownedGlobs && n.artifacts.length) {
+        ownsBreach = n.artifacts.filter((a) => !withinOwned(a.path, ownedGlobs)).map((a) => a.path);
+        if (ownsBreach.length) n.ownsBreach = ownsBreach;
+      }
       let st;
       if (n.killedTimeout || n.killedRepeat || code !== 0) st = "error";
+      else if (contractMissing.length) st = "blocked"; // CONTRACT: a required artifact is missing — driver-verified, beats any self-report
       else if (parsed && parsed.status && parsed.status !== "ok") st = parsed.status; // gap/blocked self-report honored
       else if (declaredMissing) st = "blocked"; // ok claimed but a REPORTED file is missing (measure, don't trust)
       else if (!parsed) st = "error"; // clean exit but NO return-protocol block = degenerate run (agent derailed / its output was lost). Fail LOUDLY here — never silently pass it as ok. (A derailed W2c that wandered into another lesson's file + wrote nothing was slipping through as ok and only surfacing one node downstream when its consumer couldn't find the input.)
@@ -463,6 +521,8 @@ async function runNode(node) {
       n.issues = (parsed && parsed.issues) || [];
       n.pipelineFindings = (parsed && parsed.pipelineFindings) || [];
       if (!parsed) (n.issues = n.issues || []).push("no return JSON block parsed from pi output");
+      if (contractMissing.length) (n.issues = n.issues || []).push(`contract breach — required artifact(s) missing: ${contractMissing.join(", ")}`);
+      if (ownsBreach.length) (n.issues = n.issues || []).push(`contract warn — reported writes outside owned paths: ${ownsBreach.join(", ")}`);
       if (stderr.trim()) n.stderrTail = stderr.trim().slice(-500);
       n.endedAt = nowISO();
       n.durationMs = Date.now() - t0;

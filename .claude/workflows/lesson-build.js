@@ -189,6 +189,28 @@ function discipline(extra) {
   ].join('\n')
 }
 
+// OUTPUT CONTRACT (the 4th contract layer). Claude-native gives a skill `description`
+// (requirements), `## Inputs`/`## Output` prose (I/O), and a return `schema` (the RETURN shape,
+// validated + retried) — but it verifies the returned MESSAGE, never the FILESYSTEM. So a producing
+// node DECLARES, as DATA, the files it MUST leave on disk and the only paths it may write — authored
+// once, the same double-duty economy as `schema`. This renders BOTH the forceful Definition-of-Done
+// prose (the model reads it) AND the DRIVER-ARTIFACTS / DRIVER-OWNS machine markers (the pi driver
+// parses them and VERIFIES the required files exist, independent of the self-reported
+// outputArtifacts). In the dev Workflow the prose guides Claude (no fs post-hook); on pi the driver
+// enforces. `artifacts` = files that MUST exist (non-empty) on exit — the hard gate. `owns` = the
+// ONLY paths this node may write (a trailing /* or /** marks a directory it owns; defaults to
+// `artifacts`). `note` = an optional extra owned-path caveat. Full spec:
+// ~/.claude/skills/transform-workflow-to-pi/reference/artifact-contract.md.
+function contract({ artifacts = [], owns = [], note = '' }) {
+  const abs = (p) => `${REPO}/${p}`
+  return [
+    'OUTPUT CONTRACT — you are DONE only when EVERY file below exists and is non-empty at EXACTLY its path. Write NOTHING outside the owned paths (never another lesson\'s files). If you cannot produce them, set status="blocked" and say why — do NOT exit clean (an empty or wrong-path artifact set is a FAILURE, not an ok).',
+    `DRIVER-ARTIFACTS: ${artifacts.map(abs).join(' ')}`,
+    `DRIVER-OWNS: ${(owns.length ? owns : artifacts).map(abs).join(' ')}`,
+    note ? `OWNED-PATH NOTE: ${note}` : '',
+  ].filter(Boolean).join('\n')
+}
+
 // ===========================================================================
 // Preflight: a mid-chain start must find its upstream artifacts already on disk.
 const REQUIRED_PRESENT = {
@@ -229,8 +251,8 @@ const rSetup = run('setup') ? await agent([
     ? `STEP 1 — if ${REPO}/${P.brief} does NOT already exist, write it verbatim from the BRIEF TEXT below (7-section schema). If it exists, leave it untouched.\n--- BRIEF TEXT ---\n${briefText}\n--- END BRIEF ---`
     : `STEP 1 — verify ${REPO}/${P.brief} already exists (it is the human input). If missing, status=blocked (no brief, nothing to build).`,
   `STEP 2 — if ${REPO}/${P.pipeline} is missing, scaffold it: (cd ${REPO} && npm run lesson:scaffold -- --id ${lessonId}). pipeline.json is MECHANICAL (paths + voice config) — do not hand-edit it; it is the source of truth for the exact generated-module / timeline / composition paths the later waves use.`,
-  `OWNED PATHS: ${P.brief} (only if writing from BRIEF TEXT), ${P.pipeline}. LESSON-AGNOSTIC: the scaffold script is shared — never edit it for this lesson.`,
   `OUTPUT: confirm ${P.brief} present + ${P.pipeline} scaffolded; report the lessonId, the brief **Style.** value, and the exact paths pipeline.json declares for the timing module + timeline + composition.`,
+  contract({ artifacts: [P.brief, P.pipeline], note: 'the scaffold script (npm run lesson:scaffold) is shared — never edit it for this lesson.' }),
 ].join('\n'), { label: 'Setup scaffold', phase: 'Setup', agentType: 'claude', schema: NODE_RESULT }) : (log(`Setup ${skip('setup')}`), null)
 
 // ===========================================================================
@@ -242,7 +264,7 @@ const rPed = run('ped') ? await agent([
   `SKILLS: ${SK.pedagogy}`,
   `INPUT: ${REPO}/${P.brief} (Knowledge point / the one beat / out-of-scope / continuity).`,
   `OUTPUT ARTIFACT: ${REPO}/${P.pedagogy} — per-cue discovery list (the spine every later wave references).`,
-  `OWNED PATHS: ${P.pedagogy} only. LESSON-AGNOSTIC: pure pedagogy reasoning; touches no code.`,
+  contract({ artifacts: [P.pedagogy], note: 'pure pedagogy reasoning; touches no code.' }),
 ].join('\n'), { label: 'W0 pedagogy', phase: 'Pedagogy', agentType: 'claude', schema: NODE_RESULT }) : (log(`W0 ${skip('ped')}`), null)
 
 // ===========================================================================
@@ -255,7 +277,7 @@ const rStory = run('story') ? await agent([
   `INPUT: ${REPO}/${P.pedagogy} (each cue must carry a discovery) ; ${TEACH} (the teaching-move menu — tag each cue with its move(s); required-visual is read off each move's \`requires\`) ; ${REPO}/${P.brief}.`,
   'ACQUISITION RHYTHM: give every invite-echo its OWN `echo-<target>` cue (the wait-time is a real beat; a two-variant echo → two echo cues). End the storyboard with a machine-readable `exposures: { <target>: <n> }` ledger (spaced encounters per acquisition target) — the reconcile reads it for the comprehension-floor advisory.',
   `OUTPUT ARTIFACT: ${REPO}/${P.storyboard} — ordered cues (stable kebab ids), teaching action(s) per cue, narration beat intent, required visual, and the \`exposures\` ledger. The cue ids + order DEFINE the spine that voice / visuals / timing all bind to.`,
-  `OWNED PATHS: ${P.storyboard} only. NO durations, no frames, no code.`,
+  contract({ artifacts: [P.storyboard], note: 'NO durations, no frames, no code.' }),
 ].join('\n'), { label: 'W1 storyboard', phase: 'Storyboard', agentType: 'claude', schema: NODE_RESULT }) : (log(`W1 ${skip('story')}`), null)
 
 // ===========================================================================
@@ -267,7 +289,7 @@ const rVdesign = run('design') ? await agent([
   `SKILLS: ${SK.kidsEye} ; ${SK.visualDiscipline} ; ${SK.taste}` + (style ? ` ; STYLE OVERLAY = "${style}" (see ${ROOT}/.agents/styles/${style}/).` : ''),
   `INPUT: ${REPO}/${P.storyboard} (each cue's teaching action(s)) ; ${REPO}/${P.pedagogy} ; ${TEACH} (each move's \`requires\` — the layout/legibility constraints are BINDING, e.g. announce-topic: title reads alone first, cast enters after; model-target-slow: target big+centered+nothing-on-top) ; ${CAP} (reuse vocabulary).`,
   `OUTPUT ARTIFACT: ${REPO}/${P.visualDesign} — Visual Contract with zones + identity-invariant + per-cue visualMotionSeconds. INTENT ONLY, no absolute frames.`,
-  `OWNED PATHS: ${P.visualDesign} only. LESSON-AGNOSTIC: design intent, not code.`,
+  contract({ artifacts: [P.visualDesign], note: 'design intent, not code.' }),
 ].join('\n'), { label: 'W2a visual-design', phase: 'Design', agentType: 'claude', schema: NODE_RESULT }) : (log(`W2a ${skip('design')}`), null)
 
 let rAudio = null, rSound = null
@@ -282,7 +304,7 @@ if (run('design')) {
       'OUTPUT ARTIFACTS:',
       `  1. ${REPO}/${P.audioCaptions} — per-cue narration + caption text + cue-boundary INTENT (not absolute frames).`,
       `  2. ${REPO}/${P.scriptCues} — the canonical CuePlan JSON per /cue-plan-author (ordered cues: stable id + spoken text + role) — the input the voice kit consumes. Flag any ASR risk with a proposed fix (W3a must apply it or record a reasoned ignore).`,
-      `OWNED PATHS: ${P.audioCaptions}, ${P.scriptCues}.`,
+      contract({ artifacts: [P.audioCaptions, P.scriptCues] }),
     ].join('\n'), { label: 'W2b audio/captions', phase: 'Design', agentType: 'claude', schema: NODE_RESULT }),
     () => agent([
       discipline(),
@@ -290,7 +312,7 @@ if (run('design')) {
       `SKILLS: ${SK.soundDesign}`,
       `INPUT: ${REPO}/${P.brief} (topic → bed mood + tone-language flag) ; ${REPO}/${P.pedagogy} (reward/discovery beats → where the single ta-da goes) ; ${REPO}/${P.visualDesign} (SFX-worthy beats).`,
       `OUTPUT ARTIFACT: ${REPO}/${P.audioCues} — bed key, toneSafe (true for pinyin/tone lessons → flat pad bed + no melodic motif under narration), intro.sting, outro.resolve, sfx[] (each row: cue + event + sound KEY; the composer computes the FRAME). Keys must resolve in the shared library ${SOUND_LIB}/_*/_index.json.`,
-      `OWNED PATHS: ${P.audioCues} only. LESSON-AGNOSTIC: keys reference the shared library; never author a new asset here.`,
+      contract({ artifacts: [P.audioCues], note: 'keys reference the shared library; never author a new asset here, and NEVER read or write another lesson\'s audio-cues.json (this is the cross-contamination guard).' }),
     ].join('\n'), { label: 'W2c sound-design', phase: 'Design', agentType: 'claude', schema: NODE_RESULT }),
   ])
 } else {
@@ -313,7 +335,7 @@ if (run('wave3')) {
       `  (cd ${REPO} && npm run lesson:voice -- --config ${P.pipeline})  — generates ONE TRIMMED clip per cue under ${P.voiceClipsDir}, writes the per-cue CLIP MODULE ${P.clipsTs} (the AUDIO TRUTH: clipSrc + exact narrationFrames + any typed gap), a QA master ${P.voiceWav}, ${P.geminiVoice}, the manifest out/${lessonId}/voice-clips.json, and the ASR alignment ${P.asr} + ${P.timingTs} (QA only — matchScore audit; the reconcile does NOT use ASR frames). The deterministic AUDIO GATE runs automatically (held-vowel drone + dead-air).`,
       'STEP 2 — VERIFY (do not trust): read gemini-voice.json transcriptText vs the script; walk per-cue matchScore + asrText in the ASR module + the audio-gate report (out/<id>/audio-gate.json). A 🔴 DRONE flag means a cue authored an intra-cue pause as in-text dots ("I\'m…… Sam") — Gemini holds the vowel into a ~5s drone. FIX IT: the pause must be a typed gap or a sub-beat, never in-text dots (the generator collapses ellipsis defensively, but the cue-plan should not author it). If a cue\'s matchScore is bad OR it drones, edit that cue\'s text in script-cues.json and RE-ROLL voice — repeat until the audit + gate pass. Apply any ASR risk W2b flagged, or record a reasoned ignore.',
       'STEP 3 — FREEZE: once accepted, the per-cue CLIPS are canonical. The run does NOT advance to reconcile/composer until this audit + the audio gate pass.',
-      `OWNED PATHS: ${P.voiceClipsDir}, ${P.clipsTs}, ${P.voiceWav}, ${P.geminiVoice}, ${P.asr}, ${P.timingTs}, and (only for ASR-friendliness / anti-drone re-rolls) ${P.scriptCues}.`,
+      contract({ artifacts: [P.clipsTs, P.voiceWav, P.timingTs], owns: [P.voiceClipsDir, P.clipsTs, P.voiceWav, P.geminiVoice, P.asr, P.timingTs, P.scriptCues], note: 'scriptCues is owned ONLY for ASR-friendliness / anti-drone re-rolls.' }),
       'RETURN accepted=true only when every cue\'s matchScore is acceptable AND the audio gate has 0 drones; include the per-cue cueAudit (id, matchScore, durationFrames, reRolled).',
     ].join('\n'), { label: 'W3a voice+ASR', phase: 'Voice & Assets', agentType: 'claude', schema: VOICE_RESULT }),
     // --- W3b: primitive gap-scan → build (default REUSE) ---
@@ -324,7 +346,7 @@ if (run('wave3')) {
       `INPUT: ${REPO}/${P.storyboard} (the teaching action(s) per cue — gap detection is TEACHING-driven: start from the moves, not a drawn layout) ; ${TEACH} (each move's \`requires\` capability) ; ${REPO}/${P.visualDesign} ; the AUTHORITATIVE reuse menu ${CATALOG} (every existing primitive + its variants + useWhen — consult THIS to decide REUSE vs GAP; it is generated from code and cannot lie) ; the source in ${REPO}/src/shape-primitives/.`,
       'WORK: (1) for every TEACHING ACTION the storyboard used, read its `requires` capability from TEACHING-ACTIONS.md, then list the primitive(s)/component(s) it needs (cross-check the Visual Contract); (2) mark each REUSE (name the existing catalog entry) or GAP (explicitly named — a gap is only real if NO teaching move\'s requirement is already satisfied by the catalog); (3) build any GAP primitive by ADDING IT TO THE APPROPRIATE FAMILY FILE under src/shape-primitives/ (counting.tsx / literacy.tsx / interaction.tsx / sketch.tsx) — prop-driven, reusable, lesson-agnostic (never hardcode this lesson\'s topic). The registry catalogues primitives BY FAMILY, so a brand-new standalone file is NOT discovered and will FAIL registry:check as a stranded export; prefer an existing family file, and only introduce a new family if genuinely needed (then register it: MODULE_KIND + KIND_ORDER in scripts/registry/build-registry.mjs AND the `kind` union in src/capabilities/schema.ts). (4) WIRE IT INTO THE REGISTRY (the registry is drift-gated — an exported-but-unregistered primitive FAILS `npm run registry:check` and cannot be committed): (a) export the new primitive + its public types from the barrel src/shape-primitives/index.ts; (b) `(cd ' + REPO + ' && npm run registry:build)` — discovers it and writes its catalog entry (component/kind/source) + the agent digest; (c) author the entry\'s prose (intent / useWhen / avoidWhen / variants, and flip status off "undocumented") in src/capabilities/primitive-registry.json, then re-run registry:build (prose is carried forward); (c2) ADD A demoProps ENTRY for the new primitive in src/component-gallery/demoProps.tsx (a centered render at the gallery still frame + a short strip of its key variants) — a registered component with no demo FAILS registry:check via the gallery gate (scripts/registry/check-gallery.mjs), so the Component Gallery auto-includes every new component; (d) confirm `(cd ' + REPO + ' && npm run registry:check)` is GREEN; (5) render test stills at REAL render size for the single hardest frame AND the worst-case multiplicity, and VERIFY them yourself before the composer consumes them. ALSO: every lesson opens with a short topic-intro card — if the normalized intro primitives do not fit this subject, DESIGN the intro layout here (it is your job, never the composer\'s).',
       `OUTPUT ARTIFACTS: ${REPO}/${P.primitiveGapScan} (the reuse/gap table) ; any new primitives under src/shape-primitives/ (exported from index.ts) ; their registry entries in ${REGISTRY_JSON} (regenerated + prose authored, registry:check green) ; test stills under ${REPO}/${P.primitiveChecks}/.`,
-      `OWNED PATHS: ${P.primitiveGapScan}, src/shape-primitives/* (new prop-driven primitives only) + src/shape-primitives/index.ts (barrel export), src/capabilities/primitive-registry.json + its generated catalog-digest.md/.schema.json (via registry:build — never hand-edit the generated structure), src/component-gallery/demoProps.tsx (the gallery demo entry for any new primitive — required by the gallery gate), ${P.primitiveChecks}/. Primitive aesthetic quality is YOURS and is gated at the W3→W4 boundary.`,
+      contract({ artifacts: [P.primitiveGapScan], owns: ['src/shape-primitives/*', 'src/capabilities/primitive-registry.json', 'src/capabilities/catalog-digest.md', 'src/capabilities/catalog-digest.schema.json', 'src/component-gallery/demoProps.tsx', P.primitiveGapScan, P.primitiveChecks], note: 'new prop-driven primitives ONLY (lesson-agnostic, never hardcode this lesson); the registry generated files are written via registry:build, never hand-edited. Primitive aesthetic quality is YOURS, gated at the W3→W4 boundary. The gap-scan table always ships; new primitives only when a gap is named.' }),
     ].join('\n'), { label: 'W3b primitive build', phase: 'Voice & Assets', agentType: 'claude', schema: NODE_RESULT }),
     // --- W3c: sound-asset gap-scan (default REUSE the minted library) ---
     () => agent([
@@ -333,7 +355,8 @@ if (run('wave3')) {
       `SKILLS: ${SK.soundDesign} (asset side).`,
       `INPUT: ${REPO}/${P.audioCues} ; the library index ${SOUND_LIB}/_beds|_sfx|_stings/_index.json.`,
       `WORK: for every bed/sting/sfx KEY in audio-cues.json, confirm it resolves to a licensed WAV in the library. If ALL resolve → status ok in seconds. For a genuine GAP (rare): NAME it, add a spec row to the generator manifest (vlog_test/pipeline/sound-assets.manifest.json), mint it author-time with ${SOUND_GEN} (ElevenLabs, owned commercial license + .license.txt), verify the WAV, and FREEZE before W4. Never wire a download into the render path; renders stay offline-deterministic.`,
-      `OUTPUT ARTIFACT: ${REPO}/${P.logs}/sound-asset.md — every key → resolved file (or the gap + how it was minted). LESSON-AGNOSTIC: the library + generator are shared; only this lesson\'s key→file resolution is reported.`,
+      `OUTPUT: ${REPO}/${P.logs}/sound-asset.md — every key → resolved file (or the gap + how it was minted).`,
+      contract({ artifacts: [`${P.logs}/sound-asset.md`], note: 'the library + generator are shared; only this lesson\'s key→file resolution is reported.' }),
     ].join('\n'), { label: 'W3c sound-asset', phase: 'Voice & Assets', agentType: 'claude', schema: NODE_RESULT }),
   ])
   if (rVoice && rVoice.accepted === false) {
@@ -355,7 +378,8 @@ const rReconcile = run('reconcile') ? await agent([
   'INTENTIONAL SILENCE IS A TYPED TIMELINE HOLD. A `gap` (learner-response wait-time, animation-hold, …) authored by W2b on a cue is carried on its ClipCue; reconcileClipTimeline adds gapFrames to that cue\'s window as FREE silence (nothing schedules audio across it — the clip plays at the start, then the picture holds). It is NOT baked into any WAV and there is NO detect-silences step. The composer fills a learner-response hold with a "your turn" affordance. (docs/pipeline-architecture.md §10 + the v4 changelog.)',
   `COMPREHENSION-FLOOR ADVISORY (advisory, NEVER blocking — like lesson:check): if ${REPO}/${P.storyboard} declares an \`exposures\` ledger and the lesson has acquisition targets, compare per-target counts against the lesson-pedagogy §8 floor (≥6–10 spaced exposures; ≥3–5s wait-time per echo) and the reconciled per-cue durations. If a target lands UNDER its floor, record a WARN in this node's \`issues\` + \`pipelineFindings\` (e.g. "acquisition target 'I'm' has 4 exposures < §8 floor"). Report the emergent total length as-is — never score it against a number. If the ledger is absent, print \`SKIP: no exposures ledger\` — do not silently pass.`,
   skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm each cue's clip sits inside its window before composing.`,
-  `OUTPUT ARTIFACT: ${REPO}/${P.timeline} (with the ${camel}Cues + ${camel}VoiceClips arrays). OWNED PATHS: ${P.timeline} only.`,
+  `OUTPUT: ${REPO}/${P.timeline} carries the ${camel}Cues + ${camel}VoiceClips arrays.`,
+  contract({ artifacts: [P.timeline] }),
 ].join('\n'), { label: 'W3.5 reconcile', phase: 'Reconcile', agentType: 'claude', schema: NODE_RESULT }) : (log(`W3.5 ${skip('reconcile')}`), null)
 
 // ===========================================================================
@@ -373,14 +397,15 @@ if (run('compose')) {
       `  - ${REPO}/${P.complete} (the Complete wrapper) + ${REPO}/${P.scene} (scene) + src/lessons/${camel}/layout.ts (offset constants) + src/lessons/${camel}/manifest.ts (bboxAt per load-bearing element; contract src/lessons/manifestTypes.ts).`,
       `  - AUDIO WIRING: <LessonAudioLayer voiceClips={${camel}VoiceClips}> (v4 per-cue voice — the kit mounts one Sequence per clip; pass the ${camel}VoiceClips array straight from the timeline, NEVER a single teacherAudioSrc/continuous WAV), <LessonBgmLayer> (bed — MECHANICAL envelope; derive the duck windows from the voiceClip spans via spansToWindows), <LessonSfxLayer> with SFX fired at YOUR OWN motion frames from audio-cues.json (bed = mechanical; SFX frames = composer-owned, derived from cueFrames + layout.ts offsets, NEVER literals), and the caption layer.`,
       `SELF-CHECK before declaring done: (cd ${REPO} && npm run lesson:check -- --config ${P.pipeline} --measured) — review summary.collisionCount (linear) AND summary.measuredCollisionCount + summary.gatesFailed (real-pixel + LUFS/caption/contrast/legibility/motion gates). Any non-zero collision or failed gate requires a fix or an explicit written justification. Then rerun the pedagogy discovery audit against the rendered still.`,
-      `OWNED PATHS: ${P.complete}, ${P.scene}, src/lessons/${camel}/layout.ts, src/lessons/${camel}/manifest.ts. Register the composition. LESSON-AGNOSTIC: reuse primitives + kit layers; never hardcode timings.`,
+      contract({ artifacts: [P.complete, P.scene, `src/lessons/${camel}/layout.ts`, `src/lessons/${camel}/manifest.ts`], owns: [P.complete, P.scene, `src/lessons/${camel}/*`, 'src/Root.tsx'], note: 'register the composition in src/Root.tsx; reuse primitives + kit layers, never hardcode timings (lesson-agnostic).' }),
     ].join('\n'), { label: 'W4a composer', phase: 'Compose', agentType: 'claude', schema: NODE_RESULT }),
     () => agent([
       discipline(),
       'W4b — SKETCH OVERLAY (∥ composer). Specify the hand-drawn teacher-mark overlays in CUE-RELATIVE frames (never master-timeline absolutes). Restraint is the rule — marks point at the load-bearing moment, nothing decorative.',
       `SKILLS: ${SK.sketch}`,
       `INPUT: the reconciled ${camel}Cues in ${REPO}/${P.timeline} ; ${REPO}/${P.visualDesign} ; ${REPO}/${P.pedagogy} (mark the discovery).`,
-      `OUTPUT ARTIFACT: ${REPO}/${P.sketchOverlay} — per-mark spec in cue-relative frames (use <TeacherMark> + boil from ${CAP}). OWNED PATHS: ${P.sketchOverlay} only.`,
+      `OUTPUT: ${REPO}/${P.sketchOverlay} — per-mark spec in cue-relative frames (use <TeacherMark> + boil from ${CAP}).`,
+      contract({ artifacts: [P.sketchOverlay] }),
     ].join('\n'), { label: 'W4b sketch', phase: 'Compose', agentType: 'claude', schema: NODE_RESULT }),
   ])
 } else {
@@ -396,7 +421,8 @@ const rRender = run('render') ? await agent([
   `INPUT: ${REPO}/${P.pipeline} ; the composed scene + ${P.timeline} ; the frozen ${P.voiceWav}.`,
   `STEP 1 — render (voice frozen from W3a; the script auto-skips voice when the timing module exists, but pass --skip-voice to be explicit): (cd ${REPO} && RENDER_SCALE=${renderScale} npm run lesson:render -- --config ${P.pipeline} --skip-voice). This auto-builds the contact sheet at the end.`,
   'STEP 2 — a post-render ffmpeg loudnorm pass normalizes the master to -16 LUFS / -1 dBTP (deterministic 2nd pass; it runs inside lesson:render unless --skip-loudnorm). For a fast scale<1 iteration you MAY pass --skip-loudnorm, but the final 1.0 render must be normalized.',
-  `OUTPUT ARTIFACTS: ${REPO}/${P.mp4} ; ${REPO}/${P.contact} (+ contact json) ; ${REPO}/${P.bbox}. Report ffprobe WxH/fps/frames/duration + measured loudness. OWNED PATHS: everything under ${out}/ + the master mp4.`,
+  `OUTPUT: ${REPO}/${P.mp4} ; ${REPO}/${P.contact} (+ contact json) ; ${REPO}/${P.bbox}. Report ffprobe WxH/fps/frames/duration + measured loudness.`,
+  contract({ artifacts: [P.mp4, P.contact, P.bbox], owns: [out], note: 'everything generated lands under out/<id>/.' }),
 ].join('\n'), { label: 'W5 render', phase: 'Render', agentType: 'claude', schema: NODE_RESULT }) : (log(`W5 ${skip('render')}`), null)
 
 // ===========================================================================
@@ -408,7 +434,8 @@ const rVerify = run('verify') ? await agent([
   `SKILLS: ${SK.verification}`,
   `INPUT: the contact sheet ${REPO}/${P.contact} (Read as image) ; ${REPO}/${P.mp4} (ffprobe only) ; ${REPO}/${P.bbox} (linear + measured collisions, gates) ; ${REPO}/${P.primitiveChecks}/*.png ; ${REPO}/${P.pedagogy}.`,
   'JUDGE: (1) does each cue TEACH its pedagogy discovery (re-run the §1 audit)? (2) layout/legibility — any collision or failed gate from bbox-manifest unaddressed? (3) SOUND checks: melody NOT identifiable under narration ; 3-point duck (intro duck / mid-gap rise / outro resolve) ; measured master ≈ -16 LUFS / TP ≤ -1 dB (the LUFS gate in lesson:check --measured) ; no SFX louder than narration.',
-  `OUTPUT ARTIFACT: ${REPO}/${P.verification} — per-cue pedagogy verdict + the sound/layout gate results + a punch list of any fixes (mapped to the owning wave for a targeted re-run). OWNED PATHS: ${P.verification} only.`,
+  `OUTPUT: ${REPO}/${P.verification} — per-cue pedagogy verdict + the sound/layout gate results + a punch list of any fixes (mapped to the owning wave for a targeted re-run).`,
+  contract({ artifacts: [P.verification] }),
 ].join('\n'), { label: 'W6 verification', phase: 'Verify', agentType: 'claude', schema: NODE_RESULT }) : (log(`W6 ${skip('verify')}`), null)
 
 // ===========================================================================
