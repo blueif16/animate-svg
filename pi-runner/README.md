@@ -62,16 +62,24 @@ node pi-runner/run.mjs --lesson <id> --until verify --debug      # full pipeline
 heavy artifacts only — the distilled per-node telemetry (timing, status, tool breakdown, thinking,
 tokens) lands in `run-status.json` in **both** modes, computed live from the stream.
 
-- **`--debug` (always while developing):** 4s heartbeat (`t=elapsed · ev · tools · cur=tool ·
-  think=chars · tok=billable · last=event · Δ=since-last-event · ⚠STALLED`), continuous
-  `run-status.json` refresh, **stall flag at >45s**, a hard `--node-timeout` ($PI_RUNNER_NODE_TIMEOUT
-  or 1800s) that kills a runaway node, AND the full forensic archive: the raw `_pi/<node>.events.jsonl`
-  (every pi event, for exact reproduction) + the `_pi/<node>.debug.log` timeline. A hang is visible in
-  seconds, never minutes.
-- **Production (no `--debug`):** lean — 10s status refresh, no console heartbeat, and **no raw event
-  archive**. The raw stream is cumulative (pi re-embeds the whole accumulated message on every delta),
-  so a single node can reach **100s of MB** — production skips it entirely. The digest's distilled
-  aggregates are the production telemetry; re-run one node with `--debug` to recover its raw archive.
+- **`--debug` (always while developing):** 4s heartbeat (`t=elapsed · cur=tool · think=chars ·
+  tok=billable · Δ=since-last-event · ⚠STALLED`), continuous `run-status.json` refresh, **stall flag
+  at >45s**, a hard `--node-timeout` ($PI_RUNNER_NODE_TIMEOUT or 1800s), AND the forensic archive:
+  `_pi/<node>.events.jsonl` + `_pi/<node>.debug.log` timeline. A hang is visible in seconds.
+- **Production (no `--debug`):** lean — 10s status refresh, no console heartbeat, and **no event
+  archive**. The digest's distilled aggregates are the production telemetry; re-run one node with
+  `--debug` to recover its archive.
+- **The archive is SLIMMED, not raw.** pi's `message_update` events are cumulative — each delta
+  re-embeds the *whole accumulated message*, which would balloon a node to **100s of MB** (a 74 KB
+  reasoning trace became 159 MB). The driver strips those redundant `partial`/`message` snapshots as
+  it writes, keeping only the incremental deltas → **~55× smaller** (159 MB → 2.9 MB) with **zero
+  information loss** (the full text reconstructs exactly from the deltas).
+- **Stuck-loop watchdog.** Three guards bound a node's cost: the >45s **stall flag**, the
+  `--node-timeout` hard kill, and — for a model stuck emitting the *same delta* over and over — a
+  **repeat kill** (`PI_RUNNER_REPEAT_KILL`, default 400 consecutive identical deltas → SIGTERM). A
+  legitimate heavy node never repeats a ≥4-char delta more than ~2× in a row, so the 400 threshold is
+  pure-headroom insurance, not a hair-trigger. (Note: a huge transcript is **not** a loop — those
+  lines *grow*, never repeat; that is the cumulative bloat the slimming handles.)
 - **Status is verified, not trusted:** a node is `ok` only if the artifacts it reports actually
   exist on disk.
 
