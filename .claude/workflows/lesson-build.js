@@ -201,13 +201,21 @@ function discipline(extra) {
 // ONLY paths this node may write (a trailing /* or /** marks a directory it owns; defaults to
 // `artifacts`). `note` = an optional extra owned-path caveat. Full spec:
 // ~/.claude/skills/transform-workflow-to-pi/reference/artifact-contract.md.
-function contract({ artifacts = [], owns = [], note = '' }) {
+function contract({ artifacts = [], owns = [], note = '', lint = false }) {
   const abs = (p) => `${REPO}/${p}`
+  const code = artifacts.filter((p) => /\.tsx?$/.test(p)) // the .ts/.tsx artifacts this node is on the hook to lint
   return [
     'OUTPUT CONTRACT — you are DONE only when EVERY file below exists and is non-empty at EXACTLY its path. Write NOTHING outside the owned paths (never another lesson\'s files). If you cannot produce them, set status="blocked" and say why — do NOT exit clean (an empty or wrong-path artifact set is a FAILURE, not an ok).',
     `DRIVER-ARTIFACTS: ${artifacts.map(abs).join(' ')}`,
     `DRIVER-OWNS: ${(owns.length ? owns : artifacts).map(abs).join(' ')}`,
     note ? `OWNED-PATH NOTE: ${note}` : '',
+    // LINT GATE — lint-clean is part of "done" for any node that writes code. The W5 render gate is
+    // whole-repo `eslint src && tsc`, so ONE dirty file blocks EVERY lesson's render; each code-writing
+    // node must therefore lint its OWN files clean in its OWN lane (not gate on whole-repo lint — another
+    // half-built lesson's errors aren't its lane). Scoped to the .ts/.tsx artifacts above.
+    lint && code.length
+      ? `LINT GATE — before status="ok", run \`(cd ${REPO} && npx eslint ${code.join(' ')})\` and FIX EVERY error (re-run until clean). Lint-clean means: every exported React component is PascalCase (a lowercase component name makes useCurrentFrame()/useMeasureHook() a react-hooks/rules-of-hooks ERROR), ESM \`import\` only (NEVER require()), and ZERO unused imports/vars. A lint error in YOUR file is a contract breach (status="blocked"), not a downstream surprise — do NOT gate yourself on whole-repo \`npm run lint\`, only on YOUR files.`
+      : '',
   ].filter(Boolean).join('\n')
 }
 
@@ -379,7 +387,7 @@ const rReconcile = run('reconcile') ? await agent([
   `COMPREHENSION-FLOOR ADVISORY (advisory, NEVER blocking — like lesson:check): if ${REPO}/${P.storyboard} declares an \`exposures\` ledger and the lesson has acquisition targets, compare per-target counts against the lesson-pedagogy §8 floor (≥6–10 spaced exposures; ≥3–5s wait-time per echo) and the reconciled per-cue durations. If a target lands UNDER its floor, record a WARN in this node's \`issues\` + \`pipelineFindings\` (e.g. "acquisition target 'I'm' has 4 exposures < §8 floor"). Report the emergent total length as-is — never score it against a number. If the ledger is absent, print \`SKIP: no exposures ledger\` — do not silently pass.`,
   skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm each cue's clip sits inside its window before composing.`,
   `OUTPUT: ${REPO}/${P.timeline} carries the ${camel}Cues + ${camel}VoiceClips arrays.`,
-  contract({ artifacts: [P.timeline] }),
+  contract({ artifacts: [P.timeline], lint: true }),
 ].join('\n'), { label: 'W3.5 reconcile', phase: 'Reconcile', agentType: 'claude', schema: NODE_RESULT }) : (log(`W3.5 ${skip('reconcile')}`), null)
 
 // ===========================================================================
@@ -398,7 +406,7 @@ if (run('compose')) {
       `  - AUDIO WIRING: <LessonAudioLayer voiceClips={${camel}VoiceClips}> (v4 per-cue voice — the kit mounts one Sequence per clip; pass the ${camel}VoiceClips array straight from the timeline, NEVER a single teacherAudioSrc/continuous WAV), <LessonBgmLayer> (bed — MECHANICAL envelope; derive the duck windows from the voiceClip spans via spansToWindows), <LessonSfxLayer> with SFX fired at YOUR OWN motion frames from audio-cues.json (bed = mechanical; SFX frames = composer-owned, derived from cueFrames + layout.ts offsets, NEVER literals), and the caption layer.`,
       `SELF-CHECK before declaring done: (cd ${REPO} && npm run lesson:check -- --config ${P.pipeline} --measured) — review summary.collisionCount (linear) AND summary.measuredCollisionCount + summary.gatesFailed (real-pixel + LUFS/caption/contrast/legibility/motion gates). Any non-zero collision or failed gate requires a fix or an explicit written justification. Then rerun the pedagogy discovery audit against the rendered still.`,
       `REGISTER BY DESCRIPTOR (never hand-edit a shared file): in ${REPO}/${P.complete}, export the uniform descriptor \`export const lessonComposition: LessonComposition = { id: "Complete${Pascal}Lesson", component: Complete${Pascal}Lesson, durationInFrames: ${camel}Duration, defaultProps: complete${Pascal}LessonDefaultProps }\` (type from src/lessons/lessonRegistryTypes.ts; duration from the reconciled timeline module — NEVER a literal). The lesson registry (npm run lessons:registry, auto-run by lesson:render) discovers it into src/lessons/_lessonRegistry.generated.tsx and Root.tsx maps over it. DO NOT edit src/Root.tsx or src/Composition.tsx — under worktree-isolated parallel runs those shared lists are the merge-conflict surface; your lesson must write ONLY its own disjoint files so the merge-back is a conflict-free union.`,
-      contract({ artifacts: [P.complete, P.scene, `src/lessons/${camel}/layout.ts`, `src/lessons/${camel}/manifest.ts`], owns: [P.complete, P.scene, `src/lessons/${camel}/*`], note: 'register ONLY by exporting lessonComposition from your Complete wrapper — NEVER hand-edit src/Root.tsx or src/Composition.tsx (the registry auto-discovers it). Reuse primitives + kit layers, never hardcode timings (lesson-agnostic).' }),
+      contract({ artifacts: [P.complete, P.scene, `src/lessons/${camel}/layout.ts`, `src/lessons/${camel}/manifest.ts`], owns: [P.complete, P.scene, `src/lessons/${camel}/*`], lint: true, note: 'register ONLY by exporting lessonComposition from your Complete wrapper — NEVER hand-edit src/Root.tsx or src/Composition.tsx (the registry auto-discovers it). Reuse primitives + kit layers, never hardcode timings (lesson-agnostic). The scene component MUST be PascalCase `' + Pascal + 'LessonScene` (a lowercase name fails react-hooks/rules-of-hooks).' }),
     ].join('\n'), { label: 'W4a composer', phase: 'Compose', agentType: 'claude', schema: NODE_RESULT }),
     () => agent([
       discipline(),

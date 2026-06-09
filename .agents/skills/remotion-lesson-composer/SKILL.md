@@ -141,6 +141,11 @@ Mirror the existing lesson pattern. For lesson id `<lesson-id>` (kebab) → `<ca
    };
    ```
 
+**Code hygiene — lint-clean is part of "done."** The Wave-5 render gate runs whole-repo `npm run lint` = `eslint src && tsc`, so a single dirty file in YOUR lesson blocks EVERY lesson's render. Three rules make your output pass first try:
+- **The scene component is PascalCase** — `export const <PascalId>LessonScene: React.FC<…>` (wrapper: `Complete<PascalId>Lesson`). A lowercase component name (`<camelId>LessonScene`) makes every `useCurrentFrame()`/`useMeasureHook()` inside it a `react-hooks/rules-of-hooks` ERROR — React only treats Capitalized names as components/hooks.
+- **ESM `import` only — never `require()`** anywhere (`no-require-imports` is an error). Import generated modules: `import { <camelId>Clips } from "./generated/<camelId>Clips"`.
+- **No unused imports or vars** (`no-unused-vars` is an error) — import only what the scene actually renders; delete a constant the moment it stops being used.
+
 **Registration is auto-discovered — NEVER hand-edit a shared file.** `npm run lessons:registry` (run automatically by `lesson:render` before bundling, and folded into `registry:build`/`registry:check`) statically discovers every `Complete*Lesson.tsx` that exports `lessonComposition`, writes `src/lessons/_lessonRegistry.generated.tsx`, and `Root.tsx` maps over it. So do **NOT** touch `src/Root.tsx` or `src/Composition.tsx` — under worktree-isolated parallel runs those shared lists are the merge-conflict surface, and a half-built lesson hand-wired into them breaks the whole bundle. Your lesson writes ONLY its own disjoint files; the merge-back is then a conflict-free union. (A lesson is EITHER hand-registered in Root.tsx OR auto-discovered, never both — Remotion throws on a duplicate id.)
 
 Do NOT write or modify primitives. If a primitive is missing or wrong, FAIL and report back — primitive changes are Wave 3's domain.
@@ -174,7 +179,7 @@ Before the full MP4 render, the composer runs `npm run lesson:animatic -- --conf
 
 After writing the scene, the composer:
 
-1. Runs `npm run lint`. Must pass.
+1. Lints its OWN generated files clean and fixes EVERY error before declaring done — `npx eslint src/lessons/<PascalId>LessonScene.tsx src/lessons/Complete<PascalId>Lesson.tsx src/lessons/<camelId>/*.ts`. A lint error in your files is a contract breach (status=`blocked`), never a downstream surprise — see *Code hygiene* above for the three rules that make it pass. Do NOT gate yourself on whole-repo `npm run lint`: another half-built lesson's errors aren't your lane — lint only YOUR files; the render gate then passes once every lesson's composer does the same.
 2. Renders **several** still frames — never just the climax. The climax-only still is how the intro title-occlusion shipped: a one-frame check is blind to overlaps that happen elsewhere or only at full opacity. At minimum render: the **intro at full cast opacity** (a late-intro frame, after every intro element has ramped to opacity 1 — NOT frame 30 when the cast is faint), the **climax cue mid-frame**, and **one peak-opacity frame per cue** where multiple load-bearing elements coexist:
    ```
    cd remotion-svg-primitives && npx remotion still src/index.ts Complete<PascalId>Lesson out/<lesson-id>/qa-f<frame>.png --frame=<frame>
