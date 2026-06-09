@@ -133,8 +133,16 @@ const ensureDir = (d) => fs.mkdirSync(d, { recursive: true });
 const nowISO = () => new Date().toISOString();
 const slug = (label, i) => (label || `node-${i}`).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 function artifactState(p) {
-  try { const s = fs.statSync(abs(p)); return { path: p, exists: s.size > 0, bytes: s.size }; }
-  catch { return { path: p, exists: false, bytes: 0 }; }
+  // Resolve a node-declared artifact path FORGIVINGLY before judging it missing. pi agents
+  // inconsistently report a path relative to RUN_CWD (the repo subdir) OR to ROOT (e.g.
+  // "remotion-svg-primitives/lesson-data/..", because the prompt shows ROOT-prefixed abs paths).
+  // The strict join(RUN_CWD, p) double-prefixes the repo dir and false-flags a real written file as
+  // "blocked" (killing the whole run for nothing). Try RUN_CWD first, then ROOT; absolute as-is.
+  const candidates = path.isAbsolute(p) ? [p] : [path.join(RUN_CWD, p), path.join(ROOT, p)];
+  for (const c of candidates) {
+    try { const s = fs.statSync(c); return { path: p, exists: s.size > 0, bytes: s.size }; } catch {}
+  }
+  return { path: p, exists: false, bytes: 0 };
 }
 
 // A pure file-existence CHECK node (e.g. workflow preflight) declares its required paths via a
