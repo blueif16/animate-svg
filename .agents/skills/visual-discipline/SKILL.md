@@ -36,6 +36,8 @@ If any line is fuzzy ("a friendly layout", "shows the change", "with some highli
 
 **The `motion-budget` line is load-bearing.** Wave 2b writes narration to fit it; Wave 3.5 reconciles each cue as `cueSeconds = max(narrationSeconds, visualMotionSeconds) + tail`. If you under-estimate visualMotionSeconds, the composer will be forced to rush the motion past readability. If you over-estimate, the cue holds in dead air past the audio. Be honest about how long the motion actually needs.
 
+`visualMotionSeconds` must include **dwell/hold time** for the child to look at the result (per-item ≥2–3s; longer for harder items), not just the transition duration — and the lesson should land a **re-engagement beat every ~15–30s** so a long stretch of one move never goes static (basis: `research/teaching-tempo-pacing-2026-06-08.md`).
+
 A correct contract for the `ten-ones-make-one-ten` lesson:
 
 ```
