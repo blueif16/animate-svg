@@ -186,6 +186,15 @@ Three locations, one canonical home per skill (every entry in `~/.claude/skills/
 
 Edit at the symlink target. Never duplicate kit content into a consumer skill, or kids content into the kit/vlog.
 
+## Skill-system stewardship
+
+We are ALWAYS evolving this skill system at dev speed — fix flaws the moment they're spotted (no timers, no batching). This is ambient: you do not need to be told each session. When you spot a flaw in a skill or in the workflow, a `pipelineFindings`-class issue recurs, **or the user gives feedback on a rendered artifact**, run the **`hermes-skill-system`** skill to capture→route→edit→verify→commit it as ONE atomic, revertible change. (Feedback on an MP4: triage symptom→wave with `lesson-debugger`, then when the flaw is systemic or recurring, encode the durable fix via `hermes-skill-system` — don't just patch the one lesson.)
+
+- **The map is `.agents/skill-system-map.md`** — every skill + the `lesson-build.js` orchestrator that wires them + each owner's responsibility + where each run's logs/artifacts live + a diagnostics log. Read it (with the run's real evidence) to find where a flaw belongs; refresh it via the skill's INIT when the system's shape changes. It gets more certain with every run.
+- **Prefer fixing the workflow/orchestrator over a single skill** when the flaw is coordination/hand-off (`lesson-build.js`: "improve a wave by editing its SKILL; improve the chain by editing this file").
+- **Every edit must generalize across ALL future runs** — never hard-code one case, never lean on reward-hackable tests; verification is an intent the next session/human checks, and the human is the eye for visuals.
+- **One commit per lesson:** `skillsys(<owner>): <rule>` with why/lesson/verify in the body. Review a span with the skill's `review-edits.sh`. (A new global skill itself is a structural change — but the per-lesson `skillsys` edits it produces are normal spec edits, not structural changes.)
+
 ## Feedback & Debugging Loop
 
 After render, when the user reviews the MP4 and reports an issue, invoke the `lesson-debugger` skill for triage. Do not load it during waves 1–6.
