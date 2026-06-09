@@ -88,20 +88,22 @@ Per-node digest fields in `run-status.json`: `status`, `durationMs`, `toolCalls`
 billable=input+output, contextPeak=max cumulative context, cost}`), `eventCount`, `artifacts[]`
 (stat()'d on disk), `summary`, `issues[]`, `pipelineFindings[]`.
 
-## Generic engine — `.env` is the only per-repo file
+## Generic engine — wiring `.env` is the only per-repo file; credential is pi-native
 
-`run.mjs`, `extract.mjs`, and `providers/coding-plan.ts` are **byte-identical** to the global
-skill template `transform-workflow-to-pi` (`~/.claude/skills/transform-workflow-to-pi/templates/
-pi-runner/`). Nothing in them is lesson- or repo-specific. **Never edit them for this repo** — a
-fix flows both ways by `cp`. Everything project-specific lives in gitignored `pi-runner/.env`:
+`run.mjs` and `extract.mjs` are **byte-identical** to the global skill template
+`transform-workflow-to-pi` (`~/.claude/skills/transform-workflow-to-pi/templates/pi-runner/`).
+Nothing in them is lesson- or repo-specific. **Never edit them for this repo** — a fix flows both
+ways by `cp`. Project-specific WIRING lives in gitignored `pi-runner/.env`; the credential is not
+here at all.
 
-- **Wiring** — `PI_RUNNER_CWD=remotion-svg-primitives` (npm runs there; artifact paths resolve
-  there), `PI_RUNNER_WORKFLOW=.claude/workflows/lesson-build.js`, `PI_RUNNER_UNTIL=design` (the
-  bring-up default that keeps a bare run off the voice/render walls). `PI_RUNNER_ROOT` defaults to
-  this dir's parent. Paths are relative to ROOT.
-- **Model / credential** — `providers/coding-plan.ts` registers one OpenAI-compatible provider
-  `cp` from env (Alibaba DashScope-intl; default `qwen3.7-max`; also exposes `qwen3.7-plus`,
-  `glm-5.1`, `kimi-k2.6`, `deepseek-v4`, …). Set once; swap providers by editing `.env`, never code.
+- **Wiring** (`pi-runner/.env`) — `PI_RUNNER_CWD=remotion-svg-primitives` (npm runs there; artifact
+  paths resolve there), `PI_RUNNER_WORKFLOW=.claude/workflows/lesson-build.js`. `PI_RUNNER_ROOT`
+  defaults to this dir's parent. Paths are relative to ROOT. No secret in this file.
+- **Model / credential** — live ONCE in pi's own machine-global config `~/.pi/agent/models.json`,
+  which pi resolves natively for every project (provider `cp`, Alibaba DashScope-intl, default
+  `qwen3.7-max`; also `qwen3.7-plus`). The driver just runs `pi --provider cp` — no key, no `-e`
+  extension, no per-repo credential. Swap providers by editing that one file; verify with
+  `pi --list-models cp`. Pin a non-default model for this repo with `PI_CP_MODEL` in `.env`.
 
 The convenience flags `--lesson <id>` (sets the run id + `args.lessonId`), `--brief <file>`, and
 `--style <v>` map onto the generic `--arg`/`--arg-file` mechanism, so the commands below are
@@ -111,8 +113,11 @@ unchanged by the convergence.
 
 - `extract.mjs` — execute-and-record extractor (**the sync**): runs `lesson-build.js` → prompts + DAG.
 - `run.mjs` — driver: stages + parallel lanes + pi spawning + debug/status/watchdog.
-- `providers/coding-plan.ts` — non-Claude provider, configured from `.env`.
-- `.env` — wiring + credential + model defaults (gitignored, never committed). The ONLY per-repo file.
+- `.env` — per-repo WIRING (gitignored, never committed). The ONLY per-repo file; no secret.
+- credential/model — NOT in this repo. They live once in pi's global `~/.pi/agent/models.json`
+  (provider `cp`), resolved natively by pi for every project. (`providers/coding-plan.ts` is kept only
+  as a fallback for providers needing a custom API impl / OAuth; the OpenAI-compatible path uses
+  `models.json` and no extension.)
 
 ## Headless pi invariants (learned from a real stall)
 

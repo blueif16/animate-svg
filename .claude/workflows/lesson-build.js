@@ -206,6 +206,7 @@ const mustExist = REQUIRED_PRESENT[startAt] || []
 if (mustExist.length > 0) {
   log(`Preflight: startAt=${startAt} needs ${mustExist.length} upstream artifact(s) on disk`)
   const pf = await agent([
+    `DRIVER-PREFLIGHT: ${mustExist.map((p) => `${REPO}/${p}`).join(' ')}`,
     `PREFLIGHT — verify a mid-chain start is safe. The workflow starts at "${startAt}", so earlier waves are skipped and their outputs must already exist.`,
     'Check EACH path exists and is non-empty (ls -l). Report ok=true only if ALL are present; else ok=false and list the missing ones.',
     'This is a CHECK node that writes NO artifacts. In your final RETURN BLOCK set outputArtifacts:[] and status MUST MIRROR ok: all present ⇒ status="ok" (an empty artifact list with status="ok" is correct for a check node); any missing ⇒ status="blocked". NEVER report status="blocked" when ok=true.',
