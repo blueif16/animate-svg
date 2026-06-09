@@ -40,14 +40,17 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { extractWorkflow } from "./extract.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // pi-runner/ lives here
 
-// Load pi-runner/.env (KEY=VALUE) FIRST so PI_RUNNER_* + credentials are visible to the config
-// below. A real process.env value always wins (override per-invocation). Never commit .env.
+// Load pi-runner/.env (KEY=VALUE) so the PI_RUNNER_* WIRING below is visible. A real process.env
+// value always wins (override per-invocation). The CREDENTIAL + MODEL are NOT here — they live in
+// pi's OWN machine-global config (~/.pi/agent/models.json), set once, so a product needs no key of
+// its own. This file is therefore wiring-only (and optional). Never commit it.
 function loadDefaults() {
   let raw;
   try { raw = fs.readFileSync(path.join(HERE, ".env"), "utf8"); } catch { return; }
@@ -101,8 +104,11 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const model = args.model || process.env.PI_CP_MODEL || "";
-const extension = path.resolve(args.extension || path.join(HERE, "providers/coding-plan.ts"));
+const model = args.model || process.env.PI_CP_MODEL || ""; // empty → pi uses the provider's default model
+// Provider/credential/model come from pi's OWN global config (~/.pi/agent/models.json); NO provider
+// extension is loaded by default. --extension stays available only for a provider that needs a
+// custom API implementation or OAuth flow (then pi loads it via -e).
+const extension = args.extension ? path.resolve(args.extension) : null;
 
 // DEBUG (always use while developing): frequent status refresh + console heartbeats + stall
 // detection so a hang is visible in seconds, never minutes. Production mode is lean.
@@ -128,6 +134,22 @@ const nowISO = () => new Date().toISOString();
 const slug = (label, i) => (label || `node-${i}`).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 function artifactState(p) {
   try { const s = fs.statSync(abs(p)); return { path: p, exists: s.size > 0, bytes: s.size }; }
+  catch { return { path: p, exists: false, bytes: 0 }; }
+}
+
+// A pure file-existence CHECK node (e.g. workflow preflight) declares its required paths via a
+// `DRIVER-PREFLIGHT: <space-separated absolute paths>` line in its prompt. The driver resolves it
+// in plain code — NO pi spawn — killing the cheap-model failure mode where a glorified `ls` grinds
+// to the node-timeout. The dev Workflow runtime forbids fs in the script (so it uses an agent
+// there); the pi driver does not. Generic: any workflow can opt a check node in with this marker.
+function driverPreflightPaths(prompt) {
+  const m = /(?:^|\n)\s*DRIVER-PREFLIGHT:\s*(.+?)\s*(?:\n|$)/.exec(prompt || "");
+  if (!m) return null;
+  const paths = m[1].split(/\s+/).filter(Boolean);
+  return paths.length ? paths : null;
+}
+function artifactStateAbs(p) {
+  try { const s = fs.statSync(p); return { path: p, exists: s.size > 0, bytes: s.size }; }
   catch { return { path: p, exists: false, bytes: 0 }; }
 }
 
@@ -197,14 +219,17 @@ function lastJsonBlock(text) {
 }
 
 function piArgs(promptFileAbs) {
-  return [
-    // headless executor: print+json, trust project files, ephemeral, --offline (no startup
-    // network ops; the model call still works), --no-extensions (explicit -e provider still loads).
-    "-p", "--mode", "json", "-a", "--no-session", "--offline", "--no-extensions",
-    "--provider", args.provider, "--model", model,
-    "-e", extension,
-    `@${promptFileAbs}`,
-  ];
+  // headless executor: print+json, trust project files, ephemeral, --offline (no startup network
+  // ops; the model call still works), --no-extensions. NOTE: models.json is CORE pi config, not an
+  // extension, so --no-extensions does NOT disable it — pi still resolves the `cp` provider + its
+  // credential from ~/.pi/agent/models.json. We only NAME the provider; --model when pinned; -e only
+  // for an explicit custom-API/OAuth provider.
+  const a = ["-p", "--mode", "json", "-a", "--no-session", "--offline", "--no-extensions",
+             "--provider", args.provider];
+  if (model) a.push("--model", model);
+  if (extension) a.push("-e", extension);
+  a.push(`@${promptFileAbs}`);
+  return a;
 }
 
 async function runNode(node) {
@@ -213,6 +238,32 @@ async function runNode(node) {
   n.startedAt = nowISO();
   const t0 = Date.now();
   writeStatus();
+
+  // DRIVER-side preflight short-circuit (see driverPreflightPaths): resolve a pure existence-check
+  // node in plain code, no pi spawn.
+  const pfPaths = driverPreflightPaths(node.prompt);
+  if (pfPaths) {
+    if (args.dryRun) {
+      console.log(`    DRY: DRIVER-PREFLIGHT ${node.id} — would fs-check ${pfPaths.length} path(s), no pi spawn`);
+      n.status = "dry"; n.endedAt = nowISO(); n.durationMs = Date.now() - t0; n.command = "driver-preflight (no pi)";
+      writeStatus(); return n;
+    }
+    const checks = pfPaths.map(artifactStateAbs);
+    const missing = checks.filter((c) => !c.exists).map((c) => c.path);
+    n.status = missing.length ? "blocked" : "ok";
+    n.artifacts = []; n.exitCode = 0; n.toolCalls = 0; n.toolBreakdown = {};
+    n.driverPreflight = { checked: pfPaths.length, missing };
+    n.summary = missing.length
+      ? `DRIVER-PREFLIGHT blocked — missing: ${missing.join(", ")}`
+      : `DRIVER-PREFLIGHT ok — ${pfPaths.length} upstream artifact(s) present (no pi spawn)`;
+    n.issues = missing.length ? [`missing upstream: ${missing.join(", ")}`] : [];
+    n.pipelineFindings = [];
+    n.endedAt = nowISO(); n.durationMs = Date.now() - t0;
+    writeStatus();
+    const mark = n.status === "ok" ? "✓" : "✕";
+    console.log(`    ${mark} ${node.label} → ${n.status}  (driver preflight, no pi) — ${n.summary}`);
+    return n;
+  }
 
   ensureDir(promptDir);
   const promptFile = path.join(promptDir, `${node.id}.prompt.md`);
@@ -397,11 +448,12 @@ async function runNode(node) {
 
 (async () => {
   if (!args.dryRun && args.provider === "cp") {
-    const missing = [];
-    if (!process.env.CODING_PLAN_API_KEY) missing.push("CODING_PLAN_API_KEY");
-    if (!process.env.PI_CP_BASE_URL) missing.push("PI_CP_BASE_URL");
-    if (!model) missing.push("PI_CP_MODEL (or --model)");
-    if (missing.length) { console.error(`\n✕ live run needs: ${missing.join(", ")} (or use --dry-run)\n`); process.exit(2); }
+    // Credentials/model live in pi's OWN global config now — nothing per-product to require. Just
+    // nudge if the one-time native setup is absent; pi itself errors loudly on a real auth miss.
+    const piDir = process.env.PI_CODING_AGENT_DIR || path.join(os.homedir(), ".pi", "agent");
+    if (!fs.existsSync(path.join(piDir, "models.json")) && !fs.existsSync(path.join(piDir, "auth.json"))) {
+      console.warn(`\n⚠ provider "cp" expects pi's native global config at ${piDir}/models.json (one-time, machine-global). See pi-runner/README.md.\n`);
+    }
   }
 
   // THE SYNC: execute the workflow under recording stubs → exact prompts + DAG.
