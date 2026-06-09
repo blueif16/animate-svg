@@ -244,7 +244,8 @@ const rStory = run('story') ? await agent([
   'W1 — STORYBOARD. Define the cue IDs, the TEACHING ACTION(S) per cue, the narration beat, and the required visual per cue. Decide the teaching VERB before any layout. NO duration estimates anywhere (timing is decided only by W3.5).',
   `SKILLS: ${SK.storyboard}`,
   `INPUT: ${REPO}/${P.pedagogy} (each cue must carry a discovery) ; ${TEACH} (the teaching-move menu — tag each cue with its move(s); required-visual is read off each move's \`requires\`) ; ${REPO}/${P.brief}.`,
-  `OUTPUT ARTIFACT: ${REPO}/${P.storyboard} — ordered cues (stable kebab ids), teaching action(s) per cue, narration beat intent, required visual. The cue ids + order DEFINE the spine that voice / visuals / timing all bind to.`,
+  'ACQUISITION RHYTHM: give every invite-echo its OWN `echo-<target>` cue (the wait-time is a real beat; a two-variant echo → two echo cues). End the storyboard with a machine-readable `exposures: { <target>: <n> }` ledger (spaced encounters per acquisition target) — the reconcile reads it for the comprehension-floor advisory.',
+  `OUTPUT ARTIFACT: ${REPO}/${P.storyboard} — ordered cues (stable kebab ids), teaching action(s) per cue, narration beat intent, required visual, and the \`exposures\` ledger. The cue ids + order DEFINE the spine that voice / visuals / timing all bind to.`,
   `OWNED PATHS: ${P.storyboard} only. NO durations, no frames, no code.`,
 ].join('\n'), { label: 'W1 storyboard', phase: 'Storyboard', agentType: 'claude', schema: NODE_RESULT }) : (log(`W1 ${skip('story')}`), null)
 
@@ -342,7 +343,9 @@ const rReconcile = run('reconcile') ? await agent([
   `INPUT: per-cue visualMotionSeconds from ${REPO}/${P.visualDesign} ; per-cue narrationFrames from the generated timing module ${REPO}/${P.timingTs}.`,
   'COMPUTE (use the kit @studio/narration-kit reconcileCueTimeline): for each cue, cueFrames = max(narrationFrames, round(visualMotionSeconds*fps)) + tailFrames (tail ≤ 9 frames / 0.3s). Chain cues end-to-end into startFrame/endFrame.',
   `EMBED the reconciled cue list directly into ${REPO}/${P.timeline} as the exported ${camel}Cues array (audio, visuals and captions all read THIS). Do NOT create PADDED_CUE_DURATIONS_FRAMES or any padding table. The brief **Length** is a HINT only — the true length is sum(cueFrames); accept drift.`,
-  skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm cue windows align with the voice before composing.`,
+  'INTENTIONAL SILENCE IS ALREADY IN THE WAV. Any `gap` (learner-response wait-time, animation-hold, …) authored by W2b was baked into the frozen WAV at W3a as zero-cost local silence and detected by detect-silences — so it is absorbed into the cue window via audioSpanFrames with NO reconcile-math change. Do not re-pad it. (docs/pipeline-architecture.md §10.)',
+  `COMPREHENSION-FLOOR ADVISORY (advisory, NEVER blocking — like lesson:check): if ${REPO}/${P.storyboard} declares an \`exposures\` ledger and the lesson has acquisition targets, compare per-target counts against the lesson-pedagogy §8 floor (≥6–10 spaced exposures; ≥3–5s wait-time per echo) and the reconciled per-cue durations. If a target lands UNDER its floor, record a WARN in this node's \`issues\` + \`pipelineFindings\` (e.g. "acquisition target 'I'm' has 4 exposures < §8 floor"). Report the emergent total length as-is — never score it against a number. If the ledger is absent, print \`SKIP: no exposures ledger\` — do not silently pass.`,
+  skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm cue windows align with the voice (incl. the baked silences) before composing.`,
   `OUTPUT ARTIFACT: ${REPO}/${P.timeline} (with the ${camel}Cues array). OWNED PATHS: ${P.timeline} only.`,
 ].join('\n'), { label: 'W3.5 reconcile', phase: 'Reconcile', agentType: 'claude', schema: NODE_RESULT }) : (log(`W3.5 ${skip('reconcile')}`), null)
 

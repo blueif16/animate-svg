@@ -19,7 +19,7 @@ See `docs/pipeline-architecture.md` for the full rationale.
 ## Outputs
 
 - `lesson-data/<id>/audio-captions.md` — per-cue narration table + ASR risk flags + caption plan.
-- `lesson-data/<id>/script-cues.json` — machine-readable CuePlan that drives Wave 3a's voice generation. One row per cue: `id`, `narration`, optional `notes`.
+- `lesson-data/<id>/script-cues.json` — machine-readable CuePlan that drives Wave 3a's voice generation. One row per cue: `id`, `narration`, `phrase`, `caption`, optional `emphasis`, optional `gap`.
 
 ## The targeting rule
 
@@ -60,7 +60,8 @@ If `pedagogy.md`/`storyboard.md` mark a cue as reinforcement, the narration real
 
 - **Replay cues reuse the same clip.** When the storyboard marks a cue `replay of <id>`, do NOT write fresh narration — emit the SAME `narration`/`phrase`/`caption` so Wave 3a/3.5 can reuse the identical voiced clip (the child meets the target again, identically; no new TTS roll). Note the replay so the composer plays the same audio.
 - **Choral / modeling lines.** "跟我说：Hello… Hello!" — model then invite the echo; a slow, repeated target is correct here, not an ASR hazard (break repeats into `。` breath-groups).
-- **Reason per cue, don't template.** How many repeats, where — comes from pedagogy's `reinforcement` line, not a fixed rule. A new sound wants several; an obvious thing wants none.
+- **The wait-time is a `gap`, authored — not narrated.** When the storyboard marks an `echo-*` cue (an `invite-echo` with its wait-time), the cue's `narration` is the **prompt only** ("跟我说：Hello"); the held silence is a `gap: { "seconds": <3–5>, "reason": "learner-response" }` on that cue. The voice generator bakes it as **zero-cost local silence** into the WAV (never a TTS call), and the reconcile absorbs it into the cue window (`docs/pipeline-architecture.md` §10). **Never** try to express the wait by writing "……" or padding the narration. Other intentional silences use the same field with a different reason — `"animation-hold"` to let a visual land, `"breath"`, `"beat"`.
+- **Reason per cue, don't template.** How many repeats, where, how long each wait — comes from pedagogy's `reinforcement` line + §8 floors, not a fixed rule. A new foreign sound wants the high end (≥5s wait); an obvious thing wants none.
 
 ## What this skill does NOT do anymore
 

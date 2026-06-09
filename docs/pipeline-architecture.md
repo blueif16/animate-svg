@@ -126,6 +126,8 @@ The §3 hold table was authored BEFORE narration existed, by a subagent guessing
 
 **§3 is deleted from `lesson-audio-captions` skill.** The composer no longer accepts a hold table. The timeline file no longer defines `PADDED_CUE_DURATIONS_FRAMES`.
 
+This section killed *accidental, uncoordinated* silence (padding nobody owned). It is **not** a ban on silence — its disciplined counterpart is **§10**, where silence is intentional, typed, and coordinated.
+
 ## 7. Contact sheet contract
 
 The render-time contact sheet (`scripts/make-contact-sheet.mjs`) samples 5 frames per cue from the rendered MP4:
@@ -152,6 +154,45 @@ The contact sheet is the primary review artifact for Wave 6 AND for the composer
 - **Before changing wave order or cue-timing semantics**: read §4 and §5. If your change preserves the cue-as-unit invariant (§1), edit §4 inline and add a changelog entry. If it breaks the invariant, propose it explicitly — that's a real architecture change.
 - **When debugging audio/visual sync issues**: §6 is the regression we already fixed. If you're seeing similar symptoms, the timeline file is probably re-introducing padding.
 - **When briefing a new subagent**: point them at the relevant wave section AND this doc. The wave skills enforce contracts; this doc explains why those contracts exist.
+
+---
+
+## 10. Intentional silence is typed — the gap
+
+§6 removed silence that *nobody owned*. This section is the opposite discipline: silence that someone owns, on purpose. **A lesson is never silent by accident.** When the voice goes empty, it is for a reason — and the reason is part of the data.
+
+### 10.1 One generic mechanism, many reasons
+
+Many different needs all reduce to the same thing — *the voice goes empty for a good reason*:
+
+- the child is answering a "跟我说" prompt (the **wait-time** — `lesson-pedagogy` §8);
+- a visual/animation needs to land and the picture should teach uninterrupted (**animation-hold**);
+- a natural inter-sentence **breath**;
+- a deliberate dramatic **beat**.
+
+Because the mechanism is one, **the namespace is the generic `gap`, never one purpose.** The kit type (`@studio/narration-kit` `CueGap`) is `{ seconds, reason }`, and `reason` is an *open union* (`GapReason`): `learner-response | animation-hold | breath | beat | …`. A new reason **extends the union** — it never gets its own purpose-named field. (The first version of this work proposed `responseGapSeconds`; that baked one reason into the namespace and was rejected for exactly this reason — a later kind of silence couldn't reuse the name. See `docs/proposals/intentional-silence-timeline.md`.)
+
+The `reason` is metadata: the synthesis step ignores it (it only needs `seconds`), but downstream artifacts **honor** it — the composer shows a "your turn" affordance for `learner-response` and nothing for `animation-hold`; the under-floor advisory counts `learner-response` gaps toward the §8 comprehension floor.
+
+### 10.2 Silence is generated locally — it NEVER goes through TTS
+
+**A gap is zero-cost.** It is a buffer of zero PCM samples (`silenceChunk` = `Buffer.alloc`), spliced into the WAV between clips. The TTS engine (Gemini / ElevenLabs) — billed by spoken duration — is **only** ever called for actual spoken text. We never pay an API to "say nothing." Authoring silence as an empty spoken cue is therefore forbidden: the voice generator throws and points you at the preceding cue's `gap` instead.
+
+### 10.3 Two expressions of the same philosophy
+
+Intentional silence reaches the timeline two ways, both reasoned, neither padding:
+
+1. **A baked WAV gap** (`cue.gap`) — silence that must sit *inside the audio stream* (a wait-time after a spoken prompt, a beat between sentences). The voice generator splices `gap.seconds` of local silence after that cue's clip; `bin/detect-silences.mjs` finds it; the per-lesson reconcile (`reconcileCueTimeline`) absorbs it into the cue window via `audioSpanFrames` — **no reconcile-math change**. This is the seam that makes "audio is the skeleton" (§2, §5) and intentional silence coexist: the silence is *in* the skeleton.
+2. **A motion-driven hold** (`visualMotionSeconds > narrationSeconds`, §2) — silence that exists because the *picture* needs the time. Reconcile already gives the cue `max(motion, audio)`; the voice simply finishes before the cue does and the visual holds.
+
+Both keep the **one-timeline invariant** (§1): the silence lives in the shared cue window, so audio, visuals, and captions never disagree about it. The thing §6 forbade — a *second*, composer-private timeline of padding — stays forbidden.
+
+### 10.4 What every artifact must respect
+
+- **Voice (W2b/W3a)** authors silence as a `gap` on the preceding cue, never as an empty cue.
+- **Reconcile (W3.5)** needs no change — it reads the WAV silence like any other.
+- **Composer (W4)** reads the gap's `reason` (or the cue's teaching action) and fills a `learner-response` window with a held "your turn" affordance, an `animation-hold` window with the breathing visual — never dead-frozen frames, never narration-driven motion stacked onto a response window.
+- **Captions** ride the cue window unchanged; they don't fight the gap.
 
 ---
 
@@ -217,3 +258,27 @@ The contact sheet is the primary review artifact for Wave 6 AND for the composer
 - `remotion-svg-primitives/scripts/render-complete-lesson.mjs` — loudnorm pass + `--skip-loudnorm`.
 - `remotion-svg-primitives/public/audio/_beds|_sfx|_stings/` — curated library (placeholders + `_SOURCING.md`).
 - Design: `docs/proposals/sound-layer-integration.md`. Research: `research/music-sound-{design,palette-2026-05-29}.md`.
+
+### v3 — 2026-06-08 — Intentional silence is typed (the gap)
+
+**What changed**
+- New §10: silence is **first-class and typed**. The kit gains `GapReason` (open union) + `CueGap = { seconds, reason }`; `CuePlanItem` gains an optional `gap`.
+- The voice generator's uniform inter-clip `gapSeconds` scalar becomes a **per-cue lookup**: `cue.gap.seconds ?? default breath`. Silence is `Buffer.alloc` zeros — **never a TTS call**. Authoring silence as an empty spoken cue now throws with a pointer to `gap`.
+- Reconcile is **untouched** — the baked silence is a detected WAV silence it already absorbs into `audioSpanFrames`.
+- Planning: the comprehension-floor **wait-time** (`lesson-pedagogy` §8) stops being a "reconcile follow-up / fake it" hedge and becomes the shipped mechanism — a `learner-response` gap. Storyboard emits the echo+wait as its own `echo-*` beat; audio-captions authors the `gap`; the composer holds a "your turn" affordance through the window; a reconcile-time advisory warns when an acquisition lesson lands under its floor.
+
+**Why**
+- The deferred follow-up logged in `.agents/skill-system-map.md` — planning prescribed a ≥3–5s wait-time that nothing downstream allocated, so it evaporated to a 0.4s breath at render.
+- The naming/robustness correction (user-driven): silence has many legitimate reasons (response, animation-hold, breath, beat); a purpose-named field (`responseGapSeconds`) would have collided with the next reason. The generic `gap` + extensible `reason` is the durable shape. And silence must be **free** — locally generated, never billed by a TTS API.
+
+**Trade-offs accepted**
+- Echo-as-own-beat increases cue count for acquisition lessons (more, shorter cues). Accepted — it is the most faithful to §8 and makes every gap a boundary gap (no interior-gap plumbing).
+- A truly standalone silent beat is authored as the *preceding* cue's `gap`, not as its own empty cue — keeps every cue ASR-visible so reconcile needs no cue-plan merge.
+
+**Files touched**
+- `@studio/narration-kit` (`~/Desktop/shared-narration`): `src/types.ts` (`GapReason`, `CueGap`, `CuePlanItem.gap`); `bin/generate-voice.mjs` + `bin/generate-voice-elevenlabs.mjs` (per-cue gap, zero-cost silence, error pointer).
+- `.agents/skills/cue-plan-author/SKILL.md` (kit) — the `gap` field.
+- `.agents/skills/{lesson-pedagogy,lesson-storyboard,lesson-audio-captions,remotion-lesson-composer}/SKILL.md` — author + respect the gap; drop the hedge; echo-as-own-beat; "your turn" affordance.
+- `.agents/TEACHING-ACTIONS.md` — `learner-response-gap` = one `gap` reason; drop the follow-up hedge.
+- `.claude/workflows/lesson-build.js` — reconcile-node under-floor advisory + storyboard `exposures`.
+- Design: `docs/proposals/intentional-silence-timeline.md` (supersedes the single-purpose `learner-response-gap-timeline.md`).
