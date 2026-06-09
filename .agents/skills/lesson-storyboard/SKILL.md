@@ -10,6 +10,7 @@ Shape the lesson's beats before any visual design or implementation. The storybo
 ## Input
 
 - `lesson-data/<id>/pedagogy.md` — the gate output: `lesson kind`, and per cue a `discovery` / `stage` / `focal` / `reinforcement` line. **Read it fully.** The storyboard realizes the rhythm pedagogy reasoned about; it does not re-decide the teaching.
+- `.agents/TEACHING-ACTIONS.md` — the **teaching-move registry**. The storyboard is composed FROM these moves: tag each cue with the teaching action(s) it performs. This is the audience-first script layer — moves, not layout.
 - `lesson-data/<id>/brief.md` — knowledge point, audience, out-of-scope fence.
 
 ## Output (`lesson-data/<id>/storyboard.md`)
@@ -18,8 +19,9 @@ A short lesson-shape paragraph, then one `### <cue-id>` block per cue **in play 
 
 - **discovery ref** — the exact `discovery` sentence from pedagogy.md this cue serves (verbatim). One cue, one discovery.
 - **stage** — carried from pedagogy.md (no cue may exceed it).
-- **narration beat (INTENT, no copy)** — what the narration is *for* at this beat (name the moment / model the target / invite the echo / recap). NEVER the actual words and NEVER a duration — copy is Wave 2b, timing is Wave 3.5.
-- **required visual** — the real component/primitive vocabulary the beat needs (e.g. `DialogueExchange` turn, `ReadAlongHighlight` sweep, a count badge). Name existing capabilities where you can; flag a genuine gap for Wave 3 (named as a demand, not built).
+- **teaching action(s)** — the move(s) this cue performs, from `.agents/TEACHING-ACTIONS.md` (e.g. `announce-topic`; `model-target-slow → gloss → invite-echo`; `reveal`; `spaced-recall`). Decide the *teaching verb* before the layout. A cue with no teaching action is filler (fold or cut it). This is what makes the rhythm reviewable and what the Wave-3 gap-scan maps to capabilities.
+- **narration beat (INTENT, no copy)** — what the narration is *for* at this beat (follows from the teaching action: name the moment / model the target / invite the echo / recap). NEVER the actual words and NEVER a duration — copy is Wave 2b, timing is Wave 3.5.
+- **required visual** — the real component/primitive vocabulary the beat needs. Read it OFF the teaching action's `requires` (e.g. `model-target-slow` ⇒ target glyph big+centered+nothing-on-top; `track-read-along` ⇒ `ReadAlongHighlight`). Name existing capabilities where you can; flag a genuine gap for Wave 3 (named as a demand, not built).
 
 No durations. No frames. No code. No invented copy.
 
@@ -37,11 +39,11 @@ This is the heart of the skill, and the most common failure: producing **one cue
 
 - Keep pedagogy's cue order and discoveries; do not invent, merge, or silently drop a discovery.
 - A cue whose only purpose is to say a sentence (no discovery, no reinforcement role) is filler — fold or cut it (pedagogy §1).
-- Every lesson opens with a short topic-intro beat (title + section + KP teaser) — see CLAUDE.md. The cast/teaching objects should not crowd the title; sequence them (title reads first, then the lesson begins). Flag this as a beat ordering note for the composer, not just a single frame.
+- Every lesson opens with a short topic-intro beat (the `announce-topic` move) — see CLAUDE.md. Its `requires` is binding: the title/teaser **reads alone first**, the cast/teaching objects **enter after** (never overlaid on the title). Flag this as a beat-ordering note for the composer, not just a single frame.
 - Language/L2 spine: the target word/sound is delivered by the **voice** (pedagogy §4 carve-out / §9); the **picture** delivers the moment + a trackable read-along. Plan beats that let the child *hear it, see it, and meet it again* — not one flashcard per word.
 
 ## Report back
 
-- The ordered cue list (ids) + each cue's discovery ref.
+- The ordered cue list (ids) + each cue's discovery ref + its teaching action(s).
 - Which cues are reinforcement cues (and which are `replay of <id>`), with the one-line reasoning tying them to pedagogy's `reinforcement` lines.
-- Any required-visual gaps flagged for Wave 3 (named demands only).
+- Any required-visual gaps flagged for Wave 3 (named demands only) — sourced from the teaching actions' `requires`.
