@@ -34,6 +34,13 @@ After the contact-sheet review, cross-check the Wave 4 composer outputs:
 - If `lesson-data/<id>/primitive-checks/*.png` exist, inspect each. Does the primitive read as the visual-design §5 acceptance criteria specify (e.g. "kid reads 'sticks tied with a bow'")?
 - Cross-check that every element listed in visual-design §3 Visual Contract has a corresponding `SceneElement` entry in `src/lessons/<camelLessonId>/manifest.ts`.
 
+## Per-cue text-vs-audio checks (scene strings against the spoken phrase)
+
+A frame can look correct yet show a word the audio never speaks, or hold a learner-response beat as silent dead air. The contact sheet alone won't catch these — walk every cue against `lesson-data/<id>/script-cues.json`:
+
+- **On-screen target text == the cue's spoken audio.** For each cue, compare every on-screen target STRING in `src/lessons/<camelLessonId>LessonScene.tsx` (`DialogueExchange` `line`s, `ReadAlongHighlight` word glyphs, name tags) against that cue's spoken `phrase` in `lesson-data/<id>/script-cues.json`. The on-screen target strings must be a SUBSET of the cue's spoken phrase, in spoken order. FLAG any on-screen word the cue's audio does not speak — e.g. a bubble that shows a word carried over from an earlier cue, or lifted from the brief, that this cue's audio never speaks. This is a HARD finding mapped to W4a composer.
+- **Learner-response gap is a legible invitation, not dead air.** For any cue with `gap.reason === "learner-response"`, confirm the scene holds a READABLE "your turn" affordance during the gap window — a localized label ("你来说" / "Your turn") + a pulse/ring on the read-along row + a speech/mic glyph. A bare low-opacity glow with no label/icon FAILS (it reads as awkward silence, not an invitation to speak). HARD finding mapped to W4a composer.
+
 ## Sound checks (when the lesson has `audio-cues.json`)
 
 The master loudness target (≈ −16 LUFS / TP ≤ −1 dBFS) is the `lufs` gate above — do not re-measure it by hand. These are the QUALITATIVE checks that gate can't make; scrub the MP4 with sound on:
@@ -48,6 +55,7 @@ The master loudness target (≈ −16 LUFS / TP ≤ −1 dBFS) is the `lufs` gat
 The final verdict (GREEN / YELLOW / RED) cites:
 - **contact-sheet teach test** — does the arc teach the KP? (single paragraph)
 - bbox-manifest collision count + any justified collisions
+- text-vs-audio checks — on-screen target strings ⊆ each cue's spoken phrase; learner-response gaps hold a legible "your turn" affordance
 - primitive-check observations (per redesigned primitive)
 - sound checks (if `audio-cues.json` present): melody-under-narration, 3-point duck, SFX discipline, `lufs` gate verdict
 - pedagogy + pacing checks against `audio-captions.md` and `visual-design.md`
