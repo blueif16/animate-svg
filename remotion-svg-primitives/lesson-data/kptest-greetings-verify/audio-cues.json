@@ -1,0 +1,28 @@
+{
+  "lessonId": "kptest-greetings-verify",
+  "bed": "literacy-playful-76",
+  "toneSafe": false,
+  "intro": {
+    "sting": "kids-section-lift"
+  },
+  "outro": {
+    "resolve": true
+  },
+  "sfx": [
+    {
+      "cue": "meet-hello",
+      "event": "popin",
+      "sound": "pop"
+    },
+    {
+      "cue": "hi-intro",
+      "event": "reward",
+      "sound": "chime"
+    },
+    {
+      "cue": "recap-encounter",
+      "event": "reward",
+      "sound": "ta-da"
+    }
+  ]
+}
