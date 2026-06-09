@@ -161,7 +161,11 @@ const PREFLIGHT_RESULT = {
   required: ['ok', 'missing', 'summary'],
 }
 
-// The shared system-prompt preamble — the CLAUDE.md "Discipline" laws, verbatim in spirit.
+// The shared system-prompt preamble. THIS FILE is the single source of truth for execution —
+// the wave order (meta.phases + node prompts) AND the Discipline laws, inlined below so the
+// PRODUCTION executor (pi agents, which extract.mjs derives from this file and which NEVER load
+// CLAUDE.md) receives them through their only channel. CLAUDE.md mirrors these laws as the ambient
+// summary for Claude-Code-only sessions; on any disagreement THIS file wins — edit it first.
 function discipline(extra) {
   return [
     'You are ONE node in the lesson-build workflow. Your operating system-prompt is the SKILL file(s) listed below — Read them FIRST and follow them literally. Also Read this lesson\'s pedagogy.md (once it exists) — every visual/audio choice must serve a named discovery in it.',

@@ -55,6 +55,8 @@ ASR alignment is an owned production artifact, not a pass/fail gate. Inspect the
 
 ## Subagent Workflow (wave order)
 
+**Authority.** `.claude/workflows/lesson-build.js` is the executable single source of truth for the wave order (and the discipline laws below) — pi extracts the production prompts from it and cannot read this file. This section is the ambient Claude-Code summary; on any disagreement the workflow wins, so improve the chain by editing the workflow first.
+
 The entire loop — every wave below, **including pedagogy (Wave 0) and reconcile (Wave 3.5)** — is owned by **one self-contained workflow** (the `Workflow` tool), parameterized by the lesson knowledge and runnable in parallel across many lessons. The orchestrator's only job is to spawn that workflow with the knowledge and observe; it implements nothing and owns no wave directly. Each wave is a clean-room subagent given concrete inputs. Invoking a single wave's subagent by hand is a **debug-only exception** — taken at the *start* of a run while improving the system, never the default. See `docs/pipeline-architecture.md` for the timeline-coordination architecture (cue-as-unit, frozen audio, Wave 3.5 reconcile).
 
 0. **pedagogy** (first workflow node) — write `lesson-data/<id>/pedagogy.md` answering for each cue: what does the child discover here that they didn't know walking in? Follow `lesson-pedagogy` skill. No downstream wave advances without this file.
@@ -85,6 +87,8 @@ The loop runs unattended and at scale, so every node must be inspectable after t
 Read tier 1 first; drop to tier 2 for a wave that looks wrong; tier 3 only to reproduce a failure exactly. The union of all nodes' `pipelineFindings` is the workflow-improvement backlog.
 
 ## Discipline (every workflow node)
+
+**Authority.** These laws are mirrored here for ambient Claude-Code sessions; the executable source of truth is the `discipline()` preamble in `.claude/workflows/lesson-build.js` (inlined there because pi agents extract from it and never read this file). On any disagreement the workflow wins — edit it first.
 
 - **CUE IS THE UNIT OF COORDINATION.** Each cue has ONE timeline window shared by audio, visuals, and captions. The window is set by Wave 3.5 reconcile: `cueFrames = max(narrationFrames, visualMotionFrames) + tail`. If audio is on one timeline and visuals on another, that's a bug — see `docs/pipeline-architecture.md` §1. NEVER re-introduce `PADDED_CUE_DURATIONS_FRAMES` or any timeline-padding table that the composer applies independently of audio.
 
@@ -198,6 +202,7 @@ We are ALWAYS evolving this skill system at dev speed — fix flaws the moment t
 - **Prefer fixing the workflow/orchestrator over a single skill** when the flaw is coordination/hand-off (`lesson-build.js`: "improve a wave by editing its SKILL; improve the chain by editing this file").
 - **Every edit must generalize across ALL future runs** — never hard-code one case, never lean on reward-hackable tests; verification is an intent the next session/human checks, and the human is the eye for visuals.
 - **One commit per lesson:** `skillsys(<owner>): <rule>` with why/lesson/verify in the body. Review a span with the skill's `review-edits.sh`. (A new global skill itself is a structural change — but the per-lesson `skillsys` edits it produces are normal spec edits, not structural changes.)
+- **Two HITL checkpoints (per the Hermes OPERATE loop):** the human approves the concrete diff before a structural edit is committed, and the human decides whether to rerun the workflow to re-validate after an edit.
 
 ## Feedback & Debugging Loop
 
