@@ -54,7 +54,17 @@ node pi-runner/run.mjs --lesson <id> --until verify --debug      # full pipeline
   — the block that needs no Gemini/Remotion — so a bare run can't hit the voice/render walls during
   bring-up. Later waves need their toolchains + a billed `GOOGLE_API_KEY` (voice/assets).
 - `--brief <file>` seeds Setup (passed into the workflow so the setup prompt matches).
-- **Fleet:** one driver per lesson in the background; poll each `out/<id>/run-status.json`.
+- `--worktree` (or `PI_RUNNER_WORKTREE=1`) runs the lesson in its OWN git worktree (branch
+  `pi/<id>`) so concurrent runs are PHYSICALLY isolated — a cheap model can't see/clobber another
+  lesson's files. node_modules is symlinked; each node's hardcoded absolute paths are rewritten into
+  the worktree; status + logs stay in the MAIN tree (monitoring unaffected); the deliverable
+  `out/<id>/` is copied back and the lesson source kept on branch `pi/<id>` for a human-gated merge
+  (`--keep-worktree` keeps the tree). **Pass the brief via `--brief`** (the worktree is a clean HEAD
+  checkout). Merge-back is conflict-free because lesson registration is auto-discovered (the composer
+  exports `lessonComposition`; nobody hand-edits Root.tsx). Spec:
+  `~/.claude/skills/transform-workflow-to-pi/reference/worktree-isolation.md`.
+- **Fleet:** one driver per lesson in the background; poll each `out/<id>/run-status.json`. With
+  `--worktree` the fleet is fully isolated — the strongest cross-contamination guard.
 
 ## Debug vs production mode
 
