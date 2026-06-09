@@ -228,6 +228,11 @@ const main = () => {
     }
   }
 
+  // Lesson registry — discover every Complete*Lesson.tsx that exports `lessonComposition`
+  // and (re)write src/lessons/_lessonRegistry.generated.tsx BEFORE bundling, so a freshly
+  // composed lesson is registered without anyone hand-editing Root.tsx. Deterministic + cheap.
+  run("Lesson registry", "node", ["scripts/build-lesson-registry.mjs"]);
+
   if (!args.skipLint) {
     run("Typecheck + lint", "npm", ["run", "lint"]);
   }

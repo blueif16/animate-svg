@@ -96,12 +96,14 @@ import {
   OrdinalLabelTokenHardest,
   OrdinalLabelTokenMultiplicity,
 } from "./scenes/OrdinalLabelTokenDemo";
+import { PrimitiveTestDemo } from "./scenes/PrimitiveTestDemo";
 import {
   CountingDemo,
   CompleteComparisonLesson,
   CompleteFenYuHeLesson,
   CompleteKp1FenYuHeIntroLesson,
   CompleteKp1HelloGreetingsLesson,
+  CompleteKptestGreetingsVerifyLesson,
   CompleteKp2CountingByTensLesson,
   CompleteKp2v2CountingByTensLesson,
   CompleteMakeTenLesson,
@@ -135,6 +137,8 @@ import {
   completeKp1FenYuHeIntroLessonDuration,
   completeKp1HelloGreetingsLessonDefaultProps,
   completeKp1HelloGreetingsLessonDuration,
+  completeKptestGreetingsVerifyLessonDefaultProps,
+  completeKptestGreetingsVerifyLessonDuration,
   completeKp2CountingByTensLessonDefaultProps,
   completeKp2CountingByTensLessonDuration,
   completeKp2v2CountingByTensLessonDefaultProps,
@@ -150,6 +154,7 @@ import {
   hybridSketchMotionDuration,
 } from "./Composition";
 import { video } from "./theme";
+import { AUTO_LESSON_COMPOSITIONS } from "./lessons/_lessonRegistry.generated";
 
 const compositionDefaults = {
   fps: video.fps,
@@ -285,6 +290,13 @@ export const RemotionRoot: React.FC = () => {
         component={CompleteKp1HelloGreetingsLesson}
         durationInFrames={completeKp1HelloGreetingsLessonDuration}
         defaultProps={completeKp1HelloGreetingsLessonDefaultProps}
+        {...compositionDefaults}
+      />
+      <Composition
+        id="CompleteKptestGreetingsVerifyLesson"
+        component={CompleteKptestGreetingsVerifyLesson}
+        durationInFrames={completeKptestGreetingsVerifyLessonDuration}
+        defaultProps={completeKptestGreetingsVerifyLessonDefaultProps}
         {...compositionDefaults}
       />
       <Composition
@@ -458,6 +470,12 @@ export const RemotionRoot: React.FC = () => {
         {...compositionDefaults}
       />
       <Composition
+        id="PrimitiveTestDemo"
+        component={PrimitiveTestDemo}
+        durationInFrames={1}
+        {...compositionDefaults}
+      />
+      <Composition
         id="GlyphStrokeWriterHardest"
         component={GlyphStrokeWriterHardest}
         durationInFrames={GLYPH_HARDEST_DURATION}
@@ -587,6 +605,25 @@ export const RemotionRoot: React.FC = () => {
         height={ASSET_GALLERY_HEIGHT}
         width={ASSET_GALLERY_WIDTH}
       />
+      {/*
+        AUTO-DISCOVERED LESSONS — every src/lessons/Complete*Lesson.tsx that exports a
+        `lessonComposition` descriptor (discovered by `npm run lessons:registry`). The Wave-4
+        composer registers a lesson by exporting that descriptor from its OWN file — it never
+        hand-edits this list, so parallel worktree runs never collide here. A lesson is EITHER
+        hand-registered above OR auto-discovered here, never both (Remotion throws on a duplicate id).
+      */}
+      {AUTO_LESSON_COMPOSITIONS.map((c) => (
+        <Composition
+          key={c.id}
+          id={c.id}
+          component={c.component}
+          durationInFrames={c.durationInFrames}
+          defaultProps={c.defaultProps}
+          fps={c.fps ?? compositionDefaults.fps}
+          height={c.height ?? compositionDefaults.height}
+          width={c.width ?? compositionDefaults.width}
+        />
+      ))}
     </>
   );
 };
