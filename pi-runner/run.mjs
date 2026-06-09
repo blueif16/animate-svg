@@ -30,7 +30,7 @@
 //                      this substring (case-insensitive). Default = $PI_RUNNER_UNTIL or "all".
 //   --provider/--model/--extension(-e)/--status as below (model defaults to $PI_CP_MODEL).
 //   --debug            real-time heartbeats + stall detection (ALWAYS use while developing).
-//   --node-timeout N   hard-kill a node after N seconds (default 600).
+//   --node-timeout N   hard-kill a node after N seconds (default $PI_RUNNER_NODE_TIMEOUT or 1800).
 //   --dry-run          extract + build prompts + print the exact pi commands; invoke no model.
 
 import { spawn } from "node:child_process";
@@ -62,6 +62,9 @@ loadDefaults();
 //                    Default = ROOT.
 // PI_RUNNER_WORKFLOW path to the workflow .js. Relative paths resolve vs ROOT.
 // PI_RUNNER_UNTIL    optional default for --until (e.g. an early phase during bring-up).
+// PI_RUNNER_NODE_TIMEOUT  optional default node hard-kill seconds (--node-timeout overrides).
+//                    Set generously: heavy waves (voice TTS, composer, render) run long on a
+//                    cheap coding-plan model. Default 1800 (30 min); 600 was too tight.
 const resolveFrom = (root, p, fb) => (!p ? fb : path.isAbsolute(p) ? p : path.join(root, p));
 const ROOT = process.env.PI_RUNNER_ROOT ? path.resolve(process.env.PI_RUNNER_ROOT) : path.resolve(HERE, "..");
 const RUN_CWD = resolveFrom(ROOT, process.env.PI_RUNNER_CWD, ROOT);
@@ -102,7 +105,8 @@ const extension = path.resolve(args.extension || path.join(HERE, "providers/codi
 const DEBUG = args.debug === true;
 const HEARTBEAT_MS = DEBUG ? 4000 : 10000;
 const STALL_WARN_S = 45;
-const NODE_TIMEOUT_S = args.nodeTimeout || 600;
+const NODE_TIMEOUT_S =
+  args.nodeTimeout || Number(process.env.PI_RUNNER_NODE_TIMEOUT) || 1800;
 
 const outRel = `out/${args.run}`;
 const promptDir = path.join(RUN_CWD, outRel, "_pi");
