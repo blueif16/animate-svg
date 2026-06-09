@@ -177,7 +177,7 @@ Iterating against the entire MP4 every round multiplies cost without changing de
 
 ## 10. Anti-pattern catalogue (refuse on sight)
 
-- **Label rendered on top of art.** A `一个十` label inside the bundle's bounding box. Move it to zone-labels.
+- **Anything readable rendered under anything else.** A `一个十` label inside the bundle's bounding box — *or* a cast character / prop / card sitting over the title, a caption, or a read-along phrase. Nothing readable is ever occluded (text most of all): move the occluder to its own zone, or sequence it in time so the readable thing reads first/alone (kids-eye §1.5 z-order legibility). A fade-in occluder hides from the linear collision gate — refuse it at design time.
 - **Two pictures stapled together.** A "10 ones vs 1 ten" comparison that uses different visual vocabularies on the two sides. Use the same primitive on both, only count/scale/opacity differ.
 - **Frame literals.** Any number in scene code that isn't `cues[id].startFrame + offset` is a coordinate-space bug. Refuse.
 - **Decoration "for emphasis."** A glow, a pulse, a sparkle on every cue. Reserve motion for the element that just changed. The climax gets ONE sparkle; the rest of the video earns its emphasis through composition, not effects.
