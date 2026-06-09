@@ -180,10 +180,22 @@ const main = () => {
       "--align",
     ]);
   }
-  // Silence detection — runs every render. Cheap (<1s) and frees the timeline
-  // reconcile from trusting ASR matchText offsets. Required for the
-  // silence-aware reconcile pattern (docs/pipeline-architecture.md).
-  if (args.recording && args.silenceOutTs && args.constPrefix && fs.existsSync(args.recording)) {
+  // Silence detection — LEGACY (pre-v4) only. v4 cue-anchored lessons reconcile
+  // from the per-cue clip module (`<camelId>Clips.ts`), not from detected WAV
+  // silences, so this step is skipped when that module exists.
+  const clipsModule =
+    args.alignOutTs && args.alignOutTs.replace(/Timing\.ts$/u, "Clips.ts");
+  const isV4 = clipsModule && fs.existsSync(clipsModule);
+  if (isV4 && args.silenceOutTs) {
+    console.log(
+      `\n== Silence detection skipped (v4 cue-anchored lesson: ${path.basename(clipsModule)} present)`,
+    );
+  } else if (
+    args.recording &&
+    args.silenceOutTs &&
+    args.constPrefix &&
+    fs.existsSync(args.recording)
+  ) {
     run("Silence detection", "node", [
       "node_modules/@studio/narration-kit/bin/detect-silences.mjs",
       "--recording",
@@ -199,6 +211,21 @@ const main = () => {
     console.log(
       `\n== Silence detection skipped (missing recording or constPrefix; expected ${args.recording})`,
     );
+  }
+
+  // Deterministic audio gate (v4) — runs right after voice, before render, so a
+  // held-vowel drone / untrimmed dead-air is caught by tool in seconds rather
+  // than surfacing only when a human listens. Advisory (never blocks).
+  if (isV4 && args.lessonId) {
+    try {
+      run("Audio gate", "node", [
+        "scripts/lesson-audio-gate.mjs",
+        "--lessonId",
+        args.lessonId,
+      ]);
+    } catch (error) {
+      console.warn(`Audio gate skipped: ${error.message || error}`);
+    }
   }
 
   if (!args.skipLint) {

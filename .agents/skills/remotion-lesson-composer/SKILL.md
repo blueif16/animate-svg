@@ -45,7 +45,7 @@ Same rule for sketch marks: every TeacherMark's `drawProgress` is interpolated a
 
 ## Cue-driven choreography
 
-Every cue has `startFrame`, `endFrame` from the **reconciled** timeline (Wave 3.5 — see `docs/pipeline-architecture.md`). The reconciled cue length is `max(narrationSeconds, visualMotionSeconds) + tail`. Motion within a cue is parameterized as named offsets relative to cue boundaries, never absolute frames.
+Every cue has `startFrame`, `endFrame` from the **reconciled** timeline (Wave 3.5 — see `docs/pipeline-architecture.md`). In v4 **cue-anchored audio** the reconciled cue length is `max(narrationFrames + gapFrames, visualMotionFrames) + tail`, and each cue's voice is its OWN measured clip mounted at `cue.startFrame` (the timeline also exports a `<X>VoiceClips` array). Motion within a cue is parameterized as named offsets relative to cue boundaries, never absolute frames.
 
 For each cue, the composer chooses motion that fits within `endFrame - startFrame`. If the visualMotionSeconds budget the composer chose (in `layout.ts` as relative offsets) overshoots the cue window, the composer:
 
@@ -62,15 +62,23 @@ The pre-v1 mechanism of `PADDED_CUE_DURATIONS_FRAMES` is DELETED. The lesson tim
 // ✗ FORBIDDEN — old pattern, deleted from the architecture
 const PADDED_CUE_DURATIONS_FRAMES: Record<string, number> = { ... };
 
-// ✓ REQUIRED — reconciled cues are the timeline
-export const myLessonCues: AlignedLessonCue[] = buildReconciledCues({
-  alignedCues: myLessonAlignedCues,   // from generated/<X>Timing.ts (Wave 3a)
-  visualMotionByCueId: VISUAL_MOTION,  // from visual-design.md motion-budget
-  tailSeconds: 0.25,
+// ✓ REQUIRED (v4) — the per-cue clip module is the audio truth; reconcile chains it
+import { reconcileClipTimeline } from "@studio/narration-kit";
+import { myLessonClips } from "./generated/myLessonClips"; // Wave 3a: clipSrc + exact narrationFrames + typed gap
+const reconciled = reconcileClipTimeline({
+  clips: myLessonClips,
+  visualBudgets: VISUAL_MOTION,        // from visual-design.md motion-budget (seconds)
+  fps: 30,
+  tailFrames: 9,
 });
+export const myLessonCues = reconciled.cues;            // visuals + captions read this
+export const myLessonVoiceClips = reconciled.voiceClips; // AudioLayer mounts one Sequence each
+export const myLessonDuration = reconciled.durationFrames;
 ```
 
-The `buildReconciledCues` helper computes per-cue `endFrame = startFrame + max(narrationFrames, visualMotionFrames) + tailFrames`, then chains cues end-to-end. If `visualMotionByCueId` is undefined for a cue, the cue length = narration + tail (narration-driven cue).
+`reconcileClipTimeline` computes per-cue `endFrame = startFrame + max(narrationFrames + gapFrames, visualMotionFrames) + tailFrames`, then chains cues end-to-end. The clip plays at the cue start; the rest of the window is free silence (a motion hold and/or a typed gap). There is NO `<X>Timing.ts`/`Silences.ts` import in the timeline and NO ASR-boundary correction — that's all gone.
+
+**Audio wiring:** pass `<X>VoiceClips` straight into `<LessonAudioLayer voiceClips={...}>` (the kit mounts one `<Sequence from={clip.fromFrame}>` per clip). NEVER wire a single `teacherAudioSrc`/continuous WAV. Derive the bed-duck windows from the clip spans (`spansToWindows(voiceClips.map(c => [c.fromFrame, c.fromFrame + c.durationInFrames]))`).
 
 ### Honor intentional silence — the gap reason
 

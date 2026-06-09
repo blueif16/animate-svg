@@ -58,6 +58,11 @@ at a time; a brief **predictive pause BEFORE revealing the target** beats a paus
 *requires:* **audio** = voice says the target slowly, **isolated in its own breath-group**
 (a comma-run blurs it); **visual/layout** = the target glyph **big, centered, nothing on top**,
 held at least its spoken length; `component` = a large glyph / `DialogueExchange` emphasis turn.
+**"Slow" is delivery + dwell, NEVER an in-text ellipsis.** Get slowness from (a) saying the target
+in its own breath-group, (b) repeating it across **2–3 separate models** (own short cue each), and
+(c) a typed `gap` (`reason: "beat"`/`"learner-response"`) between models — the cue window holds the
+big glyph through the silence. Writing `I'm…… Sam` to force a pause makes Gemini hold the vowel
+into a ~5s drone (the audio gate flags `🔴 DRONE`) — it does not model the sound, it ruins it.
 
 ### gloss
 Right after the target is voiced, **say what it means** in the child's language ("Hello 就是你好"). ·

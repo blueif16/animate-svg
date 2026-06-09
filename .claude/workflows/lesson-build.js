@@ -7,7 +7,7 @@ export const meta = {
     { title: 'Storyboard', detail: 'W1 storyboard.md — cue IDs + narration beats + required visuals; NO durations' },
     { title: 'Design', detail: 'W2a visual-design.md (SERIAL: Visual Contract + per-cue visualMotionSeconds) → W2b audio/captions (script-cues.json) ∥ W2c sound-design (audio-cues.json)' },
     { title: 'Voice & Assets', detail: 'W3a voice+ASR (verify+freeze) ∥ W3b primitive gap-scan→build (default reuse; owns intro card) ∥ W3c sound-asset gap-scan (default reuse the minted library)' },
-    { title: 'Reconcile', detail: 'W3.5 mechanical: cueFrames=max(narrationFrames,motionFrames)+tail → embed <X>Cues into <X>LessonTimeline.ts (kit reconcileCueTimeline); animatic gate' },
+    { title: 'Reconcile', detail: 'W3.5 mechanical: cueFrames=max(narrationFrames+gapFrames,motionFrames)+tail from the per-cue clip module → embed <X>Cues + <X>VoiceClips into <X>LessonTimeline.ts (kit reconcileClipTimeline); animatic gate' },
     { title: 'Compose', detail: 'W4a composer (Complete<X>Lesson.tsx + scene + layout.ts + manifest.ts; bed+SFX+captions wired; lesson:check --measured) ∥ W4b sketch overlay' },
     { title: 'Render', detail: 'W5 lesson:render --skip-voice + loudnorm -16 LUFS/-1 dBTP; auto contact sheet' },
     { title: 'Verify', detail: 'W6 verification.md against pedagogy discoveries + the 4 sound checks; contact sheet is the primary surface' },
@@ -80,9 +80,10 @@ const P = {
   asr: `${out}/asr-alignment.json`,
   primitiveChecks: `${out}/primitive-checks`,
   // technical exceptions (Remotion/TS-dictated locations)
-  voiceWav: `public/audio/${lessonId}-voice.wav`,
-  timingTs: `src/lessons/generated/${camel}Timing.ts`,
-  silencesTs: `src/lessons/generated/${camel}Silences.ts`,
+  voiceWav: `public/audio/${lessonId}-voice.wav`,        // QA/scrub master (render uses the per-cue clips)
+  voiceClipsDir: `public/audio/${lessonId}/clips`,        // v4: one trimmed clip per cue
+  clipsTs: `src/lessons/generated/${camel}Clips.ts`,      // v4: the AUDIO TRUTH the reconcile chains
+  timingTs: `src/lessons/generated/${camel}Timing.ts`,    // ASR alignment — QA only (matchScore audit)
   timeline: `src/lessons/${camel}LessonTimeline.ts`,
   scene: `src/lessons/${camel}LessonScene.tsx`,
   complete: `src/lessons/Complete${Pascal}Lesson.tsx`,
@@ -170,8 +171,8 @@ function discipline(extra) {
   return [
     'You are ONE node in the lesson-build workflow. Your operating system-prompt is the SKILL file(s) listed below — Read them FIRST and follow them literally. Also Read this lesson\'s pedagogy.md (once it exists) — every visual/audio choice must serve a named discovery in it.',
     `LESSON: "${lessonId}" — a single early-childhood SVG lesson video. The brief at ${REPO}/${P.brief} is the ONLY lesson-specific human input; everything else is derived by the waves.`,
-    'CUE IS THE UNIT OF COORDINATION. Each cue has ONE timeline window, set by W3.5 reconcile = max(narrationFrames, visualMotionFrames) + tail (tail ≤ 9 frames). Audio, visuals and captions all read THAT window. NEVER re-introduce PADDED_CUE_DURATIONS_FRAMES or any composer-applied padding table independent of audio.',
-    'NARRATION AUDIO IS FROZEN AFTER W3a. Once a cue\'s voice is accepted the WAV is canonical — never re-generate for visual fit; if motion overruns its cue, cut non-load-bearing flourishes first, then compress motion uniformly, never extend the cue or re-record. Music + SFX are a SECOND track added at W4 that consumes the reconciled timeline and changes NO cue length.',
+    'CUE IS THE UNIT OF COORDINATION — TRUE FOR AUDIO TOO (v4 cue-anchored audio). Each cue has ONE timeline window, set by W3.5 reconcile = max(narrationFrames + gapFrames, visualMotionFrames) + tail (tail ≤ 9 frames). Audio, visuals AND captions all read THAT window. Each cue owns its OWN measured voice CLIP, mounted in its own <Sequence from={cue.startFrame}> — there is NO single continuous WAV, so a clip can NEVER cross a cue boundary and the old continuous-WAV drift (audio playing ahead of the picture) is structurally impossible. NEVER re-introduce PADDED_CUE_DURATIONS_FRAMES, a single continuous voice Sequence, or detect-silences-based boundary snapping.',
+    'NARRATION AUDIO IS FROZEN AFTER W3a. Once accepted, the per-cue voice CLIPS are canonical — never re-generate for visual fit; if motion overruns its cue, cut non-load-bearing flourishes first, then compress motion uniformly, never extend the cue or re-record. Each clip is TRIMMED of TTS padding at generation; its exact length IS the cue\'s narrationFrames (no ASR-boundary guessing). Music + SFX are a SECOND track added at W4 that consumes the reconciled timeline and changes NO cue length.',
     'MEASURE, DON\'T ASSUME. Anything depending on voice output waits for real voice + ASR; the composer never runs before W3a timing AND W3.5 reconcile exist. audio-captions estimates are narration-length hints, not contract.',
     'ZERO FRAME LITERALS in scene code — every frame derives from cues[id].startFrame + offset or endFrame - offset. ZERO RAW MOTION LITERALS — every easing/spring reaches a named export (EASE.*, SPRING.* from src/motion-primitives/curves.ts; <PopIn motion=...>, <TeacherMark boil=...>). ' + `Read ${CAP} before reaching for any motion/sketch/primitive API.`,
     'PRIMITIVES: default = compose EXISTING primitives (src/shape-primitives/, prop-driven, reusable); the AUTHORITATIVE inventory of what exists (every primitive + variants + useWhen) is src/capabilities/catalog-digest.md — generated from code, drift-gated, never hand-edited; consult it instead of guessing. A new primitive ships only when a gap is named explicitly, and W3b MUST wire it into the registry (export from the barrel → npm run registry:build → author prose → registry:check green) or the pre-commit gate rejects it. Primitive aesthetic quality is owned by W3, verified at the W3→W4 boundary — a bad-looking primitive is a W3 bug, kicked back, not patched in the scene.',
@@ -190,7 +191,7 @@ const REQUIRED_PRESENT = {
   story: [P.pedagogy],
   design: [P.storyboard],
   wave3: [P.visualDesign, P.scriptCues, P.audioCues],
-  reconcile: [P.visualDesign, P.timingTs],
+  reconcile: [P.visualDesign, P.clipsTs],
   compose: [P.timeline, P.primitiveGapScan, P.audioCues],
   render: [P.complete, P.timeline],
   verify: [P.mp4, P.contact],
@@ -301,12 +302,12 @@ if (run('wave3')) {
       'W3a — VOICE + ASR (verify, then FREEZE). Generate the voice, then VERIFY it before the run advances. You OWN both running the generator AND auditing the result.',
       `SKILLS: ${SK.ttsVoice} ; ${SK.asrAligner}`,
       `INPUT: ${REPO}/${P.scriptCues} ; ${REPO}/${P.pipeline} (voice config + the exact generated-module paths).`,
-      'STEP 1 — generate voice + ASR alignment:',
-      `  (cd ${REPO} && npm run lesson:voice -- --config ${P.pipeline})  — writes ${P.voiceWav}, ${P.geminiVoice}, ${P.asr}, and the generated timing module ${P.timingTs} (+ ${P.silencesTs}).`,
-      'STEP 2 — VERIFY (do not trust): read gemini-voice.json transcriptText vs the script; walk per-cue matchScore + asrText + durationFrames in the generated timing module. If a cue\'s matchScore is bad, edit that cue\'s text in script-cues.json for ASR-friendliness (or adjust the cue) and RE-ROLL voice — repeat until the audit passes. Apply any ASR risk W2b flagged, or record a reasoned ignore.',
-      'STEP 3 — FREEZE: once accepted, the WAV is canonical. The run does NOT advance to reconcile/composer until this audit passes.',
-      `OWNED PATHS: ${P.voiceWav}, ${P.geminiVoice}, ${P.asr}, ${P.timingTs}, ${P.silencesTs}, and (only for ASR-friendliness re-rolls) ${P.scriptCues}.`,
-      'RETURN accepted=true only when every cue\'s matchScore is acceptable; include the per-cue cueAudit (id, matchScore, durationFrames, reRolled).',
+      'STEP 1 — generate voice + ASR alignment (v4 cue-anchored audio):',
+      `  (cd ${REPO} && npm run lesson:voice -- --config ${P.pipeline})  — generates ONE TRIMMED clip per cue under ${P.voiceClipsDir}, writes the per-cue CLIP MODULE ${P.clipsTs} (the AUDIO TRUTH: clipSrc + exact narrationFrames + any typed gap), a QA master ${P.voiceWav}, ${P.geminiVoice}, the manifest out/${lessonId}/voice-clips.json, and the ASR alignment ${P.asr} + ${P.timingTs} (QA only — matchScore audit; the reconcile does NOT use ASR frames). The deterministic AUDIO GATE runs automatically (held-vowel drone + dead-air).`,
+      'STEP 2 — VERIFY (do not trust): read gemini-voice.json transcriptText vs the script; walk per-cue matchScore + asrText in the ASR module + the audio-gate report (out/<id>/audio-gate.json). A 🔴 DRONE flag means a cue authored an intra-cue pause as in-text dots ("I\'m…… Sam") — Gemini holds the vowel into a ~5s drone. FIX IT: the pause must be a typed gap or a sub-beat, never in-text dots (the generator collapses ellipsis defensively, but the cue-plan should not author it). If a cue\'s matchScore is bad OR it drones, edit that cue\'s text in script-cues.json and RE-ROLL voice — repeat until the audit + gate pass. Apply any ASR risk W2b flagged, or record a reasoned ignore.',
+      'STEP 3 — FREEZE: once accepted, the per-cue CLIPS are canonical. The run does NOT advance to reconcile/composer until this audit + the audio gate pass.',
+      `OWNED PATHS: ${P.voiceClipsDir}, ${P.clipsTs}, ${P.voiceWav}, ${P.geminiVoice}, ${P.asr}, ${P.timingTs}, and (only for ASR-friendliness / anti-drone re-rolls) ${P.scriptCues}.`,
+      'RETURN accepted=true only when every cue\'s matchScore is acceptable AND the audio gate has 0 drones; include the per-cue cueAudit (id, matchScore, durationFrames, reRolled).',
     ].join('\n'), { label: 'W3a voice+ASR', phase: 'Voice & Assets', agentType: 'claude', schema: VOICE_RESULT }),
     // --- W3b: primitive gap-scan → build (default REUSE) ---
     () => agent([
@@ -340,14 +341,14 @@ phase('Reconcile')   // W3.5 — mechanical; the cue is set HERE and nowhere els
 
 const rReconcile = run('reconcile') ? await agent([
   discipline(),
-  'W3.5 — CUE-TIMELINE RECONCILE (mechanical). Set the ONE window per cue and embed it as the single shared timeline. This is the only place cue durations are decided.',
-  `INPUT: per-cue visualMotionSeconds from ${REPO}/${P.visualDesign} ; per-cue narrationFrames from the generated timing module ${REPO}/${P.timingTs}.`,
-  'COMPUTE (use the kit @studio/narration-kit reconcileCueTimeline): for each cue, cueFrames = max(narrationFrames, round(visualMotionSeconds*fps)) + tailFrames (tail ≤ 9 frames / 0.3s). Chain cues end-to-end into startFrame/endFrame.',
-  `EMBED the reconciled cue list directly into ${REPO}/${P.timeline} as the exported ${camel}Cues array (audio, visuals and captions all read THIS). Do NOT create PADDED_CUE_DURATIONS_FRAMES or any padding table. The brief **Length** is a HINT only — the true length is sum(cueFrames); accept drift.`,
-  'INTENTIONAL SILENCE IS ALREADY IN THE WAV. Any `gap` (learner-response wait-time, animation-hold, …) authored by W2b was baked into the frozen WAV at W3a as zero-cost local silence and detected by detect-silences — so it is absorbed into the cue window via audioSpanFrames with NO reconcile-math change. Do not re-pad it. (docs/pipeline-architecture.md §10.)',
+  'W3.5 — CUE-TIMELINE RECONCILE (mechanical, v4 cue-anchored). Set the ONE window per cue and embed it as the single shared timeline. This is the only place cue durations are decided — and it is now a TRIVIAL, deterministic chain (no ASR-boundary correction, no detected-silence snapping).',
+  `INPUT: per-cue visualMotionSeconds from ${REPO}/${P.visualDesign} ; the per-cue CLIP MODULE ${REPO}/${P.clipsTs} (each ClipCue carries clipSrc + EXACT narrationFrames + any typed gap — this is the audio truth; do NOT read ASR frames).`,
+  'COMPUTE (use the kit @studio/narration-kit reconcileClipTimeline): for each cue, cueFrames = max(narrationFrames + gapFrames, round(visualMotionSeconds*fps)) + tailFrames (tail ≤ 9 frames / 0.3s). Chain cues end-to-end. The clip plays at the cue START for narrationFrames; the rest of the window is FREE silence (a motion hold and/or a typed gap). No ASR_CORRECTIONS, no Silences import.',
+  `EMBED the reconciled output into ${REPO}/${P.timeline}: import ${camel}Clips, call reconcileClipTimeline(visualBudgets), and export the ${camel}Cues array AND the ${camel}VoiceClips array (the AudioLayer mounts one Sequence per clip). Audio, visuals and captions all read THIS. Do NOT create PADDED_CUE_DURATIONS_FRAMES, a continuous-WAV span, or any padding table. The brief **Length** is a HINT only — the true length is sum(cueFrames); accept drift.`,
+  'INTENTIONAL SILENCE IS A TYPED TIMELINE HOLD. A `gap` (learner-response wait-time, animation-hold, …) authored by W2b on a cue is carried on its ClipCue; reconcileClipTimeline adds gapFrames to that cue\'s window as FREE silence (nothing schedules audio across it — the clip plays at the start, then the picture holds). It is NOT baked into any WAV and there is NO detect-silences step. The composer fills a learner-response hold with a "your turn" affordance. (docs/pipeline-architecture.md §10 + the v4 changelog.)',
   `COMPREHENSION-FLOOR ADVISORY (advisory, NEVER blocking — like lesson:check): if ${REPO}/${P.storyboard} declares an \`exposures\` ledger and the lesson has acquisition targets, compare per-target counts against the lesson-pedagogy §8 floor (≥6–10 spaced exposures; ≥3–5s wait-time per echo) and the reconciled per-cue durations. If a target lands UNDER its floor, record a WARN in this node's \`issues\` + \`pipelineFindings\` (e.g. "acquisition target 'I'm' has 4 exposures < §8 floor"). Report the emergent total length as-is — never score it against a number. If the ledger is absent, print \`SKIP: no exposures ledger\` — do not silently pass.`,
-  skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm cue windows align with the voice (incl. the baked silences) before composing.`,
-  `OUTPUT ARTIFACT: ${REPO}/${P.timeline} (with the ${camel}Cues array). OWNED PATHS: ${P.timeline} only.`,
+  skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm each cue's clip sits inside its window before composing.`,
+  `OUTPUT ARTIFACT: ${REPO}/${P.timeline} (with the ${camel}Cues + ${camel}VoiceClips arrays). OWNED PATHS: ${P.timeline} only.`,
 ].join('\n'), { label: 'W3.5 reconcile', phase: 'Reconcile', agentType: 'claude', schema: NODE_RESULT }) : (log(`W3.5 ${skip('reconcile')}`), null)
 
 // ===========================================================================
@@ -363,7 +364,7 @@ if (run('compose')) {
       `INPUT: the reconciled ${camel}Cues in ${REPO}/${P.timeline} ; ${REPO}/${P.storyboard} (each cue's teaching action(s)) ; ${TEACH} (HONOR each move's \`requires\` — the layout/legibility constraints are binding: announce-topic ⇒ the title reads ALONE first, cast enters after (never overlay art on text); model-target-slow ⇒ target big+centered+nothing-on-top, held; spaced-recall ⇒ the live marker lands on the CURRENTLY-spoken item, never a stale row) ; ${REPO}/${P.visualDesign} ; ${REPO}/${P.audioCaptions} ; ${REPO}/${P.audioCues} ; the verified primitives + test stills from W3b ; ${REPO}/${P.primitiveGapScan} ; ${CAP}.`,
       'EMIT (consume existing primitives + generated timing — do not author one-off SVG art):',
       `  - ${REPO}/${P.complete} (the Complete wrapper) + ${REPO}/${P.scene} (scene) + src/lessons/${camel}/layout.ts (offset constants) + src/lessons/${camel}/manifest.ts (bboxAt per load-bearing element; contract src/lessons/manifestTypes.ts).`,
-      '  - AUDIO WIRING: <LessonAudioLayer> (voice), <LessonBgmLayer> (bed — MECHANICAL envelope over the cue narration windows + total), <LessonSfxLayer> with SFX fired at YOUR OWN motion frames from audio-cues.json (bed = mechanical; SFX frames = composer-owned, derived from cueFrames + layout.ts offsets, NEVER literals), and the caption layer.',
+      `  - AUDIO WIRING: <LessonAudioLayer voiceClips={${camel}VoiceClips}> (v4 per-cue voice — the kit mounts one Sequence per clip; pass the ${camel}VoiceClips array straight from the timeline, NEVER a single teacherAudioSrc/continuous WAV), <LessonBgmLayer> (bed — MECHANICAL envelope; derive the duck windows from the voiceClip spans via spansToWindows), <LessonSfxLayer> with SFX fired at YOUR OWN motion frames from audio-cues.json (bed = mechanical; SFX frames = composer-owned, derived from cueFrames + layout.ts offsets, NEVER literals), and the caption layer.`,
       `SELF-CHECK before declaring done: (cd ${REPO} && npm run lesson:check -- --config ${P.pipeline} --measured) — review summary.collisionCount (linear) AND summary.measuredCollisionCount + summary.gatesFailed (real-pixel + LUFS/caption/contrast/legibility/motion gates). Any non-zero collision or failed gate requires a fix or an explicit written justification. Then rerun the pedagogy discovery audit against the rendered still.`,
       `OWNED PATHS: ${P.complete}, ${P.scene}, src/lessons/${camel}/layout.ts, src/lessons/${camel}/manifest.ts. Register the composition. LESSON-AGNOSTIC: reuse primitives + kit layers; never hardcode timings.`,
     ].join('\n'), { label: 'W4a composer', phase: 'Compose', agentType: 'claude', schema: NODE_RESULT }),
