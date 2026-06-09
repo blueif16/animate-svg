@@ -219,11 +219,33 @@ function writeStatus() {
 }
 
 function lastJsonBlock(text) {
-  const re = /```json\s*([\s\S]*?)```/g;
+  // Robustly recover the node's return object. Cheap models botch the ```json FENCE (drop the close,
+  // omit the language tag, or emit the object bare) even when the JSON itself is valid — so a strict
+  // fenced-only parse false-fails a node that actually did its work. Try, in order: a closed ```json
+  // block, an UNCLOSED opening fence, then the last balanced {...} that parses AND looks like a node
+  // return. A truly derailed node (no JSON at all) still returns null → caught as a degenerate run.
+  if (!text) return null;
+  const tryParse = (s) => { try { return JSON.parse(s.trim()); } catch { return null; } };
+  // 1) Protocol form: the LAST closed ```json ... ``` block.
+  const fenced = /```json\s*([\s\S]*?)```/g;
   let m, last = null;
-  while ((m = re.exec(text))) last = m[1];
-  if (!last) return null;
-  try { return JSON.parse(last.trim()); } catch { return null; }
+  while ((m = fenced.exec(text))) last = m[1];
+  if (last) { const o = tryParse(last); if (o) return o; }
+  // 2) An opening ```json with no proper close — take everything after it, drop a dangling fence.
+  const open = text.lastIndexOf("```json");
+  if (open >= 0) { const o = tryParse(text.slice(open + 7).replace(/```\s*$/, "")); if (o) return o; }
+  // 3) Bare/unfenced: the LAST balanced {...} object that parses and carries a node-return key.
+  for (let end = text.lastIndexOf("}"); end >= 0; end = text.lastIndexOf("}", end - 1)) {
+    let depth = 0, start = -1;
+    for (let i = end; i >= 0; i--) {
+      if (text[i] === "}") depth++;
+      else if (text[i] === "{") { depth--; if (depth === 0) { start = i; break; } }
+    }
+    if (start < 0) break;
+    const o = tryParse(text.slice(start, end + 1));
+    if (o && typeof o === "object" && ("status" in o || "outputArtifacts" in o || "node" in o)) return o;
+  }
+  return null;
 }
 
 function piArgs(promptFileAbs) {
