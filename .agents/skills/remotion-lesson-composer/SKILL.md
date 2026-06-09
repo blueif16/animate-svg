@@ -130,9 +130,18 @@ Mirror the existing lesson pattern. For lesson id `<lesson-id>` (kebab) → `<ca
 
 1. `src/lessons/<camelId>LessonTimeline.ts` — derives audio/caption/duration from generated timing
 2. `src/lessons/<PascalId>LessonScene.tsx` — the scene (frame-driven, cue-bounded)
-3. `src/lessons/Complete<PascalId>Lesson.tsx` — the composition wrapper (scene + voice + caption + bgm/sfx layers)
-4. `src/Composition.tsx` — add re-exports alphabetically near `CompleteMakeTenLesson`
-5. `src/Root.tsx` — add `<Composition id="Complete<PascalId>Lesson" .../>` block
+3. `src/lessons/Complete<PascalId>Lesson.tsx` — the composition wrapper (scene + voice + caption + bgm/sfx layers), **and in this same file** the registration descriptor:
+   ```ts
+   import type { LessonComposition } from "./lessonRegistryTypes";
+   export const lessonComposition: LessonComposition = {
+     id: "Complete<PascalId>Lesson",
+     component: Complete<PascalId>Lesson,
+     durationInFrames: <camelId>Duration,            // from the reconciled timeline module — NEVER a literal
+     defaultProps: complete<PascalId>LessonDefaultProps,
+   };
+   ```
+
+**Registration is auto-discovered — NEVER hand-edit a shared file.** `npm run lessons:registry` (run automatically by `lesson:render` before bundling, and folded into `registry:build`/`registry:check`) statically discovers every `Complete*Lesson.tsx` that exports `lessonComposition`, writes `src/lessons/_lessonRegistry.generated.tsx`, and `Root.tsx` maps over it. So do **NOT** touch `src/Root.tsx` or `src/Composition.tsx` — under worktree-isolated parallel runs those shared lists are the merge-conflict surface, and a half-built lesson hand-wired into them breaks the whole bundle. Your lesson writes ONLY its own disjoint files; the merge-back is then a conflict-free union. (A lesson is EITHER hand-registered in Root.tsx OR auto-discovered, never both — Remotion throws on a duplicate id.)
 
 Do NOT write or modify primitives. If a primitive is missing or wrong, FAIL and report back — primitive changes are Wave 3's domain.
 
