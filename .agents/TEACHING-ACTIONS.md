@@ -52,23 +52,27 @@ voiced. · *requires:* `component` = `DialogueExchange` turn; an **identity-inva
 ### model-target-slow
 The teacher **voices the target utterance** (a word / sound / tone) slowly and clearly so the
 child can hear and copy it. The canonical language/L2 delivery move. · *when:* acquisition — a new
-word or the lesson's key-difficult sound. · *pace:* **slow, held**; one target at a time. ·
+word or the lesson's key-difficult sound. · *pace:* **slow, held — ~9–15s incl. 2–3 models**
+(~3–5s each), the target delivered **slower than the ~0.30s/char narration default**; one target
+at a time; a brief **predictive pause BEFORE revealing the target** beats a pause after. ·
 *requires:* **audio** = voice says the target slowly, **isolated in its own breath-group**
 (a comma-run blurs it); **visual/layout** = the target glyph **big, centered, nothing on top**,
 held at least its spoken length; `component` = a large glyph / `DialogueExchange` emphasis turn.
 
 ### gloss
 Right after the target is voiced, **say what it means** in the child's language ("Hello 就是你好"). ·
-*when:* any new L2 word, once. · *pace:* immediately after the model, slow. · *requires:* **audio**
+*when:* any new L2 word, once. · *pace:* immediately after the model, slow — **~3–4s**. ·
+*requires:* **audio**
 = one L1 gloss line; **visual/layout** = the L1 meaning shown **beside/under** the target, never
 over it.
 
 ### invite-echo
 Model the target, then **invite the child to repeat** ("跟我说：Hello"). Sets the call-and-response
 rhythm. · *when:* acquisition reinforcement (`lesson-pedagogy` §8 choral move). · *pace:* model →
-**a beat for the child to answer**. · *requires:* **audio** = model line + a held beat (a true
-silent learner-gap is a future capability — note where it's wanted); **visual/layout** = a clear
-"your turn" cue.
+**a real ≥3–5s SILENT child-response gap** (the wait-time — see `learner-response-gap`), then
+reveal; choral repeats themselves run ~3–5s × 2. · *requires:* **audio** = model line + a held
+silent beat (the genuine zero-narration gap is a reconcile follow-up — note where it's wanted);
+**visual/layout** = a clear "your turn" cue.
 
 ### track-read-along
 Surface the **exact phrase as it is spoken** and move a cursor across it, so the child follows the
@@ -83,9 +87,11 @@ narration must **not pre-say** the answer the picture reveals (`lesson-pedagogy`
 
 ### count-on
 Count items **one at a time**, the number said **as each item appears** (one increment per spoken
-number). · *when:* any beat where a count is spoken. · *requires:* **visual** = exactly one new
-item per spoken number, in sync; `component` = countables + (optional) a single count badge — not
-both a badge and a highlight for the same signal (`kids-eye` §2).
+number). · *when:* any beat where a count is spoken. · *pace:* a **per-item dwell of ≥2–3s** (hold
+each new item / word on screen long enough to read; longer for harder items). · *requires:*
+**visual** = exactly one new item per spoken number, in sync; `component` = countables +
+(optional) a single count badge — not both a badge and a highlight for the same signal
+(`kids-eye` §2).
 
 ### contrast
 Put the **right beside the wrong** for a confusion the child must disambiguate (the "I'm" /aɪm/
@@ -94,7 +100,8 @@ beside the wrong [em]). · *when:* the difficulty is a confusion, not a void. ·
 
 ### spaced-recall
 Bring earlier targets **back together later** so they are *retrieved*, not just re-shown (the
-cumulative recap). · *when:* almost every lesson closes with it (`lesson-pedagogy` §8). · *requires:*
+cumulative recap). · *when:* almost every lesson closes with it (`lesson-pedagogy` §8). · *pace:*
+~3–5s per item retrieved → a whole-set recap of **~15–30s**. · *requires:*
 **visual/layout** = the live highlight / punctuation lands on the **currently-spoken** item — a
 marker sitting on a stale/earlier row is a bug; `component` = a recap stack + a **single** live marker.
 
@@ -103,9 +110,13 @@ Meet an earlier cue again **identically** — reuse its same voiced clip AND its
 most consistent reinforcement. · *when:* a target being memorized (`lesson-pedagogy` §8). ·
 *requires:* nothing new — the storyboard marks the cue `replay of <cue-id>`; W2b/W3a reuse the clip.
 
-### (future) learner-response-gap
-A silent beat where the child answers **before** the reveal. · *status:* not yet built — note where
-a lesson wants it; the timeline mechanism comes later.
+### learner-response-gap
+A planned silent beat where the child answers **before** the reveal — the **wait-time**. · *when:*
+every acquisition target, paired with `invite-echo`. · *pace:* **≥3–5s of held SILENCE** (longer
+for L2); prompt (~2s) → silent gap (3–5s) → reveal (~3s). · *requires:* **audio** = a true
+zero-narration window — note where it belongs; its first-class SILENT-timeline mechanism (a beat
+that is neither narration nor motion) is a **reconcile follow-up**, so for now realize it as
+`invite-echo`'s held beat and mark the genuine gap for the timeline.
 
 ## Adding a move
 

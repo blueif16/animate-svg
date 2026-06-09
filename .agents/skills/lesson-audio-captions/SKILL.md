@@ -66,6 +66,8 @@ If `pedagogy.md`/`storyboard.md` mark a cue as reinforcement, the narration real
 
 - ❌ **No §3 post-narration hold table.** That mechanism is deleted. See `docs/pipeline-architecture.md` §6.
 - ❌ **No total-runtime targeting.** The lesson is as long as max(visual, narration) summed across cues. Do not pad to hit a brief-level "target length." **But "no padding" is not "rush":** if pedagogy called for reinforcement (replays, choral repeats, spaced recall), those are real cues with real narration — write them. A language lesson taught properly is long *because it reinforces*, not because it was padded. Length emerges from the teaching — neither padded nor starved.
+
+  **Acquisition cues carry the FULL move sequence, sized to the floors — never minimized.** When pedagogy marks a cue as an acquisition target (a sound/word/phrase the child must produce), its narration carries the whole arc — **model → repeat → pause → echo → (wait-time) → recap** — and is sized to each move's time budget in `.agents/TEACHING-ACTIONS.md` (`model-target-slow` ~9–15s incl. 2–3 slower-than-default models, `gloss` ~3–4s, `invite-echo` + a real ≥3–5s SILENT child-response gap, `spaced-recall` ~15–30s). Do **not** shrink an acquisition line to its terse minimum. Going far UNDER the comprehension floor (one terse line, three crammed exposures, no wait-time) is **starvation, not "accepted drift"** — flag it back, don't ship it. (The genuine anti-FILLER rule above still holds: more time means more REAL reinforcement + wait-time, never padding.)
 - ❌ **No per-cue duration ESTIMATES that downstream waves treat as contract.** Your char-rate math is a hint for narration LENGTH; cue boundaries come from Wave 3a + 3.5.
 
 ## Report back
