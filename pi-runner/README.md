@@ -84,12 +84,26 @@ tokens) lands in `run-status.json` in **both** modes, computed live from the str
   reasoning trace became 159 MB). The driver strips those redundant `partial`/`message` snapshots as
   it writes, keeping only the incremental deltas → **~55× smaller** (159 MB → 2.9 MB) with **zero
   information loss** (the full text reconstructs exactly from the deltas).
-- **Stuck-loop watchdog.** Three guards bound a node's cost: the >45s **stall flag**, the
-  `--node-timeout` hard kill, and — for a model stuck emitting the *same delta* over and over — a
-  **repeat kill** (`PI_RUNNER_REPEAT_KILL`, default 400 consecutive identical deltas → SIGTERM). A
-  legitimate heavy node never repeats a ≥4-char delta more than ~2× in a row, so the 400 threshold is
-  pure-headroom insurance, not a hair-trigger. (Note: a huge transcript is **not** a loop — those
-  lines *grow*, never repeat; that is the cumulative bloat the slimming handles.)
+- **Behavioral watchdog.** Five guards bound a node's cost, all routed through one `killChild`
+  (SIGTERM → SIGKILL grace). Cheapest signal first:
+  - **stall flag** at >45s (warn only, in the heartbeat).
+  - **silent-stall kill** (`PI_RUNNER_STALL_TIMEOUT`, default **300s**) — no event of any kind for that
+    long **while no tool is in flight** → kill. Gated on "no tool running" so a long silent bash
+    (TTS/render) is exempt. Catches the *model-went-dead-after-a-tool-returned* class in minutes
+    instead of burning the full `--node-timeout` (a real composer run sat silent ~25 min before this).
+  - **no-progress tool-thrash kill** (`PI_RUNNER_TOOL_REPEAT_KILL`, default **5**) — the same
+    `(toolName+args)` signature repeated N× with **no `write`/`edit`/`submit_result` in between** →
+    kill. The per-signature counters reset on any write/edit, so re-running an identical `npm run
+    …:check` after each edit never trips; a model re-running `grep -rn <phantom>` / `ls …|head` with
+    zero writes (the spelunk that motivated this) trips at the 5th repeat.
+  - **stuck-delta repeat kill** (`PI_RUNNER_REPEAT_KILL`, default 400 consecutive identical ≥4-char
+    deltas) — a model stuck emitting the *same token*. (A huge transcript is **not** a loop — those
+    lines *grow*, never repeat; that is the cumulative bloat the slimming handles.)
+  - **`--node-timeout`** ($PI_RUNNER_NODE_TIMEOUT or 1800s) — the absolute backstop.
+
+  Each fired guard sets an `n.killed*` flag → the node ends `error`, the `summary` names the cause, and
+  (when escalation is armed) it routes to `ESCALATE` with the evidence in the consult preamble. Set any
+  threshold to `0` to disable that guard.
 - **Status is verified, not trusted:** a node is `ok` only if the artifacts it reports actually
   exist on disk.
 - **Output Contract — required, not just reported:** a producing node may declare in its prompt the
@@ -132,6 +146,20 @@ Three additions, all OFF by default (flip in `.env`), all engine-baked in the by
 - **Per-node tool gating** — `DRIVER-TOOLS:` / `DRIVER-EXCLUDE-TOOLS:` markers in a node's prompt →
   `--tools` / `--exclude-tools` on that node's spawn (shrinks a check node's wander surface). No env;
   active whenever the workflow emits the marker. Default (no marker) = full toolset, unchanged.
+- **OS read-scope sandbox (`--sandbox` / `PI_RUNNER_SANDBOX=1`)** — *macOS prototype*. Prompt-level
+  "reading laws" are unenforceable on cheap models (one read 3 OTHER lessons' source and grepped the
+  repo for a phantom component, bloating context to 116k tokens). This wraps a node in `sandbox-exec`
+  with a per-node Seatbelt profile (`sandbox/read-scope.sb`): `allow default`, then `deny file-read*`
+  but re-allow **metadata everywhere** (so `getcwd`/dyld resolve and node boots) and re-allow file
+  **content** only for the toolchain roots + the node's **declared** read scope. A node opts in by
+  emitting a `DRIVER-READ-SCOPE: <abs allow-subpaths>` marker (own lesson-data + own out + the
+  catalog-digest + shared `src` roots + node_modules); `node_modules` and the node's own `_pi` dir are
+  auto-added. Reads outside that set — another lesson, a `grep` from `/` — return *Operation not
+  permitted*, **kernel-enforced and inherited by pi's child `grep`/`find`/`cat`**. No marker → not
+  wrapped (byte-identical). Verify the mechanism with `sandbox/demo.sh`. macOS only; the Linux fleet
+  would use `bubblewrap` (not wired). **Status: mechanism + driver wiring proven via demo + driver
+  parity; a full pi-under-sandbox node run is the next validation (needs the composer node to carry a
+  `DRIVER-READ-SCOPE` marker — a workflow edit).**
 
 ## Generic engine — wiring `.env` is the only per-repo file; credential is pi-native
 
@@ -158,6 +186,10 @@ unchanged by the convergence.
 
 - `extract.mjs` — execute-and-record extractor (**the sync**): runs `lesson-build.js` → prompts + DAG.
 - `run.mjs` — driver: stages + parallel lanes + pi spawning + debug/status/watchdog.
+- `sandbox/read-scope.sb` — macOS Seatbelt read-scope profile template (driver substitutes `@HOME@`,
+  `@TMPDIR@`, `@SCOPE_ALLOWS@`). Pure-ASCII comments, tokens only at rule sites (both are SBPL footguns).
+- `sandbox/demo.sh` — proves the profile denies out-of-scope reads (other lesson, `grep /`) while
+  in-scope reads + node boot succeed. No pi / no model call — pure mechanism check.
 - `.env` — per-repo WIRING (gitignored, never committed). The ONLY per-repo file; no secret.
 - credential/model — NOT in this repo. They live once in pi's global `~/.pi/agent/models.json`
   (provider `cp`), resolved natively by pi for every project. (`providers/coding-plan.ts` is kept only
