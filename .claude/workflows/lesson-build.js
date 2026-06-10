@@ -207,7 +207,7 @@ function contract({ artifacts = [], owns = [], note = '', lint = false }) {
   return [
     'OUTPUT CONTRACT — you are DONE only when EVERY file below exists and is non-empty at EXACTLY its path. Write NOTHING outside the owned paths (never another lesson\'s files). If you cannot produce them, set status="blocked" and say why — do NOT exit clean (an empty or wrong-path artifact set is a FAILURE, not an ok).',
     `DRIVER-ARTIFACTS: ${artifacts.map(abs).join(' ')}`,
-    `DRIVER-OWNS: ${(owns.length ? owns : artifacts).map(abs).join(' ')}`,
+    `DRIVER-OWNS: ${[...(owns.length ? owns : artifacts), `${P.logs}/*`].map(abs).join(' ')}`, // every node may always write its own _logs/<wave>.md (observability) — never over-block it
     note ? `OWNED-PATH NOTE: ${note}` : '',
     // LINT GATE — lint-clean is part of "done" for any node that writes code. The W5 render gate is
     // whole-repo `eslint src && tsc`, so ONE dirty file blocks EVERY lesson's render; each code-writing
