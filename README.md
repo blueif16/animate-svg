@@ -33,28 +33,78 @@ node pi-runner/run.mjs --lesson <id> --until <wave> --debug
 
 ## Wave order
 
-Realizes the CLAUDE.md "Subagent Workflow" natively. `∥` = parallel lane, `→` = serial dependency.
+Realizes the CLAUDE.md "Subagent Workflow" natively, generated from `lesson-build.js`. Serial backbone (Setup → W0 → W1 → W2a), three `parallel()` lanes (Design / Voice & Assets / Compose) with a barrier between phases, and W3.5 reconcile as the sole cue-window setter. Each node carries its one-line responsibility + primary output artifact. Node colours: 🟨 gate · ⬜ mechanical · 🟦 serial · 🟩 authoring · ⬛ barrier.
 
-```
-Setup  scaffold pipeline.json from brief.md
-  ↓
-W0   pedagogy        what the child discovers at each cue — the gate every downstream wave reads
-  ↓
-W1   storyboard      cue IDs + narration beats + required visuals + teaching action(s); NO durations
-  ↓
-W2a  visual-design   (SERIAL) Visual Contract: zones, identity-invariant, per-cue visualMotionSeconds
-  ↓
-W2b  audio/captions  narration written TO FIT each cue's motion budget   ∥   W2c sound-design  audio-cues.json (bed + SFX map; semantic, no frames)
-  ↓
-W3a  voice + ASR     generate → verify → FREEZE   ∥   W3b primitive gap-scan→build (default REUSE; owns intro card)   ∥   W3c sound-asset gap-scan (default REUSE)
-  ↓
-W3.5 reconcile       (mechanical) cueFrames = max(narrationFrames, motionFrames) + tail → embed <X>Cues into <X>LessonTimeline.ts → animatic gate
-  ↓
-W4a  composer        scene + layout.ts + manifest.ts; bed+SFX+captions wired; lesson:check --measured   ∥   W4b sketch overlay
-  ↓
-W5   render          lesson:render --skip-voice + ffmpeg loudnorm (-16 LUFS / -1 dBTP); auto contact sheet
-  ↓
-W6   verification    checks rendered MP4 + contact sheet against pedagogy discoveries + the 4 sound checks
+```mermaid
+flowchart TD
+  classDef gate   fill:#fde68a,stroke:#b45309,color:#1f2937;
+  classDef mech   fill:#e5e7eb,stroke:#6b7280,color:#1f2937;
+  classDef serial fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937;
+  classDef author fill:#d1fae5,stroke:#047857,color:#1f2937;
+  classDef bar    fill:#1f2937,stroke:#1f2937,color:#f9fafb;
+  classDef law    fill:#fef2f2,stroke:#b91c1c,color:#1f2937;
+
+  Setup["Setup · mechanical<br/>scaffold pipeline.json from brief.md<br/><i>brief.md, pipeline.json</i>"]:::mech
+  W0["W0 · pedagogy — THE GATE<br/>what the child DISCOVERS per cue<br/><i>pedagogy.md</i>"]:::gate
+  W1["W1 · storyboard<br/>cue IDs + teaching action(s) + required visual · NO durations<br/><i>storyboard.md (+ exposures ledger)</i>"]:::author
+  W2a["W2a · visual-design — SERIAL<br/>Visual Contract: zones, identity-invariant, per-cue visualMotionSeconds<br/><i>visual-design.md</i>"]:::serial
+
+  subgraph DESIGN[" "]
+    direction LR
+    W2b["W2b · audio / captions<br/>narration written TO FIT the motion budget + the CuePlan<br/><i>audio-captions.md, script-cues.json</i>"]:::author
+    W2c["W2c · sound-design<br/>semantic sound manifest — bed/SFX KEYS, no frames<br/><i>audio-cues.json</i>"]:::author
+  end
+
+  Bd[["barrier · await design lane"]]:::bar
+
+  subgraph WAVE3[" "]
+    direction LR
+    W3a["W3a · voice + ASR<br/>generate → VERIFY → FREEZE the voice<br/><i>per-cue clips + timing module</i>"]:::author
+    W3b["W3b · primitive gap-scan / build<br/>default REUSE · teaching-driven gaps · owns intro card · wires registry<br/><i>primitives + registry + checks</i>"]:::author
+    W3c["W3c · sound-asset gap-scan<br/>confirm shared library covers every key; mint gaps author-time<br/><i>_logs/sound-asset.md</i>"]:::author
+  end
+
+  Bw[["barrier · await all 3 Wave-3 lanes (audio FROZEN)"]]:::bar
+
+  W35["W3.5 · reconcile — mechanical<br/>SET THE ONE CUE WINDOW = max(narration+gap, motion) + tail<br/><i>&lt;X&gt;LessonTimeline.ts → animatic gate</i>"]:::mech
+
+  subgraph COMPOSE[" "]
+    direction LR
+    W4a["W4a · composer<br/>scene from RECONCILED cues · wire audio · lesson:check --measured<br/><i>Complete&lt;X&gt;Lesson.tsx + scene + layout.ts + manifest.ts</i>"]:::author
+    W4b["W4b · sketch overlay<br/>cue-relative teacher marks · restraint<br/><i>sketch-overlay.md</i>"]:::author
+  end
+
+  Bc[["barrier · await compose lane"]]:::bar
+
+  W5["W5 · render — mechanical<br/>render + loudnorm −16 LUFS / −1 dBTP · auto contact sheet<br/><i>mp4, contact.png, bbox-manifest.json</i>"]:::mech
+  W6["W6 · verification<br/>judge artifact vs pedagogy discoveries + the 4 sound checks<br/><i>verification.md</i>"]:::gate
+
+  Setup --> W0 --> W1 --> W2a
+  W2a --> W2b
+  W2a --> W2c
+  W2b --> Bd
+  W2c --> Bd
+  Bd --> W3a
+  Bd --> W3b
+  Bd --> W3c
+  W3a --> Bw
+  W3b --> Bw
+  W3c --> Bw
+  Bw --> W35
+  W35 --> W4a
+  W35 --> W4b
+  W4a --> Bc
+  W4b --> Bc
+  Bc --> W5 --> W6
+
+  subgraph LAWS["Coordination laws — injected into EVERY node by discipline()"]
+    direction TB
+    L1["CUE IS THE UNIT — one window per cue, set ONLY at W3.5; audio+visuals+captions all read it"]:::law
+    L2["AUDIO FROZEN after W3a — music/SFX is a 2nd W4 track that changes no cue length"]:::law
+    L3["MEASURE, don't assume — composer never runs before real voice timing + reconcile exist"]:::law
+    L4["ZERO frame literals + ZERO raw motion literals in scene code (cues[id].startFrame+offset · EASE.* / SPRING.*)"]:::law
+    L5["PRIMITIVES default to REUSE — catalog-digest is the inventory; W3b owns aesthetic quality"]:::law
+  end
 ```
 
 `lesson-debugger` (feedback triage) runs **only** after render when the user reports an issue on the MP4 — never during waves 1–6.
