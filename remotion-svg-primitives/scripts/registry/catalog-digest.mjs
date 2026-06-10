@@ -67,7 +67,20 @@ const KIND_TITLE = {
 };
 
 const totalDocumented = (arr) => arr.filter((e) => e.useWhen && e.useWhen.trim()).length;
-const allEntries = [...reg.primitives, ...reg.motionComponents, ...reg.fxComponents];
+const lessonComponents = reg.lessonComponents ?? [];
+const allEntries = [
+  ...reg.primitives,
+  ...reg.motionComponents,
+  ...reg.fxComponents,
+  ...lessonComponents,
+];
+
+const LESSON_FAMILY_ORDER = ["media", "transition", "style"];
+const LESSON_FAMILY_TITLE = {
+  media: "Audio & caption layers",
+  transition: "Decorative 3D section transitions",
+  style: "Style wrapper",
+};
 
 // Deprecated entries are QUARANTINED: dropped from every live family/component
 // table (the reuse menu an agent reads must never list a superseded cap as a
@@ -110,6 +123,21 @@ out.push("");
 out.push("## FX components\n");
 out.push(componentTable(live(reg.fxComponents)));
 out.push("");
+
+// --- lesson-infra components ------------------------------------------------
+// The non-teaching components a Complete<Lesson> wrapper / scene mounts: audio &
+// caption layers, decorative 3D section transitions, and the root style wrapper.
+// Grouped by family so a composer sees the infra surface alongside the craft
+// surface. (The `styles[]` IDS table below is a DIFFERENT thing — those are the
+// aesthetic-overlay ids the <StylePreset> wrapper accepts.)
+out.push("## Lesson-infra components\n");
+for (const family of LESSON_FAMILY_ORDER) {
+  const entries = live(lessonComponents.filter((c) => c.family === family));
+  if (!entries.length) continue;
+  out.push(`### ${LESSON_FAMILY_TITLE[family]} (\`${family}\`)\n`);
+  out.push(componentTable(entries));
+  out.push("");
+}
 
 // --- motion vocabulary ------------------------------------------------------
 out.push("## Motion vocabulary\n");

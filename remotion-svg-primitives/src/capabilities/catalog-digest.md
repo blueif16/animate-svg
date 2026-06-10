@@ -6,7 +6,7 @@
 >
 > Source of truth for SHAPE: `src/capabilities/schema.ts`. Source of truth for WHAT EXISTS: the component barrels + `EASE`/`SPRING` keys. This menu is generated — never hand-edited.
 
-**Coverage:** 62/62 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
+**Coverage:** 69/69 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
 
 ## SVG teaching primitives
 
@@ -105,6 +105,30 @@
 | `glow-pulse` | `GlowPulse` | — | Pulsing aura wrapper to draw the eye. |
 | `shine-sweep` | `ShineSweep` | — | Cinematic shine sweeping across a rectangle (card/title). |
 | `sparkle` | `Sparkle` | — | One-shot sparkle particle accent on a reward/reveal. |
+
+## Lesson-infra components
+
+### Audio & caption layers (`media`)
+
+| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
+| --- | --- | --- | --- |
+| `lesson-audio-layer` | `LessonAudioLayer` | — | Mount once in the Complete<Lesson> wrapper to play the narration track. |
+| `lesson-bgm-layer` | `LessonBgmLayer` | — | Mount in the Complete<Lesson> wrapper to play the background music bed as the SECOND audio track. |
+| `lesson-caption-layer` | `LessonCaptionLayer` | — | Mount in the Complete<Lesson> wrapper to render the bottom caption ribbon from the lesson's caption cues (kids-cute cream/navy theme baked in). |
+| `lesson-sfx-layer` | `LessonSfxLayer` | — | Mount in the Complete<Lesson> wrapper to fire discrete sound effects (a pop, a chime, a whoosh) at composer-owned motion frames. |
+
+### Decorative 3D section transitions (`transition`)
+
+| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
+| --- | --- | --- | --- |
+| `section-handoff` | `SectionHandoff` | — | Mount between two major lesson sections for a decorative iridescent portal-ring pass-through (3D). |
+| `topic-intro-card` | `TopicIntroCard` | — | Mount at lesson open (or a section transition) for the decorative ceramic 3D topic card landing with a slow push-in — carries the lesson title. |
+
+### Style wrapper (`style`)
+
+| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
+| --- | --- | --- | --- |
+| `style-preset` | `StylePreset` | — | Wrap the scene root (OUTSIDE SceneFrame) to apply an aesthetic overlay; |
 
 ## Motion vocabulary
 

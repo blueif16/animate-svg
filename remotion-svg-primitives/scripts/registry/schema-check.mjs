@@ -35,9 +35,9 @@ if (!result.success) {
   process.exit(1);
 }
 
-const {primitives, motionComponents, fxComponents, styles} = result.data;
+const {primitives, motionComponents, fxComponents, lessonComponents, styles} = result.data;
 console.log(
   `Registry schema check ok: ${primitives.length} primitives, ` +
     `${motionComponents.length} motion components, ${fxComponents.length} fx components, ` +
-    `${styles.length} styles — JSON matches schema.ts.`,
+    `${lessonComponents.length} lesson-infra components, ${styles.length} styles — JSON matches schema.ts.`,
 );

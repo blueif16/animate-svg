@@ -6,6 +6,7 @@
     "primitives",
     "motionComponents",
     "fxComponents",
+    "lessonComponents",
     "motionVocabulary"
   ],
   "membershipGatedSections": [
@@ -1174,5 +1175,104 @@
       "skillBundle": ".agents/styles/ink-wash"
     }
   ],
-  "recipes": []
+  "recipes": [],
+  "lessonComponents": [
+    {
+      "family": "media",
+      "id": "lesson-audio-layer",
+      "component": "LessonAudioLayer",
+      "source": "src/lesson-media/LessonAudioLayer.tsx",
+      "intent": [
+        "voice",
+        "narration",
+        "audio-track"
+      ],
+      "useWhen": "Mount once in the Complete<Lesson> wrapper to play the narration track. Pass the reconciled per-cue voiceClips (v4 cue-anchored audio: one Sequence per cue, no continuous WAV). It also threads the music-bed props through to the kit so a single layer carries voice plus bed.",
+      "avoidWhen": "Never mount inside a scene/cue subtree or more than once per composition — it is the wrapper-level audio root. Do not use the legacy teacherAudioSrc single-WAV path for new lessons; pass voiceClips.",
+      "status": "stable"
+    },
+    {
+      "family": "media",
+      "id": "lesson-bgm-layer",
+      "component": "LessonBgmLayer",
+      "source": "src/lesson-media/LessonBgmLayer.tsx",
+      "intent": [
+        "music",
+        "background-bed",
+        "audio-track"
+      ],
+      "useWhen": "Mount in the Complete<Lesson> wrapper to play the background music bed as the SECOND audio track. The bed envelope is mechanical — it ducks under narration windows and resolves at the tail; drive it from the cue narration windows + total length, never hand-tuned frames.",
+      "avoidWhen": "Do not use it to fire one-shot sound effects (use LessonSfxLayer). Do not let the bed drive cue length — music consumes the reconciled timeline, it never sets it.",
+      "status": "stable"
+    },
+    {
+      "family": "media",
+      "id": "lesson-caption-layer",
+      "component": "LessonCaptionLayer",
+      "source": "src/lesson-media/LessonCaptionLayer.tsx",
+      "intent": [
+        "captions",
+        "subtitle-ribbon",
+        "accessibility"
+      ],
+      "useWhen": "Mount in the Complete<Lesson> wrapper to render the bottom caption ribbon from the lesson's caption cues (kids-cute cream/navy theme baked in). Pass labelWindows for any cue with an on-screen teaching label so the ribbon self-suppresses there — one on-screen representation per beat.",
+      "avoidWhen": "Do not stack a second caption surface or re-skin per lesson — the theme is intentionally fixed. Do not pass captions that duplicate an active on-screen label without a labelWindow (it double-renders the same words).",
+      "status": "stable"
+    },
+    {
+      "family": "media",
+      "id": "lesson-sfx-layer",
+      "component": "LessonSfxLayer",
+      "source": "src/lesson-media/LessonSfxLayer.tsx",
+      "intent": [
+        "sfx",
+        "one-shot-sound",
+        "audio-track"
+      ],
+      "useWhen": "Mount in the Complete<Lesson> wrapper to fire discrete sound effects (a pop, a chime, a whoosh) at composer-owned motion frames. Each SfxEvent frame derives from cueFrames + the scene's layout offsets — the SFX punctuate the visual beats from audio-cues.json.",
+      "avoidWhen": "Do not use it for the continuous music bed (use LessonBgmLayer) or for narration. Never let an SFX play louder than the narration, and never derive its frame from a master-timeline literal.",
+      "status": "stable"
+    },
+    {
+      "family": "transition",
+      "id": "section-handoff",
+      "component": "SectionHandoff",
+      "source": "src/lessons/transitions/SectionHandoff.tsx",
+      "intent": [
+        "transition",
+        "section-break",
+        "decorative-3d"
+      ],
+      "useWhen": "Mount between two major lesson sections for a decorative iridescent portal-ring pass-through (3D). Pass entranceFrame computed from cues[id].startFrame + offset; pair it with a whoosh SFX cue.",
+      "avoidWhen": "Decorative only — never put a teaching primitive the child reasons about inside it (the teaching object stays SVG). Do not use it for the lesson-open title card (that is TopicIntroCard) or pass an absolute master-timeline frame.",
+      "status": "stable"
+    },
+    {
+      "family": "transition",
+      "id": "topic-intro-card",
+      "component": "TopicIntroCard",
+      "source": "src/lessons/transitions/TopicIntroCard.tsx",
+      "intent": [
+        "intro",
+        "title-card",
+        "decorative-3d"
+      ],
+      "useWhen": "Mount at lesson open (or a section transition) for the decorative ceramic 3D topic card landing with a slow push-in — carries the lesson title. Pass entranceFrame from cues[id].startFrame + offset; backgroundOverride dims it for an after-recap intro.",
+      "avoidWhen": "Decorative only — never the teaching surface. For between-section handoffs reach for SectionHandoff instead. Do not pass an absolute master-timeline frame.",
+      "status": "stable"
+    },
+    {
+      "family": "style",
+      "id": "style-preset",
+      "component": "StylePreset",
+      "source": "src/styles/StylePreset.tsx",
+      "intent": [
+        "style-overlay",
+        "aesthetic-wrapper"
+      ],
+      "useWhen": "Wrap the scene root (OUTSIDE SceneFrame) to apply an aesthetic overlay; set style to a style id from the styles[] section (e.g. 'ink-wash'). It injects shared <defs> and publishes the filter ids + palette via context for the scene to read. 'default'/omitted is a zero-cost passthrough.",
+      "avoidWhen": "Do not pass a style id that is not registered in styles[] (the wrapper throws on unknown styles). It carries no aesthetic of its own — the per-lesson choice is only the style prop. Do not place it inside SceneFrame.",
+      "status": "stable"
+    }
+  ]
 }
