@@ -86,6 +86,33 @@ export const reusableComponentSchema = z
   .passthrough();
 
 // ---------------------------------------------------------------------------
+// lessonComponents[] — GENERATED. The lesson-INFRA components a Complete<Lesson>
+// wrapper / scene mounts but which are NOT teaching primitives, motion, or fx:
+// the audio/caption layers (src/lesson-media/components.ts), the decorative 3D
+// section transitions (src/lessons/transitions/index.ts), and the root style
+// wrapper (src/styles/components.ts). Discovered from those component barrels so
+// a scene can never name one that the registry doesn't know about (the
+// lesson↔registry phantom gate's universe grows by sweeping these in). `family`
+// is the discriminant (media | transition | style); the rest is the reusable
+// component shape. NOTE styles[] (style IDS) is a DIFFERENT, membership-gated
+// section — this entry is just the <StylePreset> wrapper component.
+// ---------------------------------------------------------------------------
+export const lessonComponentSchema = z
+  .object({
+    family: z.string(),
+    id: z.string(),
+    component: z.string(),
+    source: z.string(),
+    intent: z.array(z.string()),
+    useWhen: z.string(),
+    avoidWhen: z.string(),
+    variants: z.record(z.string(), z.array(z.string())).optional(),
+    status: z.string(),
+    supersededBy: z.string().optional(),
+  })
+  .passthrough();
+
+// ---------------------------------------------------------------------------
 // motionVocabulary — GENERATED, pure-derivable. curves = EASE object keys,
 // springs = SPRING object keys (src/motion-primitives/curves.ts).
 // ---------------------------------------------------------------------------
@@ -138,6 +165,7 @@ export const primitiveRegistrySchema = z
     primitives: z.array(primitiveSchema),
     motionComponents: z.array(reusableComponentSchema),
     fxComponents: z.array(reusableComponentSchema),
+    lessonComponents: z.array(lessonComponentSchema),
     motionVocabulary: motionVocabularySchema,
     styles: z.array(styleSchema),
     recipes: z.array(recipeSchema),
@@ -150,6 +178,7 @@ export const primitiveRegistrySchema = z
 export type PrimitiveRegistry = z.infer<typeof primitiveRegistrySchema>;
 export type RegistryPrimitive = z.infer<typeof primitiveSchema>;
 export type RegistryReusableComponent = z.infer<typeof reusableComponentSchema>;
+export type RegistryLessonComponent = z.infer<typeof lessonComponentSchema>;
 export type RegistryMotionVocabulary = z.infer<typeof motionVocabularySchema>;
 export type RegistryStyle = z.infer<typeof styleSchema>;
 export type RegistryRecipe = z.infer<typeof recipeSchema>;

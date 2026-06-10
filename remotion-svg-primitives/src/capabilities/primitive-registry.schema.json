@@ -429,6 +429,67 @@
         "additionalProperties": {}
       }
     },
+    "lessonComponents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "family": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "useWhen": {
+            "type": "string"
+          },
+          "avoidWhen": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "supersededBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "family",
+          "id",
+          "component",
+          "source",
+          "intent",
+          "useWhen",
+          "avoidWhen",
+          "status"
+        ],
+        "additionalProperties": {}
+      }
+    },
     "motionVocabulary": {
       "type": "object",
       "properties": {
@@ -516,6 +577,7 @@
     "primitives",
     "motionComponents",
     "fxComponents",
+    "lessonComponents",
     "motionVocabulary",
     "styles",
     "recipes"

@@ -70,14 +70,15 @@ const recencyForSource = (relSource) => {
 
 const isoDay = (ts) => new Date(ts * 1000).toISOString().slice(0, 10); // YYYY-MM-DD
 
-// Every catalogued component across the three generated sections. No hardcoded
-// list — the registry is the source of truth.
+// Every catalogued component across the generated component sections. No
+// hardcoded list — the registry is the source of truth.
 const allEntries = () => {
   const reg = readJson(P.registry);
   return [
     ...(reg.primitives ?? []),
     ...(reg.motionComponents ?? []),
     ...(reg.fxComponents ?? []),
+    ...(reg.lessonComponents ?? []),
   ];
 };
 

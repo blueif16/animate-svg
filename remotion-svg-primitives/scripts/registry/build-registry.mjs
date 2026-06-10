@@ -43,7 +43,25 @@ const P = {
   motionBarrel: path.join(root, "src/motion-primitives/index.ts"),
   fxBarrel: path.join(root, "src/fx/index.ts"),
   curves: path.join(root, "src/motion-primitives/curves.ts"),
+  // Lesson-infra COMPONENT barrels (scene-mountable, non-teaching). Each is a
+  // focused barrel re-exporting only the React components a scene mounts, so the
+  // generator catalogs the scene-facing surface and not internal helpers/types.
+  // The component-barrel `module` is irrelevant (these export from one file each);
+  // sourceFor() resolves the real .tsx path from the module specifier.
+  lessonMediaBarrel: path.join(root, "src/lesson-media/components.ts"),
+  transitionsBarrel: path.join(root, "src/lessons/transitions/index.ts"),
+  styleComponentsBarrel: path.join(root, "src/styles/components.ts"),
 };
+
+// Lesson-infra component families — one generated `lessonComponents[]` section,
+// each entry tagged with its `family` discriminant. The barrel is the discovery
+// selector (what a scene can mount); the family is for grouping in the digest.
+const LESSON_COMPONENT_FAMILIES = [
+  {family: "media", barrel: "lessonMediaBarrel"},
+  {family: "transition", barrel: "transitionsBarrel"},
+  {family: "style", barrel: "styleComponentsBarrel"},
+];
+const LESSON_FAMILY_ORDER = LESSON_COMPONENT_FAMILIES.map((f) => f.family);
 
 const read = (p) => fs.readFileSync(p, "utf8");
 const readJson = (p) => JSON.parse(read(p));
@@ -143,6 +161,36 @@ const buildReusable = (barrelAbs, priorByComponent) => {
     .sort((a, b) => a.component.localeCompare(b.component));
 };
 
+// --- lessonComponents[] -----------------------------------------------------
+// Sweep the lesson-infra component barrels into ONE generated section, each
+// entry carrying its `family`. Same structure-from-code + carry-prose-forward
+// rule as the other component sections: id/component/source/family are derived,
+// intent/useWhen/avoidWhen are carried forward by component id on regenerate.
+const buildLessonComponents = (priorByComponent) => {
+  const out = [];
+  for (const {family, barrel} of LESSON_COMPONENT_FAMILIES) {
+    const barrelAbs = P[barrel];
+    const discovered = parseBarrelValueExports(read(barrelAbs)).filter((e) =>
+      isComponentName(e.name),
+    );
+    for (const {name, module} of discovered) {
+      const prior = priorByComponent.get(name);
+      out.push({
+        family,
+        id: prior?.id ?? kebab(name),
+        component: name,
+        source: sourceFor(barrelAbs, module),
+        ...proseFields(prior),
+      });
+    }
+  }
+  return out.sort(
+    (a, b) =>
+      LESSON_FAMILY_ORDER.indexOf(a.family) - LESSON_FAMILY_ORDER.indexOf(b.family) ||
+      a.component.localeCompare(b.component),
+  );
+};
+
 // --- motionVocabulary (pure-derivable) --------------------------------------
 const buildMotionVocabulary = () => {
   const curvesSrc = read(P.curves);
@@ -166,12 +214,13 @@ const buildNext = () => {
   const current = readJson(P.registry);
   const next = {...current};
   next.$comment = BANNER;
-  next.generatedSections = ["primitives", "motionComponents", "fxComponents", "motionVocabulary"];
+  next.generatedSections = ["primitives", "motionComponents", "fxComponents", "lessonComponents", "motionVocabulary"];
   next.membershipGatedSections = ["styles"];
   next.manifestAuthoredSections = ["recipes"];
   next.primitives = buildPrimitives(byComponent(current.primitives));
   next.motionComponents = buildReusable(P.motionBarrel, byComponent(current.motionComponents));
   next.fxComponents = buildReusable(P.fxBarrel, byComponent(current.fxComponents));
+  next.lessonComponents = buildLessonComponents(byComponent(current.lessonComponents));
   next.motionVocabulary = buildMotionVocabulary();
   return next;
 };
@@ -184,9 +233,12 @@ const committed = read(P.registry);
 const generated = serialize(buildNext());
 
 const undocumented = (next) =>
-  [...next.primitives, ...next.motionComponents, ...next.fxComponents].filter(
-    (e) => e.status === "undocumented" || !e.useWhen,
-  ).length;
+  [
+    ...next.primitives,
+    ...next.motionComponents,
+    ...next.fxComponents,
+    ...next.lessonComponents,
+  ].filter((e) => e.status === "undocumented" || !e.useWhen).length;
 
 const stranded = strandedShapeExports();
 const printStranded = () => {
@@ -232,7 +284,8 @@ if (checkMode) {
     console.log(
       `registry:check ok — catalog in sync with code ` +
         `(${next.primitives.length} primitives, ${next.motionComponents.length} motion, ` +
-        `${next.fxComponents.length} fx, curves ${next.motionVocabulary.curves.length}/` +
+        `${next.fxComponents.length} fx, ${next.lessonComponents.length} lesson-infra, ` +
+        `curves ${next.motionVocabulary.curves.length}/` +
         `springs ${next.motionVocabulary.springs.length}). ${undocumented(next)} entr(ies) still need prose.`,
     );
   }
@@ -250,7 +303,8 @@ if (committed === generated) {
   const next = JSON.parse(generated);
   console.log(
     `registry:build — no change (${next.primitives.length} primitives, ` +
-      `${next.motionComponents.length} motion, ${next.fxComponents.length} fx already in sync).`,
+      `${next.motionComponents.length} motion, ${next.fxComponents.length} fx, ` +
+      `${next.lessonComponents.length} lesson-infra already in sync).`,
   );
 } else {
   fs.writeFileSync(P.registry, generated);
@@ -259,6 +313,8 @@ if (committed === generated) {
     `registry:build — regenerated catalog from code: ${next.primitives.length} primitives ` +
       `(${KIND_ORDER.map((k) => `${k}=${next.primitives.filter((p) => p.kind === k).length}`).join(" ")}), ` +
       `${next.motionComponents.length} motion components, ${next.fxComponents.length} fx components, ` +
+      `${next.lessonComponents.length} lesson-infra components ` +
+      `(${LESSON_FAMILY_ORDER.map((f) => `${f}=${next.lessonComponents.filter((c) => c.family === f).length}`).join(" ")}), ` +
       `motion vocabulary (curves ${next.motionVocabulary.curves.length}, springs ${next.motionVocabulary.springs.length}). ` +
       `${undocumented(next)} entr(ies) still need hand-authored prose.`,
   );
