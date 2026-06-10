@@ -203,7 +203,13 @@ function buildSandboxProfile(node, scopeRoots) {
     path.join(ROOT, "node_modules"),
     path.join(BASE_RUN_CWD, outRel, "_pi"),    // the node's own prompt + logs (always in the main tree)
   ];
-  const roots = [...new Set([...auto, ...scopeRoots].map((p) => path.resolve(p)))];
+  // Seatbelt matches file-read on the RESOLVED realpath, not the lexical path (verified empirically).
+  // Two consequences: (1) under --worktree, node_modules is a SYMLINK into the MAIN checkout, so we
+  // must allow its TARGET realpath or pi can't load modules; (2) a model therefore CANNOT escape via a
+  // self-made symlink, since the target realpath is what is checked. Expand every root to {itself, its
+  // realpath} so a symlinked root (node_modules, or a worktree-rewritten scope dir) reads correctly.
+  const expand = (p) => { const a = path.resolve(p); try { const r = fs.realpathSync(a); return a === r ? [a] : [a, r]; } catch { return [a]; } };
+  const roots = [...new Set([...auto, ...scopeRoots].flatMap(expand))];
   const allows = roots.map((p) => `  (subpath ${JSON.stringify(p)})`).join("\n");
   const out = tmpl
     .replaceAll("@HOME@", os.homedir())
