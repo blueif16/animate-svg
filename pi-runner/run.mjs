@@ -106,6 +106,7 @@ function parseArgs(argv) {
     else if (k === "--debug") a.debug = true;
     else if (k === "--worktree") a.worktree = true;
     else if (k === "--keep-worktree") { a.worktree = true; a.keepWorktree = true; }
+    else if (k === "--sandbox") a.sandbox = true;
     else if (k === "--node-timeout") a.nodeTimeout = Number(next());
     else throw new Error(`unknown arg: ${k}`);
   }
@@ -133,6 +134,20 @@ const NODE_TIMEOUT_S =
 // transcript huge — that is pi re-embedding the whole accumulated message on every delta (those lines
 // GROW, never repeat), fixed separately by the message_update slimming below.
 const REPEAT_KILL = process.env.PI_RUNNER_REPEAT_KILL !== undefined ? Number(process.env.PI_RUNNER_REPEAT_KILL) : 400;
+// Silent-stall guard: a model can stop emitting events ENTIRELY after a tool returns (provider drop /
+// the model just gives up) and sit dead until the node-timeout — a real run burned ~25 silent minutes
+// this way. If NO event (text, thinking, or tool) arrives for this many seconds WHILE NO TOOL IS IN
+// FLIGHT, the node is dead, not working → kill it early. The "no tool in flight" gate is essential: a
+// long silent bash (TTS / render) legitimately emits nothing for minutes, so it must NOT count as a
+// stall. Must be < node-timeout to matter. 0 disables. (STALL_WARN_S above still only WARNS.)
+const STALL_TIMEOUT_S = process.env.PI_RUNNER_STALL_TIMEOUT !== undefined ? Number(process.env.PI_RUNNER_STALL_TIMEOUT) : 300;
+// No-progress tool-thrash guard: a cheap model that can't find something re-runs the SAME read/grep/
+// find/ls (identical toolName+args) over and over, writing nothing, until the node-timeout — the
+// composer spelunk that motivated this fired identical `grep -rn` ×7 and `ls …|head` ×9 with ZERO files
+// written. If one (toolName+args) signature repeats this many times with NO write/edit in between, kill.
+// The per-signature counters RESET on any write/edit/submit_result (= progress), so a node that
+// legitimately re-runs an identical `npm run …:check` after each edit never trips. 0 disables.
+const TOOL_REPEAT_KILL = process.env.PI_RUNNER_TOOL_REPEAT_KILL !== undefined ? Number(process.env.PI_RUNNER_TOOL_REPEAT_KILL) : 5;
 
 // ESCALATION (advisor inversion) — opt-in. On a VERIFIED failure (artifact-contract breach, stuck
 // loop, timeout, degenerate output — NEVER self-confidence) consult a stronger, ideally different-
@@ -168,6 +183,37 @@ const outRel = `out/${args.run}`;
 // status.mjs / watch.mjs) is unaffected by worktree mode and survives teardown.
 const promptDir = path.join(BASE_RUN_CWD, outRel, "_pi");
 const statusPath = path.resolve(args.status || path.join(BASE_RUN_CWD, outRel, "run-status.json"));
+
+// SANDBOX (opt-in via --sandbox / PI_RUNNER_SANDBOX=1) — macOS Seatbelt read-scope. PROTOTYPE: only a
+// node that DECLARES its read scope (a `DRIVER-READ-SCOPE:` marker) is wrapped; the rest run unchanged,
+// so ON or OFF is non-breaking. macOS only (the Linux fleet would use bubblewrap — not wired here).
+const SANDBOX_REQ = args.sandbox === true || process.env.PI_RUNNER_SANDBOX === "1";
+if (SANDBOX_REQ && process.platform !== "darwin")
+  console.warn(`⚠ --sandbox is a macOS sandbox-exec prototype; on ${process.platform} use bubblewrap (not wired) — nodes run UNSANDBOXED.`);
+// macOS only. dry-run still PREVIEWS (the dry-run branch returns before the spawn that writes a profile).
+const SANDBOX_OK = SANDBOX_REQ && process.platform === "darwin";
+const SANDBOX_TMPL = path.join(HERE, "sandbox", "read-scope.sb");
+// Render the node's read-scope profile: deny-all-read base (from the template) + the toolchain roots +
+// the node's DECLARED scope, plus a few always-needed run paths (node_modules, the node's own _pi dir).
+// Anything not granted — other lessons' src/lessons + lesson-data, other out/* — stays read-denied.
+function buildSandboxProfile(node, scopeRoots) {
+  const tmpl = fs.readFileSync(SANDBOX_TMPL, "utf8");
+  const auto = [
+    path.join(RUN_CWD, "node_modules"),
+    path.join(ROOT, "node_modules"),
+    path.join(BASE_RUN_CWD, outRel, "_pi"),    // the node's own prompt + logs (always in the main tree)
+  ];
+  const roots = [...new Set([...auto, ...scopeRoots].map((p) => path.resolve(p)))];
+  const allows = roots.map((p) => `  (subpath ${JSON.stringify(p)})`).join("\n");
+  const out = tmpl
+    .replaceAll("@HOME@", os.homedir())
+    .replaceAll("@TMPDIR@", os.tmpdir().replace(/\/+$/, ""))
+    .replace("@SCOPE_ALLOWS@", allows);
+  ensureDir(promptDir);
+  const sbFile = path.join(promptDir, `${node.id}.sandbox.sb`);
+  fs.writeFileSync(sbFile, out);
+  return sbFile;
+}
 
 const abs = (p) => (path.isAbsolute(p) ? p : path.join(RUN_CWD, p));
 const ensureDir = (d) => fs.mkdirSync(d, { recursive: true });
@@ -335,6 +381,7 @@ const status = {
   model: model || null,
   escalate: ESCALATE ? { provider: ESCALATE_PROVIDER || args.provider, model: ESCALATE_MODEL, maxRetries: MAX_RETRIES } : false,
   contractExt: contractExtension ? path.basename(contractExtension) : false,
+  sandbox: SANDBOX_OK,
   dryRun: args.dryRun,
   debug: DEBUG,
   startedAt: nowISO(),
@@ -462,6 +509,9 @@ async function runNode(node, opts = {}) {
     toolsAllow: toolAllow ? toolAllow.join(",") : null,
     toolsDeny: toolDeny ? toolDeny.join(",") : null,
   });
+  // SANDBOX read-scope (opt-in): only a node that DECLARES its read scope (DRIVER-READ-SCOPE marker)
+  // is wrapped in sandbox-exec; everything else spawns pi directly (byte-identical to before).
+  const sandboxScope = SANDBOX_OK ? markerPaths(node.prompt, "DRIVER-READ-SCOPE") : null;
   // Hand the node's owned lane to the node-contract extension's in-loop block (PI_NODE_OWNS); only set
   // when the node declares DRIVER-OWNS and the extension is active. No-op otherwise.
   const childEnv = process.env;
@@ -470,6 +520,7 @@ async function runNode(node, opts = {}) {
   console.log(`  ▶ ${node.label}  [${node.id}]`);
 
   if (args.dryRun) {
+    if (sandboxScope) console.log(`    DRY: SANDBOX sandbox-exec -f <generated .sb> (read-scope: ${sandboxScope.length} declared allow-root(s) + toolchain)`);
     console.log(`    DRY: (cd ${RUN_CWD} && pi ${argv.join(" ")})`);
     console.log(`    prompt: ${promptFile} (${fs.statSync(promptFile).size} bytes)`);
     n.status = "dry";
@@ -502,9 +553,35 @@ async function runNode(node, opts = {}) {
     n.live = { eventCount: 0, toolCalls: 0, lastEvent: "(starting pi)", sinceEventMs: 0, elapsedMs: 0, currentTool: null, textChars: 0, thinkingChars: 0, stalled: false };
     dbg(`spawn: pi ${argv.join(" ")}`);
 
+    // SANDBOX wrap: when the node declared a read scope, run pi INSIDE sandbox-exec with a per-node
+    // Seatbelt profile. Reads outside {toolchain ∪ declared scope} (e.g. another lesson, `grep … /`)
+    // get "Operation not permitted" — kernel-enforced and inherited by pi's child grep/find/cat.
+    let spawnCmd = "pi", spawnArgv = argv;
+    if (sandboxScope) {
+      const sbFile = buildSandboxProfile(node, sandboxScope);
+      spawnCmd = "sandbox-exec"; spawnArgv = ["-f", sbFile, "pi", ...argv];
+      n.sandbox = path.relative(BASE_RUN_CWD, sbFile);
+      dbg(`sandbox: sandbox-exec -f ${sbFile} (read-scope: ${sandboxScope.length} declared root(s) + toolchain)`);
+    }
     // stdin MUST be closed — a headless CLI with an open stdin pipe (no TTY) blocks forever
     // waiting for EOF (this caused a silent ~10-min startup hang).
-    const child = spawn("pi", argv, { cwd: RUN_CWD, env: spawnEnv, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(spawnCmd, spawnArgv, { cwd: RUN_CWD, env: spawnEnv, stdio: ["ignore", "pipe", "pipe"] });
+
+    // ONE place that kills the child (SIGTERM, then SIGKILL after a grace). All four watchdogs
+    // (node-timeout, silent-stall, stuck-delta-loop, tool-thrash) route through it; the `killing`
+    // latch makes a double-trip a no-op. Each caller sets its own n.killedX flag first (read in the
+    // close handler to classify the failure).
+    let killing = false;
+    const killChild = (msg) => {
+      if (killing || finished) return;
+      killing = true;
+      console.error(`    ✕ ${node.id} ${msg} — killing pi`);
+      dbg(`kill: ${msg}`);
+      try { child.kill("SIGTERM"); } catch {}
+      setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, 3000);
+    };
+    // tool-thrash: (toolName+args) signature -> count of no-progress repeats since the last write/edit.
+    const toolSig = new Map();
 
     const refresh = (force) => {
       Object.assign(n.live, {
@@ -550,6 +627,19 @@ async function runNode(node, opts = {}) {
         toolBreakdown[tn] = (toolBreakdown[tn] || 0) + 1;
         n.live.currentTool = tn;
         dbg(`tool▶ ${tn}`);
+        // No-progress tool-thrash guard: identical (name+args) repeated with no write/edit between.
+        if (TOOL_REPEAT_KILL > 0 && !finished) {
+          if (/^(write|edit|str_replace|apply_patch|multi_edit|create|submit_result)/i.test(tn)) {
+            toolSig.clear();                                  // a write/edit/submit = progress → reset thrash counters
+          } else {
+            const sig = `${tn}:${JSON.stringify(ev.args || ev.toolInput || ev.input || {})}`;
+            const c = (toolSig.get(sig) || 0) + 1; toolSig.set(sig, c);
+            if (c >= TOOL_REPEAT_KILL && !n.killedToolLoop) {
+              n.killedToolLoop = true; n.toolLoopSig = sig.slice(0, 120); n.toolLoopCount = c;
+              killChild(`tool-thrash: ${tn} repeated ×${c} with no write (${sig.slice(0, 60)})`);
+            }
+          }
+        }
       }
       else if (t.startsWith("tool_execution_end")) {
         // node-contract structured return: the typed submit_result tool's `details` ride this event.
@@ -576,12 +666,9 @@ async function runNode(node, opts = {}) {
         }
       }
       // Kill an obvious stuck-token loop early instead of letting it burn to the node-timeout.
-      if (REPEAT_KILL > 0 && repeatRun >= REPEAT_KILL && !n.killedRepeat && !finished) {
+      if (REPEAT_KILL > 0 && repeatRun >= REPEAT_KILL && !n.killedRepeat) {
         n.killedRepeat = true; n.repeatRun = repeatRun;
-        console.error(`    ✕ ${node.id} stuck-loop: same delta ×${repeatRun} (${JSON.stringify(lastDelta).slice(0, 40)}) — killing pi`);
-        dbg(`stuck-loop kill: same delta ×${repeatRun}`);
-        try { child.kill("SIGTERM"); } catch {}
-        setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, 3000);
+        killChild(`stuck-loop: same delta ×${repeatRun} (${JSON.stringify(lastDelta).slice(0, 40)})`);
       }
       refresh(false);
     });
@@ -600,11 +687,16 @@ async function runNode(node, opts = {}) {
         const tok = tokens.billable > 999 ? `${(tokens.billable / 1000).toFixed(1)}k` : `${tokens.billable}`;
         console.log(`    · ${node.id}  t=${el}s  cur=${n.live.currentTool || "-"}  think=${think} tok=${tok}  Δ=${dl}s${n.live.stalled ? "  ⚠ STALLED" : ""}`);
       }
-      if (n.live.elapsedMs > NODE_TIMEOUT_S * 1000) {
-        console.error(`    ✕ ${node.id} exceeded --node-timeout ${NODE_TIMEOUT_S}s — killing pi`);
+      if (n.live.elapsedMs > NODE_TIMEOUT_S * 1000 && !n.killedTimeout) {
         n.killedTimeout = true;
-        try { child.kill("SIGTERM"); } catch {}
-        setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, 3000);
+        killChild(`exceeded --node-timeout ${NODE_TIMEOUT_S}s`);
+      }
+      // Silent-stall kill: no event for STALL_TIMEOUT_S WHILE no tool is in flight = a dead/stalled
+      // model (a long silent bash keeps currentTool set, so it is exempt). Catches the silent-death
+      // class in ~minutes instead of burning the full node-timeout.
+      if (STALL_TIMEOUT_S > 0 && !n.live.currentTool && n.live.sinceEventMs > STALL_TIMEOUT_S * 1000 && !n.killedStall) {
+        n.killedStall = true; n.stallMs = n.live.sinceEventMs;
+        killChild(`silent-stall: no event for ${(n.live.sinceEventMs / 1000).toFixed(0)}s with no tool in flight`);
       }
     }, HEARTBEAT_MS);
 
@@ -648,7 +740,7 @@ async function runNode(node, opts = {}) {
         if (ownsBreach.length) n.ownsBreach = ownsBreach;
       }
       let st;
-      if (n.killedTimeout || n.killedRepeat || code !== 0) st = "error";
+      if (n.killedTimeout || n.killedRepeat || n.killedStall || n.killedToolLoop || code !== 0) st = "error";
       else if (contractMissing.length) st = "blocked"; // CONTRACT: a required artifact is missing — driver-verified, beats any self-report
       else if (parsed && parsed.status && parsed.status !== "ok") st = parsed.status; // gap/blocked self-report honored
       else if (declaredMissing) st = "blocked"; // ok claimed but a REPORTED file is missing (measure, don't trust)
@@ -662,6 +754,8 @@ async function runNode(node, opts = {}) {
       n.tokens = tokens;
       n.eventCount = eventCount;
       n.summary = n.killedTimeout ? `killed: exceeded ${NODE_TIMEOUT_S}s node timeout`
+        : n.killedStall ? `killed: silent-stall — no event for ${((n.stallMs || 0) / 1000).toFixed(0)}s with no tool in flight`
+        : n.killedToolLoop ? `killed: tool-thrash — ${n.toolLoopSig} repeated ×${n.toolLoopCount} with no write`
         : n.killedRepeat ? `killed: stuck-loop — same delta repeated ≥${REPEAT_KILL}×`
         : (parsed && parsed.summary) || assistantText.trim().slice(-240) || "";
       n.issues = (parsed && parsed.issues) || [];
@@ -693,6 +787,8 @@ function classifyFailure(n) {
   if ((n.status === "blocked" || n.status === "gap") && /upstream|missing input/i.test(issueText)) return "HALT"; // escalation can't manufacture a missing input
   if (n.contractMissing && n.contractMissing.length) return "ESCALATE"; // contract breach — ground-truth trigger
   if (n.killedRepeat) return "ESCALATE";                                 // stuck loop — a same-model retry just loops again (correlated blind spots)
+  if (n.killedToolLoop) return "ESCALATE";                               // no-progress tool thrash — a same-model retry thrashes the same way
+  if (n.killedStall) return "ESCALATE";                                  // model went silent/dead — a stronger model is the move, not a blind retry
   if (n.killedTimeout) return "ESCALATE";                                // over budget
   if (n.exitCode && n.exitCode !== 0 && /rate.?limit|ECONN|ETIMEDOUT|EAI_AGAIN|socket hang up|\b429\b|\b5\d\d\b|network/i.test(n.stderrTail || "")) return "RETRY_SAME"; // infra, not capability
   if (!n.parsedOk) return "DEGENERATE";                                  // no return block — retry once, then escalate
@@ -701,10 +797,13 @@ function classifyFailure(n) {
 // The consult is NOT blind: prepend the cheap attempt's VERIFIED failure evidence (not a score).
 function consultPreamble(n) {
   const cls = (n.contractMissing && n.contractMissing.length) ? "contract"
-    : n.killedRepeat ? "loop" : n.killedTimeout ? "timeout" : !n.parsedOk ? "degenerate" : "capability";
+    : n.killedRepeat ? "loop" : n.killedToolLoop ? "tool-thrash" : n.killedStall ? "stall"
+    : n.killedTimeout ? "timeout" : !n.parsedOk ? "degenerate" : "capability";
   const ev = [];
   if (n.contractMissing && n.contractMissing.length) ev.push(`missing required artifact(s): ${n.contractMissing.join(", ")}`);
   if (n.killedRepeat) ev.push(`looped on a repeated token (~${n.repeatRun}× identical delta)`);
+  if (n.killedToolLoop) ev.push(`thrashed on a repeated tool call (${n.toolLoopSig} ×${n.toolLoopCount}) without writing — find it via the catalog/digest, do NOT re-run the same search`);
+  if (n.killedStall) ev.push(`went silent for ~${((n.stallMs || 0) / 1000).toFixed(0)}s with no tool running (model stalled)`);
   if (n.killedTimeout) ev.push(`exceeded the ${NODE_TIMEOUT_S}s node budget`);
   if (!n.parsedOk) ev.push("produced no parseable return-protocol block");
   if (n.stderrTail) ev.push(`stderr: ${n.stderrTail.slice(-160)}`);
@@ -766,7 +865,7 @@ async function runNodeWithEscalation(node) {
   let idx = 0;
   for (const s of stages) for (const node of s.nodes) { node.id = slug(node.label, idx++); status.nodes[node.id] = { id: node.id, label: node.label, phase: node.phase, status: "pending" }; }
 
-  console.log(`\npi-runner — run "${args.run}" — ${stages.flatMap((s) => s.nodes).length} nodes / ${stages.length} stages from ${path.basename(WORKFLOW)} — ${args.dryRun ? "DRY-RUN" : `provider=${args.provider} model=${model}`}${DEBUG ? ` — DEBUG (heartbeat ${HEARTBEAT_MS / 1000}s · stall>${STALL_WARN_S}s · node-timeout ${NODE_TIMEOUT_S}s)` : ""}`);
+  console.log(`\npi-runner — run "${args.run}" — ${stages.flatMap((s) => s.nodes).length} nodes / ${stages.length} stages from ${path.basename(WORKFLOW)} — ${args.dryRun ? "DRY-RUN" : `provider=${args.provider} model=${model}`}${DEBUG ? ` — DEBUG (heartbeat ${HEARTBEAT_MS / 1000}s · stall-warn>${STALL_WARN_S}s · stall-kill ${STALL_TIMEOUT_S || "off"}s · tool-repeat-kill ${TOOL_REPEAT_KILL || "off"} · node-timeout ${NODE_TIMEOUT_S}s)` : ""}`);
   console.log(`source-of-truth: ${WORKFLOW}`);
   console.log(`status → ${statusPath}\n`);
   writeStatus();
