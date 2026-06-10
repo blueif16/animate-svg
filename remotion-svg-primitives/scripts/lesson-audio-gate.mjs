@@ -12,6 +12,11 @@
 //      skills + the generator's held-vowel guard).
 //   2) UNTRIMMED DEAD-AIR — each clip must be trimmed of TTS padding; large
 //      leading/trailing silence means the trim regressed (→ timeline drift).
+//   3) EMPTY / SHORT CLIP — a cue that authored a phrase but whose clip is
+//      near-zero (narrationFrames <= 1, or audible duration < MIN_CLIP_SECONDS)
+//      means the TTS silently failed to render that cue. Catastrophic on a
+//      climax (a silent beat reads as "audio out of sync") yet invisible to the
+//      drone + dead-air checks, so it gets its own gate.
 //
 // Reads out/<id>/voice-clips.json (the generator manifest) + the per-cue clip
 // WAVs. Advisory by contract (CLAUDE.md: "the check is advisory, not blocking")
@@ -29,6 +34,7 @@ const MIN_DRONE_SECONDS = 1.5; // a held vowel beyond this is not natural speech
 const DRONE_ZCR_MAX = 0.07; // held vowel/nasal: very few zero crossings
 const DRONE_RMS_DB_MIN = -28; // loud enough to be heard as a drone
 const EDGE_SILENCE_MAX = 0.3; // trimmed clips should start/end on speech
+const MIN_CLIP_SECONDS = 0.25; // a cue with a phrase is always longer; near-zero = TTS silently failed to render it
 
 const parseArgs = (argv) => {
   const a = { strict: false };
@@ -134,6 +140,7 @@ const main = () => {
   const findings = [];
   let droneFails = 0;
   let deadAirWarns = 0;
+  let emptyClipFails = 0;
 
   for (const clip of manifest.clips) {
     const file = path.join(publicRoot, clip.clipSrc);
@@ -145,11 +152,22 @@ const main = () => {
     const isDrone = a.droneSeconds >= MIN_DRONE_SECONDS;
     const isDeadAir =
       a.leadSilence > EDGE_SILENCE_MAX || a.trailSilence > EDGE_SILENCE_MAX;
+    // EMPTY/SHORT: a cue that authored a phrase but rendered to near-nothing —
+    // the TTS silently failed to produce it (a silent climax reads as desync).
+    const phrase = (clip.phrase ?? clip.caption ?? "").trim();
+    const isEmptyClip =
+      phrase.length > 0 &&
+      ((typeof clip.narrationFrames === "number" && clip.narrationFrames <= 1) ||
+        a.durationSeconds < MIN_CLIP_SECONDS);
     if (isDrone) droneFails += 1;
     if (isDeadAir) deadAirWarns += 1;
+    if (isEmptyClip) emptyClipFails += 1;
 
     const flags = [
       isDrone ? `🔴 DRONE ${a.droneSeconds.toFixed(1)}s held` : null,
+      isEmptyClip
+        ? `🔴 EMPTY/SHORT ${a.durationSeconds.toFixed(2)}s for phrase "${phrase.slice(0, 10)}" (TTS failed — re-roll)`
+        : null,
       isDeadAir
         ? `🟡 dead-air lead ${a.leadSilence.toFixed(2)}s / trail ${a.trailSilence.toFixed(2)}s`
         : null,
@@ -160,12 +178,12 @@ const main = () => {
         `dur ${a.durationSeconds.toFixed(2)}s  maxHeld ${a.droneSeconds.toFixed(1)}s` +
         (flags.length ? `  ${flags.join("  ")}` : ""),
     );
-    findings.push({ id: clip.id, ...a, isDrone, isDeadAir });
+    findings.push({ id: clip.id, ...a, isDrone, isDeadAir, isEmptyClip });
   }
 
-  const pass = droneFails === 0 && deadAirWarns === 0;
+  const pass = droneFails === 0 && deadAirWarns === 0 && emptyClipFails === 0;
   console.log(
-    `\n== Audio gate: ${pass ? "✅ PASS" : `⚠ FAIL — ${droneFails} drone, ${deadAirWarns} dead-air`}`,
+    `\n== Audio gate: ${pass ? "✅ PASS" : `⚠ FAIL — ${droneFails} drone, ${emptyClipFails} empty/short, ${deadAirWarns} dead-air`}`,
   );
   if (droneFails > 0) {
     console.log(
@@ -173,11 +191,17 @@ const main = () => {
         `Author it as a typed gap or a sub-beat (lesson-audio-captions / cue-plan-author skills).`,
     );
   }
+  if (emptyClipFails > 0) {
+    console.log(
+      `   An EMPTY/SHORT clip means the TTS produced (near) silence for a cue that has a phrase. ` +
+        `Re-roll that cue's voice (often a tweak to script-cues.json text fixes the TTS miss); a silent cue is never acceptable.`,
+    );
+  }
 
   const reportPath = path.join(path.dirname(manifestPath), "audio-gate.json");
   fs.writeFileSync(
     reportPath,
-    `${JSON.stringify({ pass, droneFails, deadAirWarns, findings }, null, 2)}\n`,
+    `${JSON.stringify({ pass, droneFails, emptyClipFails, deadAirWarns, findings }, null, 2)}\n`,
   );
   console.log(`   report -> ${reportPath}`);
 
