@@ -30,6 +30,19 @@ const BANNER =
   "catalog's prose, then regenerate. -->";
 
 const cell = (s) => (s && String(s).trim() ? String(s).replace(/\|/g, "\\|").replace(/\n/g, " ") : "— needs prose —");
+// The component menu is a PICK list: an agent needs name + variants + a one-line
+// "what it's for" to choose. The full multi-sentence prose lives in
+// src/capabilities/primitive-registry.json (the source); pasting it verbatim into
+// a table cell bloated the digest to ~34k (73% useWhen), stalling cheap models.
+// menuCell emits only the first sentence (≤180 chars). Recoverable depth = the JSON.
+const MENU_CELL_MAX = 180;
+const menuCell = (s) => {
+  if (!s || !String(s).trim()) return "— needs prose —";
+  const t = String(s).replace(/\n/g, " ").trim();
+  let first = t.split(/(?<=[.;])\s+/)[0];
+  if (first.length > MENU_CELL_MAX) first = `${first.slice(0, MENU_CELL_MAX - 1).trimEnd()}…`;
+  return first.replace(/\|/g, "\\|");
+};
 const variantsCell = (v) =>
   v && Object.keys(v).length
     ? Object.entries(v)
@@ -38,9 +51,9 @@ const variantsCell = (v) =>
     : "—";
 
 const componentTable = (entries) => {
-  const lines = ["| id | component | variants | use when |", "| --- | --- | --- | --- |"];
+  const lines = ["| id | component | variants | use when (one-line; full prose in primitive-registry.json) |", "| --- | --- | --- | --- |"];
   for (const e of entries)
-    lines.push(`| \`${e.id}\` | \`${e.component}\` | ${variantsCell(e.variants)} | ${cell(e.useWhen)} |`);
+    lines.push(`| \`${e.id}\` | \`${e.component}\` | ${variantsCell(e.variants)} | ${menuCell(e.useWhen)} |`);
   return lines.join("\n");
 };
 
