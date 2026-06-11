@@ -89,22 +89,25 @@ flowchart TD
 ```
 
 ## Nodes → responsibility · reads · writes
+
+_**This table is the clickable node index.** GitHub renders the Mermaid above but its nodes are **not** clickable (sandboxed iframe / CSP — even the anchor-tag workaround is gone). So click here instead: **a node name** opens its skill (the craft); **a skill** in Reads opens its `SKILL.md`. **Reads** = the skills/docs that precede the node; **Writes** = the artifacts it emits, which become downstream nodes' inputs (the DAG arrows show that flow). Each node's *what good output looks like* bar is its entry in [`skill-system-criteria.md`](skill-system-criteria.md). Kit skills (shared-narration/3d), mechanical nodes, and generated files have no in-repo skill link._
+
 | Node (wave) | Responsibility (what it's responsible for) | Reads (skills/docs) | Writes (artifacts) |
 |---|---|---|---|
-| Setup | make the lesson runnable; scaffold mechanical pipeline.json | `complete-video-pipeline` | brief.md, pipeline.json |
-| W0 pedagogy | the gate: what the child DISCOVERS per cue | `lesson-pedagogy` | pedagogy.md |
-| W1 storyboard | tag each cue with teaching action(s) → cue IDs + narration-beat intent + required visual; NO durations | `lesson-storyboard`, **`.agents/TEACHING-ACTIONS.md`** | storyboard.md (carries teaching action(s) per cue) |
-| W2a visual-design (SERIAL) | Visual Contract: zones, identity-invariant, per-cue visualMotionSeconds | `kids-eye`, `visual-discipline`, `early-childhood-visual-taste`, CAPABILITIES.md, (styles) | visual-design.md |
-| W2b audio/captions | narration written TO FIT the motion budget; the CuePlan | `lesson-audio-captions`, `cue-plan-author` (kit) | audio-captions.md, script-cues.json |
-| W2c sound-design | semantic sound manifest (bed/sting/SFX **keys**, no frames) | `lesson-sound-design` | audio-cues.json |
+| [Setup](skills/complete-video-pipeline/SKILL.md) | make the lesson runnable; scaffold mechanical pipeline.json | [`complete-video-pipeline`](skills/complete-video-pipeline/SKILL.md) | brief.md, pipeline.json |
+| [W0 pedagogy](skills/lesson-pedagogy/SKILL.md) | the gate: what the child DISCOVERS per cue | [`lesson-pedagogy`](skills/lesson-pedagogy/SKILL.md) | pedagogy.md |
+| [W1 storyboard](skills/lesson-storyboard/SKILL.md) | tag each cue with teaching action(s) → cue IDs + narration-beat intent + required visual; NO durations | [`lesson-storyboard`](skills/lesson-storyboard/SKILL.md), **[`TEACHING-ACTIONS.md`](TEACHING-ACTIONS.md)** | storyboard.md (carries teaching action(s) per cue) |
+| [W2a visual-design (SERIAL)](skills/visual-discipline/SKILL.md) | Visual Contract: zones, identity-invariant, per-cue visualMotionSeconds | [`kids-eye`](skills/kids-eye/SKILL.md), [`visual-discipline`](skills/visual-discipline/SKILL.md), [`early-childhood-visual-taste`](skills/early-childhood-visual-taste/SKILL.md), [CAPABILITIES.md](CAPABILITIES.md), (styles) | visual-design.md |
+| [W2b audio/captions](skills/lesson-audio-captions/SKILL.md) | narration written TO FIT the motion budget; the CuePlan | [`lesson-audio-captions`](skills/lesson-audio-captions/SKILL.md), `cue-plan-author` (kit) | audio-captions.md, script-cues.json |
+| [W2c sound-design](skills/lesson-sound-design/SKILL.md) | semantic sound manifest (bed/sting/SFX **keys**, no frames) | [`lesson-sound-design`](skills/lesson-sound-design/SKILL.md) | audio-cues.json |
 | W3a voice+ASR | generate → **VERIFY** → **FREEZE** the voice timing | `tts-voice-direction` (kit), `asr-cue-aligner` (kit) | voice.wav, gemini-voice.json, asr-alignment.json, generated timing modules |
-| W3b primitive gap-scan/build | reuse-or-build primitives (default REUSE); **teaching-driven gap detection** (map move→`requires`→catalog, not off a drawn layout); owns the intro card; owns primitive AESTHETIC quality; wire the registry | **`primitive-builder`** (its dedicated skill), storyboard (teaching actions), **`.agents/TEACHING-ACTIONS.md`**, `visual-discipline`, `kids-eye`, CAPABILITIES.md, catalog-digest.md, primitive-registry.json | primitive-gap-scan.md, src/shape-primitives/*, registry, primitive-checks/*.png |
-| W3c sound-asset | confirm the shared library covers every key; mint gaps author-time | `lesson-sound-design` (asset side), sound kit library | _logs/sound-asset.md |
+| [W3b primitive gap-scan/build](skills/primitive-builder/SKILL.md) | reuse-or-build primitives (default REUSE); **teaching-driven gap detection** (map move→`requires`→catalog, not off a drawn layout); owns the intro card; owns primitive AESTHETIC quality; wire the registry | **[`primitive-builder`](skills/primitive-builder/SKILL.md)** (its dedicated skill), storyboard (teaching actions), **[`TEACHING-ACTIONS.md`](TEACHING-ACTIONS.md)**, [`visual-discipline`](skills/visual-discipline/SKILL.md), [`kids-eye`](skills/kids-eye/SKILL.md), [CAPABILITIES.md](CAPABILITIES.md), catalog-digest.md, primitive-registry.json | primitive-gap-scan.md, src/shape-primitives/*, registry, primitive-checks/*.png |
+| [W3c sound-asset](skills/lesson-sound-design/SKILL.md) | confirm the shared library covers every key; mint gaps author-time | [`lesson-sound-design`](skills/lesson-sound-design/SKILL.md) (asset side), sound kit library | _logs/sound-asset.md |
 | W3.5 reconcile | set the ONE cue window; embed the shared timeline (mechanical) | — (narration-kit `reconcileCueTimeline`) | `<X>LessonTimeline.ts` |
-| W4a composer | build the scene from reconciled cues; wire audio; run `lesson:check --measured` | `remotion-lesson-composer`, CAPABILITIES.md | Complete`<X>`Lesson.tsx, scene, layout.ts, manifest.ts |
-| W4b sketch | hand-drawn teacher marks, cue-relative (restraint) | `sketch-explainer-layer` | sketch-overlay.md |
+| [W4a composer](skills/remotion-lesson-composer/SKILL.md) | build the scene from reconciled cues; wire audio; run `lesson:check --measured` | [`remotion-lesson-composer`](skills/remotion-lesson-composer/SKILL.md), [CAPABILITIES.md](CAPABILITIES.md) | Complete`<X>`Lesson.tsx, scene, layout.ts, manifest.ts |
+| [W4b sketch](skills/sketch-explainer-layer/SKILL.md) | hand-drawn teacher marks, cue-relative (restraint) | [`sketch-explainer-layer`](skills/sketch-explainer-layer/SKILL.md) | sketch-overlay.md |
 | W5 render | render + loudnorm (−16 LUFS/−1 dBTP); auto contact sheet (mechanical) | — | mp4, contact.png(+json), bbox-manifest.json |
-| W6 verification | judge the artifact vs pedagogy discoveries + the 4 sound checks | `lesson-verification` | verification.md |
+| [W6 verification](skills/lesson-verification/SKILL.md) | judge the artifact vs pedagogy discoveries + the 4 sound checks | [`lesson-verification`](skills/lesson-verification/SKILL.md) | verification.md |
 
 **Off-wave skills (system, not in waves 1–6):** `lesson-debugger` (post-render feedback triage — symptom→wave mapping; loaded only when the human reports an MP4 issue) · `complete-video-pipeline` (orchestrator overview) · `capability-registry-harness` (the drift-gate method) · `capability-gap-filler` (library-wide factory).
 
@@ -128,6 +131,35 @@ Three tiers (CLAUDE.md "Observability"), cheapest first, plus the products:
 - **Run status:** `out/<id>/run-status.json` (pi-runner `--debug`; artifact-verified node status).
 - **Product artifacts for diagnosis:** `out/<id>/<id>.mp4`, `<id>-contact.png` (+json) — the primary review surface, `bbox-manifest.json` (linear + `measured` collisions, `gatesFailed`, LUFS), `gemini-voice.json`, `asr-alignment.json`, `primitive-checks/*.png`, `lesson-data/<id>/verification.md`.
 - **Prior diagnostics on file:** `docs/lesson-build-shakedown-fixlog.md` (first e2e run fix log).
+
+## Per-node post-mortem — node bindings
+_The repeatable loop that hardens this pipeline node-by-node. METHOD (portable): `hermes-skill-system` → `references/node-validation-loop.md` (clean-room single-node re-run + independent judge; the executor PRODUCES, the steward JUDGES + EDITS; one node at a time; never inject the criteria fixture). Judge against `.agents/skill-system-criteria.md`. This block is the REPO BINDING the method needs._
+
+**Validation command (per node)** — M3 is the pi default now, so `--provider/--model` are explicit-but-redundant:
+```
+PI_RUNNER_ESCALATE=0 node pi-runner/run.mjs --lesson <id> \
+  --arg startAt=<phase> --until <node-label> --provider minimax --model MiniMax-M3 --debug
+```
+Back up the bad-run artifact first as `<artifact>.PRE-<NODE>FIX`. Reuses every upstream phase from disk; the node reads the *edited* skill by path.
+
+**Node table** (sweep order; `startAt` ∈ setup|ped|story|design|wave3|reconcile|compose|render|verify):
+
+| Node | startAt | --until | artifact | owner skill(s) |
+|---|---|---|---|---|
+| W0 pedagogy | ped | pedagogy | pedagogy.md | lesson-pedagogy |
+| W1 storyboard | story | storyboard | storyboard.md | lesson-storyboard |
+| W2a visual-design | design | visual-design | visual-design.md | kids-eye, visual-discipline, early-childhood-visual-taste |
+| W2b audio/captions | design † | audio-captions | audio-captions.md + script-cues.json | lesson-audio-captions (+ cue-plan-author kit) |
+| W2c sound-design | design † | sound-design | audio-cues.json | lesson-sound-design |
+| W3a voice+ASR | wave3 ‡ | voice-asr | generated clips/timing + voice-clips.json | tts-voice-direction, asr-cue-aligner (kit) |
+| W3b primitive | wave3 ‡ | primitive-build | primitive-gap-scan.md (+ primitives) | primitive-builder |
+| W3c sound-asset | wave3 ‡ | sound-asset | _logs/sound-asset.md (+ assets) | lesson-build.js W3c (sound lane) |
+| W3.5 reconcile | reconcile | reconcile | src/lessons/&lt;X&gt;LessonTimeline.ts | lesson-build.js (chain, mechanical) |
+| W4a composer | compose ‡ | composer | scene + layout.ts + manifest.ts + Complete&lt;X&gt; | remotion-lesson-composer |
+| W4b sketch | compose ‡ | sketch | sketch-overlay.md | sketch-explainer-layer |
+| W5 render | render | render | out/&lt;id&gt;/&lt;id&gt;.mp4 + contact.png | lesson-build.js (chain, mechanical) |
+
+† W2b/W2c share the Design phase *after* serial W2a → the re-run also regenerates W2a (and the phase sibling); judge ONLY the target, restore a previously-validated sibling if it drifts. ‡ W3a/b/c are one parallel stage, as are W4a/b → `--until <label>` runs the whole parallel stage; judge ONLY the target. **W6 verification is RETIRED** (blind to pixels) — never run it in the sweep.
 
 ## Diagnostics log (append-only — makes this map more certain)
 _The **product-quality ledger**: one line per skill/workflow edit that changes what the artifact-production pipeline PRODUCES (`date — owner — rule (skillsys <sha>)`). Stewardship-process/method edits and other-repo edits are NOT logged here — `git log` is their record._
@@ -162,8 +194,9 @@ _The **product-quality ledger**: one line per skill/workflow edit that changes w
 ### RUN STATUS — last validated 2026-06-08 (read this first next session)
 
 - **★ IN PROGRESS (2026-06-11) — PER-NODE QUALITY POST-MORTEM of `kptest-fenyuhe-six`** (the W6-GREEN-but-bad-MP4 run). **Loop discipline:** human = the eye; go node-by-node; fix each flawed node's SKILL durably (NEVER patch the one lesson); validate by a clean-room **MiniMax-M3** re-run of that node + an independent judge; judge output against `.agents/skill-system-criteria.md`; only then advance. **W6 verification is RETIRED for this pass** — it is blind to pixels (its model can't view PNGs, it GREEN-stamped the bad run from the same JSON the measured gate got wrong). Do NOT run or rely on it; we are the eye.
-  - **DONE + committed:** (1) **W0 pedagogy** — root cause of the broken script/captions ("一和五，分成。": backwards fragments that drop the whole 六 + suppress conservation). Fixed §4 (acquisition carve-out beyond L2) + §8 (complete-utterance for EVERY relation/retrieval beat). VALIDATED by a clean-room M3 W0 re-run + independent judge. `a3b38fe`. (2) **Criteria fixture** `.agents/skill-system-criteria.md` (12 nodes) — the standing judging bar; `02b4529`. (3) **Criteria-as-fixture practice** in `hermes-skill-system` (seed/maintain) + `transform-workflow-to-pi` (create at adoption) — global-skill repos `2e8719b` / `ae1ab39`. (4) **`primitive-builder` skill extracted** from the inlined W3b craft; `009229a`.
-  - **NEXT NODE = W1 storyboard** (then W2a visual-design = the zone-overlap + empty-frame root; W2b audio/captions = the broken-Chinese craft; W4a composer = text-on-dots overlap + unreadable split-gap + blind self-grade). For each: read its tier-2 `_logs/<wave>.md` + tier-3 `out/kptest-fenyuhe-six/_pi/<node>.*` for the exact decision, fix the SKILL, re-run that node on M3, judge vs the criteria fixture. The regenerated `pedagogy.md` RESTRUCTURED the spine (3 per-split wait-gaps, merged split+合, aggregator+recap) — W1 builds on THIS new spine. Full evidence intact (--debug): contact sheet + `measured-frames/` + `bbox-manifest.json`.
+  - **DONE + committed:** (1) **W0 pedagogy** — root cause of the broken script/captions ("一和五，分成。": backwards fragments that drop the whole 六 + suppress conservation). Fixed §4 (acquisition carve-out beyond L2) + §8 (complete-utterance for EVERY relation/retrieval beat). VALIDATED by a clean-room M3 W0 re-run + independent judge. `a3b38fe`. (2) **Criteria fixture** `.agents/skill-system-criteria.md` (12 nodes) — the standing judging bar; `02b4529`. (3) **Criteria-as-fixture practice** in `hermes-skill-system` (seed/maintain) + `transform-workflow-to-pi` (create at adoption) — global-skill repos `2e8719b` / `ae1ab39`. (4) **`primitive-builder` skill extracted** from the inlined W3b craft; `009229a`. (5) **W1 storyboard** — fidelity ≠ blind transcription (complete-utterance bond intent, stated referentially; ONE retrieval recap, not twin closers); VALIDATED clean-room M3 W1 re-run + independent judge = PASS (the node cited the new recap rule back); `893e490` + referential clarification `c089d71`. (6) **W2a visual-design** — spatial claims must carry arithmetic (computed-disjoint zones + `separation-gap-min` + correct-denominator occupancy); VALIDATED clean-room M3 + judge, red-flags 81/82 CLEAR + 83's axis-error fixed; `99be61f`. (7) **pi default → MiniMax-M3** (the config had lagged the map's recorded intent); `cd00cff`. (8) **The post-mortem loop is now CRYSTALLIZED** — portable method in `hermes-skill-system/references/node-validation-loop.md` (+ OPERATE pointer); repo binding in the `## Per-node post-mortem — node bindings` section above (command + node table + sweep-order).
+  - **NEXT NODE = W2b audio/captions** (the broken-Chinese craft, now that pedagogy permits naming the whole), then W2c sound-design → W3a voice → W3b primitive → W3.5 reconcile → W4a composer (text-on-dots overlap + unreadable split-gap + blind self-grade) → W4b sketch → W5 render. Run the loop via the **`## Per-node post-mortem — node bindings`** block above (method = hermes `references/node-validation-loop.md`); judge vs the criteria fixture; W6 is retired. The W1/W2a re-runs built on the new pedagogy spine; bad-run artifacts backed up as `*.PRE-W1FIX` / `*.PRE-W2AFIX`.
+  - **PARKED for post-run review:** **W2a red-flag 83** — a single-row 6-dot metaphor occupies only ~12% of the non-binding (vertical) axis. Accepted as-is (user: never an issue in final renders; the axis-denominator error that *hid* it is fixed). Revisit after the full run whether `visual-discipline` §4 should explicitly bless-and-constrain the single-row exception (ship target size + vertical-center) vs leave it to per-lesson judgment.
 - **OPEN rerun-decision (HITL, low priority):** a live `--worktree` + `--sandbox` COMBINED smoke is still unproven — each half is proven separately (sandbox live on this run; worktree TDZ-hoist via the template), and the byte-identical reconcile (`2bef675`+`59f7b2f`) is static-verified by a 3/3 adversarial Workflow. Run it when convenient; not blocking.
 - **W6 advisory backlog (non-blocking gate-definition flaws, surfaced by this run — fix in a Hermes pass):** (1) `captionRedundancy` gate is WRONG for lessons where on-screen text is a SUBSET of the spoken phrase (jaccard=1.0 is design intent, not redundancy) → invert/INFORMATIONAL for that lesson kind; (2) the W4a LUFS WARN measures voice PRE-loudnorm (−17.3) — hide it when W5 loudnorm is scheduled (final was −16.21, in spec); (3) bond-glyph contrast WARN is a single ENTRANCE-frame (~33% opacity) sample — W4a should report HELD-state contrast across entrance/held/exit, not one brittle frame; (4) the Remotion CLI's mandatory `.env.local` read is sandbox-EPERM-fragile → it blocked the contact-sheet/primitive-checks still-render path under `--sandbox` (make `.env.local` optional in the CLI path, or split `lesson:check` so the still-render sub-stage runs unsandboxed).
 
