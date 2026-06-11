@@ -107,6 +107,8 @@ flowchart TD
   end
 ```
 
+> **The nodes above aren't clickable on GitHub** (Mermaid renders inside a sandboxed iframe, so `click`/`href` is blocked). For a **clickable node index** — each node → its skill (the craft) + criteria (what good output looks like), with its input/output artifacts — see the table in [`.agents/skill-system-map.md`](.agents/skill-system-map.md).
+
 `lesson-debugger` (feedback triage) runs **only** after render when the user reports an issue on the MP4 — never during waves 1–6.
 
 ## The discipline laws (mirrored from the workflow)
