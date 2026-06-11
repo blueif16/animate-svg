@@ -133,7 +133,7 @@ Three tiers (CLAUDE.md "Observability"), cheapest first, plus the products:
 - **Prior diagnostics on file:** `docs/lesson-build-shakedown-fixlog.md` (first e2e run fix log).
 
 ## Per-node post-mortem — node bindings
-_The repeatable loop that hardens this pipeline node-by-node. METHOD (portable): `hermes-skill-system` → `references/node-validation-loop.md` (clean-room single-node re-run + independent judge; the executor PRODUCES, the steward JUDGES + EDITS; one node at a time; never inject the criteria fixture). Judge against `.agents/skill-system-criteria.md`. This block is the REPO BINDING the method needs._
+_The repeatable loop that hardens this pipeline node-by-node. METHOD (portable): `hermes-skill-system` → `references/node-validation-loop.md` (clean-room single-node re-run + independent judge; one node at a time; never inject the criteria fixture). **THREE roles:** the executor (pi/M3) PRODUCES the artifact; Claude SUBAGENTS do the work (diagnosis · apply+commit · independent-judge); the main loop ONLY orchestrates (spawns subagents, triggers the executor, runs the two HITL gates, commits, advances — never reads/judges/edits in its own context). Judge against `.agents/skill-system-criteria.md`. This block is the REPO BINDING the method needs._
 
 **Validation command (per node)** — M3 is the pi default now, so `--provider/--model` are explicit-but-redundant:
 ```
