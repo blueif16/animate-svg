@@ -100,6 +100,7 @@ export type {
 export {
   PairConnector,
   PointerHandArrow,
+  RecapSpotlight,
   RewardProgressToken,
   SortingBin,
   UnmatchedSlot,
@@ -111,6 +112,7 @@ export type {
   PointerDirection,
   PointerHandArrowProps,
   PointerHandArrowVariant,
+  RecapSpotlightProps,
   RewardProgressTokenProps,
   RewardProgressTokenVariant,
   SortingBinProps,

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EASE } from "../motion-primitives/curves";
 import { colors } from "../theme";
 import { IconAsset } from "./asset";
 import {
@@ -612,6 +613,110 @@ export const RewardProgressToken = ({
         <PrimitiveLabel fontSize={20} x={0} y={58}>
           {label}
         </PrimitiveLabel>
+      ) : null}
+    </PlacedGroup>
+  );
+};
+
+export type RecapSpotlightProps = PrimitiveGroupProps & {
+  /** One pre-positioned node per recap sub-beat, in the order they were taught.
+   *  The caller owns each sub-beat's layout, colors, and content — this only
+   *  decides which are visible and which are dimmed. */
+  subBeats: ReactNode[];
+  /** Index of the ACTIVE sub-beat. Items at this index render in full color;
+   *  index < this render dimmed (already seen); index > this are NOT rendered
+   *  (not yet shown). */
+  currentHighlight: number;
+  /** ViewBox coords of the active sub-beat's emphasis ring center. */
+  ringCenter: [number, number];
+  /** Radius of the transient emphasis ring, in viewBox units. */
+  ringRadius: number;
+  /** Group opacity applied to previously-shown sub-beats. Default 0.3 — the
+   *  items keep their own colors, just quieted. */
+  dimOpacity?: number;
+  /** 0..1 envelope for the ONE transient ring: it draws/fades IN over the first
+   *  half and clears (fades out) over the second half — one moment, one beat,
+   *  then gone. The caller derives this from the active cue's frames (e.g.
+   *  interpolate(frame, [cue.startFrame, mid, cue.endFrame], [0, 0.5, 1])) —
+   *  never a frame literal inside the component. Default 0 (ring hidden). */
+  ringProgress?: number;
+  /** Stroke color of the transient ring. Defaults to a theme token (reward),
+   *  never a hardcoded hex. Accepts a theme key or a raw color string. */
+  ringColor?: ThemeColor;
+};
+
+// =========================================================================
+// RecapSpotlight — a recap stack with ONE live, moving highlight.
+//
+// A spaced-recall recap walks back through a sequence of sub-beats the lesson
+// already taught, keeping each earlier one visible-but-quiet while the spoken
+// one lights up. This primitive owns exactly that three-state visibility:
+//   • index <  currentHighlight → DIMMED (group-opacity wrap; colors kept)
+//   • index == currentHighlight → FULL COLOR (the live one)
+//   • index >  currentHighlight → NOT RENDERED (not yet reached)
+// plus the recap's single allowed emphasis: one transient dashed ring on the
+// active sub-beat's center, which draws in and then clears within one beat
+// (driven by `ringProgress`, never a frame).
+//
+// Lesson-agnostic & prop-driven: the caller renders + positions each sub-beat
+// and supplies the active index, ring geometry, and the frame→progress mapping.
+// It bakes NO topic, value, or string — any lesson with a "recap stack + a live
+// moving highlight + a transient emphasis ring" reuses it as-is.
+// =========================================================================
+export const RecapSpotlight = ({
+  currentHighlight,
+  dimOpacity = 0.3,
+  ringCenter,
+  ringColor,
+  ringProgress = 0,
+  ringRadius,
+  subBeats,
+  ...groupProps
+}: RecapSpotlightProps) => {
+  const active = Math.round(currentHighlight);
+  const ringStroke = resolveColor(ringColor, colors.reward);
+
+  // The ring is the recap's ONE emphasis: it draws in over the first half of
+  // `ringProgress` (eased entrance), holds at the crest, then clears over the
+  // second half — so a single beat lands and releases. Symmetric triangle on a
+  // named curve; the caller's 0..1 is the only timing input.
+  const env = clamp01(ringProgress);
+  const ringReveal =
+    env <= 0.5 ? EASE.enter(env / 0.5) : EASE.enter(clamp01((1 - env) / 0.5));
+  const [ringX, ringY] = ringCenter;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+
+  return (
+    <PlacedGroup {...groupProps}>
+      {subBeats.map((node, index) => {
+        // Not-yet-shown sub-beats are absent, not transparent — the recap only
+        // ever reveals up to the live one.
+        if (index > active) {
+          return null;
+        }
+
+        const dimmed = index < active;
+
+        return (
+          <g key={index} opacity={dimmed ? clamp01(dimOpacity) : 1}>
+            {node}
+          </g>
+        );
+      })}
+
+      {ringReveal > 0 ? (
+        <circle
+          className="recap-ring"
+          cx={ringX}
+          cy={ringY}
+          fill="none"
+          opacity={ringReveal}
+          r={ringRadius}
+          stroke={ringStroke}
+          strokeDasharray={`${ringCircumference * 0.06} ${ringCircumference * 0.05}`}
+          strokeLinecap="round"
+          strokeWidth={NAVY_STROKE + 1}
+        />
       ) : null}
     </PlacedGroup>
   );

@@ -26,6 +26,7 @@ import {
   PlaceValueMat,
   PointerHandArrow,
   RadicalTile,
+  RecapSpotlight,
   RegionSplit,
   RewardProgressToken,
   SmallStick,
@@ -592,6 +593,26 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+  },
+  "recap-spotlight": {
+    render: () => (
+      // Three pre-positioned sub-beats (caller-owned) — the middle one is the
+      // live highlight: index 0 dimmed (already seen), index 1 full color + the
+      // transient ring at its center, index 2 not yet shown (absent).
+      <RecapSpotlight
+        currentHighlight={1}
+        dimOpacity={0.3}
+        ringCenter={[0, 0]}
+        ringProgress={0.5}
+        ringRadius={86}
+        subBeats={[
+          <NumberCard key="a" value={1} width={108} height={132} x={-200} y={0} />,
+          <NumberCard key="b" value={2} width={108} height={132} x={0} y={0} />,
+          <NumberCard key="c" value={3} width={108} height={132} x={200} y={0} />,
+        ]}
+      />
+    ),
+    tall: true,
   },
   "reward-progress-token": {
     render: () => (
