@@ -657,6 +657,21 @@
     },
     {
       "kind": "interaction",
+      "id": "recap-spotlight",
+      "component": "RecapSpotlight",
+      "source": "src/shape-primitives/interaction.tsx",
+      "intent": [
+        "recap",
+        "highlight",
+        "spaced-recall"
+      ],
+      "useWhen": "A spaced-recall RECAP STACK with ONE live, moving highlight: walk back through a sequence of already-taught sub-beats keeping each earlier one visible-but-quiet while the current one lights up. Given currentHighlight (the active index into subBeats[]): the active sub-beat's items render in FULL color, previously-shown sub-beats (index < currentHighlight) render DIMMED via a group-opacity wrap (dimOpacity, ~0.3 — the items keep their own colors, just quieted), and not-yet-shown sub-beats (index > currentHighlight) are NOT rendered. A single transient dashed <circle> ring sits on the active sub-beat's ringCenter:[x,y] with ringRadius — the recap's ONE allowed emphasis (one moment, one beat: it draws in over the first half of ringProgress and clears over the second half, eased with EASE.enter). Prop-driven & LESSON-AGNOSTIC, bakes NO topic, value, or string: subBeats:ReactNode[] are the caller-rendered, pre-positioned sub-beats (any nodes — the component only decides which are visible/dimmed and where the ring lands); ringProgress (0..1) is the caller's frame-derived ring envelope (e.g. interpolate over the active cue's frames — ZERO frame literals in the component); ringColor defaults to a theme token. Any lesson with a 'recap stack + a live moving highlight + a transient emphasis ring' reuses it as-is.",
+      "avoidWhen": "There is no spaced-recall stack to walk — a single static emphasis on one element is a TeacherMark spotlight ring or a PulseCircle, not a multi-sub-beat dim/highlight. You need a persistent (non-clearing) selection state across a quiz or sort — use SelectionRing / SortingBin. The 'previously seen' look is on ONE self-contained diagram rather than a stack — pass the dimmed prop to that primitive directly (e.g. FenHeDiagram dimmed). It does not lay out or color the sub-beats (the caller owns each node's content + position) and it does not own per-item count/progress animation — it owns only the three-state visibility across the stack and the one transient ring.",
+      "variants": {},
+      "status": "experimental"
+    },
+    {
+      "kind": "interaction",
       "id": "reward-progress-token",
       "component": "RewardProgressToken",
       "source": "src/shape-primitives/interaction.tsx",
