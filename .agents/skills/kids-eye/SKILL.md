@@ -28,10 +28,13 @@ teaching-unit-target:    12–15% of short-side = 130–160 px
 primary-label-min:       48 px rendered  (signal labels: "一个十", "10 步", takeaway lines)
 body-label-min:          36 px rendered  (counts, badges)
 caption-line-min:        56 px rendered
+separation-gap-min:      ≥ 6% of short-side = 65 px  (readable gap between two co-present clusters when the object SPLITS — below this they read as one blob)
 chrome-label:            FORBIDDEN — if a label is decoration, delete it
 ```
 
 If the teaching unit + primary labels cannot fit at these minimums inside the 1920×1080 frame *with the declared zones below*, your scene density is wrong. Drop elements or simplify the metaphor. Do not ship at sub-minimum sizes and rationalize it ("readable enough" is a rationalization, not a defense).
+
+Run this fit-check on the **densest** cue — the worst split / multiplicity, not just the whole row — and at the **delivery resolution**: the co-present clusters PLUS `separation-gap-min` between them must fit the binding axis at the minimum unit size. A split that does not clear the gap floor at delivery size is a sub-minimum render (the two groups read as one blob) — redesign, do not rationalize.
 
 ## 1.5. Declare the spatial zones
 
@@ -50,6 +53,8 @@ What this enforces:
 - A label and the object it names use the **same idiom across all cues** — the label always lives in `zone-labels`, never floats into `zone-objects`. The composer cannot accidentally overlap them because the zones forbid it.
 - An optional element can never use "place near the bundle" to position itself. It lives inside its declared zone and anchors there.
 - If a designed element doesn't fit any of the named zones, the design is wrong — extend the zone list explicitly or change the element.
+
+**Disjoint is COMPUTED, not asserted.** Before you write "disjoint", compute the pairwise bounding-box intersection of every pair of zones that can be CO-PRESENT in the same cue — each such intersection MUST be empty (show the px arithmetic, at the delivery frame). A zone whose box sits inside or overlaps a co-present zone's box is an automatic FAIL — move the coordinates apart; do not stamp "disjoint" on overlapping numbers. Overlap is permitted ONLY between zones that are never on screen together (time-disjoint); when you allow one, name the cue each zone is active in so the time-disjointness is auditable. A question / prompt / label zone that intersects the teaching-object zone while both are on screen is the canonical occlusion bug (the prompt text landing on the dots).
 
 Overlap of a label and its referent (`一个十` rendered ON the bundle) is not a layout bug; it is a missing zone declaration.
 

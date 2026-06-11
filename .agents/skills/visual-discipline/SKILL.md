@@ -22,7 +22,7 @@ between-states:  <what visually moves / changes / persists across cues>
 reading-order:   <eye lands on A, then B, then C — name elements per cue>
 decoration-budget:  <max 2 stacked surfaces, max N meaningful colors>
 text-budget:     <for each on-screen string: is it already implied by geometry / sequence / color / adjacency? if yes, drop NOW>
-occupancy:       <which axis is binding; the teaching unit must occupy ≥ ~50% of the non-binding axis>
+occupancy:       <which axis is binding; SHOW the arithmetic at the fullest cue — content ÷ its OWN axis length (a horizontal row is ÷ the 1920 width, NEVER ÷ the 1080 short-side); teaching content occupies ≥ ~50% of the non-binding axis; if the binding axis is itself < ~50%, the object floats in an empty frame — grow it or widen the metaphor>
 identity-invariant: <what stays the same primitive across the transformation>
 motion-budget:   <per cue: visualMotionSeconds — the MINIMUM time the cue's motion needs to land for a 6yo. e.g.
                   intro: 2.0s     (title write-on + mini-preview cycle)
@@ -88,7 +88,7 @@ A scene that draws a 200 px bundle in the center of a 1920 px wide canvas with t
 ### Rules
 
 - The teaching unit (a stick, the bundle) must size itself per the `kids-eye` §1 minimums and **grow** until it hits a real constraint — design-rhythm spacing to its neighbor, the metaphor's geometry, or the binding-axis bound.
-- After implementation, audit: on the **non-binding axis** (the axis the metaphor doesn't fix), does the teaching content occupy ≥ ~50%? If not, you have whitespace acting as decoration — redesign.
+- Audit occupancy IN THE CONTRACT (front-loaded, §9), with the px arithmetic shown — measure each axis against ITS OWN length (a horizontal row's occupancy is width ÷ 1920, NOT ÷ the 1080 short-side; the wrong denominator inflates a 48%-empty frame into a fake "86%"). On the **non-binding axis** the teaching content must occupy ≥ ~50%; a thin centered band with cream margins on the binding axis is whitespace acting as decoration — redesign or widen the metaphor, never defer it to a post-render audit.
 
 ### When the canvas aspect fights the metaphor
 
