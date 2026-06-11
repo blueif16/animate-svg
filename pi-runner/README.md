@@ -173,10 +173,12 @@ here at all.
   paths resolve there), `PI_RUNNER_WORKFLOW=.claude/workflows/lesson-build.js`. `PI_RUNNER_ROOT`
   defaults to this dir's parent. Paths are relative to ROOT. No secret in this file.
 - **Model / credential** — live ONCE in pi's own machine-global config `~/.pi/agent/models.json`,
-  which pi resolves natively for every project (provider `cp`, Alibaba DashScope-intl, default
-  `qwen3.7-max`; also `qwen3.7-plus`). The driver just runs `pi --provider cp` — no key, no `-e`
-  extension, no per-repo credential. Swap providers by editing that one file; verify with
-  `pi --list-models cp`. Pin a non-default model for this repo with `PI_CP_MODEL` in `.env`.
+  which pi resolves natively for every project (provider `cp`, Alibaba DashScope-intl, `qwen3.7-max`
+  + `qwen3.7-plus`; provider `minimax`, `MiniMax-M3`). The pi DEFAULT for THIS repo is `minimax` /
+  `MiniMax-M3`, pinned in `.env` wiring (`PI_RUNNER_PROVIDER=minimax`, `PI_RUNNER_MODEL=MiniMax-M3`);
+  `cp` / `qwen3.7-max` stays available as a non-default (`pi --provider cp`). No key, no `-e`
+  extension, no per-repo credential. Swap the default by editing `.env`; verify with
+  `pi --list-models <provider>`. (`PI_CP_MODEL` still pins a `cp` model when the lane is `cp`.)
 
 The convenience flags `--lesson <id>` (sets the run id + `args.lessonId`), `--brief <file>`, and
 `--style <v>` map onto the generic `--arg`/`--arg-file` mechanism, so the commands below are
