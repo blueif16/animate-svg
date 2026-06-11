@@ -263,16 +263,33 @@ function buildSandboxProfile(node, scopeRoots) {
 }
 
 const abs = (p) => (path.isAbsolute(p) ? p : path.join(RUN_CWD, p));
-const ensureDir = (d) => fs.mkdirSync(d, { recursive: true });
+// FUNCTION DECLARATION (hoisted): setupWorktree runs at module-eval (the `const wtRoot = ...` above),
+// BEFORE this line — so ensureDir must be hoisted, not a TDZ const, or --worktree throws on startup.
+function ensureDir(d) { return fs.mkdirSync(d, { recursive: true }); }
 const nowISO = () => new Date().toISOString();
 const slug = (label, i) => (label || `node-${i}`).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+// PROJECT_BASE — the workflow's output root (the `projectDir` arg) resolved to absolute (and into
+// the worktree if active). Cheap models often self-report paths RELATIVE TO THIS dir (e.g. "src/x")
+// rather than to RUN_CWD/ROOT, so the forgiving resolvers below try it as an extra base — else a
+// node that genuinely wrote its files (esp. a no-DRIVER-ARTIFACTS node judged only by self-report)
+// gets a false "missing" → false `blocked`. No-op when no projectDir arg is passed (generic:
+// workflows without one are unaffected). Could later derive from the DRIVER-OWNS markers to drop the
+// arg-name convention entirely.
+const PROJECT_BASE = (() => {
+  const a = (args.wfArgs && args.wfArgs.projectDir != null) ? String(args.wfArgs.projectDir) : null;
+  if (!a) return null;
+  if (!path.isAbsolute(a)) return path.join(RUN_CWD, a);
+  return (wtRoot && a.includes(BASE_ROOT)) ? a.split(BASE_ROOT).join(wtRoot) : a;
+})();
+
 function artifactState(p) {
   // Resolve a node-declared artifact path FORGIVINGLY before judging it missing. pi agents
-  // inconsistently report a path relative to RUN_CWD (the repo subdir) OR to ROOT (e.g.
-  // "remotion-svg-primitives/lesson-data/..", because the prompt shows ROOT-prefixed abs paths).
-  // The strict join(RUN_CWD, p) double-prefixes the repo dir and false-flags a real written file as
-  // "blocked" (killing the whole run for nothing). Try RUN_CWD first, then ROOT; absolute as-is.
-  const candidates = path.isAbsolute(p) ? [p] : [path.join(RUN_CWD, p), path.join(ROOT, p)];
+  // inconsistently report a path relative to RUN_CWD (the repo subdir), ROOT (the prompt shows
+  // ROOT-prefixed abs paths), OR the projectDir (e.g. "src/x" under projectDir). The strict
+  // join(RUN_CWD, p) false-flags a real written file as "blocked" (killing the run for nothing).
+  // Try RUN_CWD, then ROOT, then PROJECT_BASE; absolute as-is.
+  const candidates = path.isAbsolute(p) ? [p]
+    : [path.join(RUN_CWD, p), path.join(ROOT, p), ...(PROJECT_BASE ? [path.join(PROJECT_BASE, p)] : [])];
   for (const c of candidates) {
     try { const s = fs.statSync(c); return { path: p, exists: s.size > 0, bytes: s.size }; } catch {}
   }
@@ -291,8 +308,16 @@ function driverPreflightPaths(prompt) {
   return paths.length ? paths : null;
 }
 function artifactStateAbs(p) {
-  try { const s = fs.statSync(p); return { path: p, exists: s.size > 0, bytes: s.size }; }
-  catch { return { path: p, exists: false, bytes: 0 }; }
+  // Forgiving like artifactState: a DRIVER-ARTIFACTS marker may be project-relative (resolve via
+  // RUN_CWD/ROOT/PROJECT_BASE — fixes the worktree/projectDir case where a bare statSync against the
+  // driver's cwd misses a file written into the worktree/projectDir). A DRIVER-PREFLIGHT path is
+  // absolute → candidates=[p], unchanged.
+  const candidates = path.isAbsolute(p) ? [p]
+    : [path.join(RUN_CWD, p), path.join(ROOT, p), ...(PROJECT_BASE ? [path.join(PROJECT_BASE, p)] : [])];
+  for (const c of candidates) {
+    try { const s = fs.statSync(c); return { path: p, exists: s.size > 0, bytes: s.size }; } catch {}
+  }
+  return { path: p, exists: false, bytes: 0 };
 }
 
 // ===== WORKTREE ISOLATION (opt-in) =========================================================
@@ -302,7 +327,10 @@ function artifactStateAbs(p) {
 // never recurse. node_modules is symlinked from the main checkout (it is gitignored, so the fresh
 // checkout has none). The workflow's hardcoded absolute paths are rewritten BASE_ROOT→wtRoot per
 // node in runNode, so agents write INTO the worktree; status + logs stay in the MAIN tree (below).
-const git = (cwd, ...a) => execFileSync("git", a, { cwd, stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
+// FUNCTION DECLARATION (hoisted): setupWorktree calls git() at module-eval (above), before this
+// line — a TDZ const would throw on --worktree startup (the worktree-remove try/catch hid it; the
+// later worktree-add did not). Hoisted so the eager setupWorktree call resolves it.
+function git(cwd, ...a) { return execFileSync("git", a, { cwd, stdio: ["ignore", "pipe", "pipe"] }).toString().trim(); }
 function setupWorktree(run, baseRoot, cwdRel, baseRunCwd) {
   const wtRoot = path.join(path.dirname(baseRoot), ".pi-worktrees", run);
   const branch = `pi/${run}`;
@@ -312,13 +340,30 @@ function setupWorktree(run, baseRoot, cwdRel, baseRunCwd) {
   ensureDir(path.dirname(wtRoot));
   // -B resets branch pi/<run> to HEAD so the run starts from a known committed state (clean room).
   git(baseRoot, "worktree", "add", "-B", branch, wtRoot, "HEAD");
-  // Link node_modules (gitignored → absent in the fresh checkout) for the package dir + repo root.
-  for (const rel of [cwdRel, ""].filter((v, i, arr) => arr.indexOf(v) === i)) {
-    const target = path.join(rel ? baseRunCwd : baseRoot, "node_modules");
+  // Link node_modules (gitignored → absent in the fresh checkout) for EVERY package in the base
+  // checkout, not just root+cwd: a worktree is HEAD-clean, so any tracked package dir whose base
+  // has an installed node_modules needs it symlinked, or that package's scripts (build/test/verify)
+  // break inside the worktree (e.g. a packages/verify harness with its own deps). Discover packages
+  // by their TRACKED package.json (git ls-files — so a gitignored nested node_modules never
+  // recurses), then symlink each existing node_modules at the same relative path. A single-package
+  // repo links just root — identical to the prior behavior.
+  let pkgRels = [];
+  try {
+    pkgRels = git(baseRoot, "ls-files")
+      .split("\n")
+      .filter((f) => f === "package.json" || f.endsWith("/package.json"))
+      .map((f) => (f === "package.json" ? "" : path.dirname(f)));
+  } catch {}
+  const linkRels = Array.from(new Set(["", cwdRel, ...pkgRels])).filter((d) => !d.split("/").includes("node_modules"));
+  let linked = 0;
+  for (const rel of linkRels) {
+    const target = path.join(baseRoot, rel, "node_modules");
     const link = path.join(wtRoot, rel, "node_modules");
-    try { if (fs.existsSync(target) && !fs.existsSync(link)) fs.symlinkSync(target, link, "dir"); } catch {}
+    try {
+      if (fs.existsSync(target) && !fs.existsSync(link)) { ensureDir(path.dirname(link)); fs.symlinkSync(target, link, "dir"); linked++; }
+    } catch {}
   }
-  console.log(`worktree → ${wtRoot}  (branch ${branch}, node_modules symlinked)\n`);
+  console.log(`worktree → ${wtRoot}  (branch ${branch}, ${linked} node_modules symlinked)\n`);
   return wtRoot;
 }
 // After the run: preserve the lesson SOURCE on its branch, copy the deliverable (out/<run>) back to
@@ -790,7 +835,7 @@ async function runNode(node, opts = {}) {
       if (n.killedTimeout || n.killedRepeat || n.killedStall || n.killedToolLoop || code !== 0) st = "error";
       else if (contractMissing.length) st = "blocked"; // CONTRACT: a required artifact is missing — driver-verified, beats any self-report
       else if (parsed && parsed.status && parsed.status !== "ok") st = parsed.status; // gap/blocked self-report honored
-      else if (declaredMissing) st = "blocked"; // ok claimed but a REPORTED file is missing (measure, don't trust)
+      else if (declaredMissing && !(requiredPaths && requiredPaths.length)) st = "blocked"; // a missing/empty SELF-REPORTED file blocks ONLY a node with NO DRIVER-ARTIFACTS contract. When a contract WAS declared and is satisfied (contractMissing empty, above), it is the authority — a noisy self-report (a stripped path, or an intentionally size-0 file like .gitkeep) must NOT override it. "Verified, not trusted" cuts both ways: trust the driver-verified contract over the model's self-report.
       else if (!parsed) st = "error"; // clean exit but NO return-protocol block = degenerate run (agent derailed / its output was lost). Fail LOUDLY here — never silently pass it as ok. (A derailed W2c that wandered into another lesson's file + wrote nothing was slipping through as ok and only surfacing one node downstream when its consumer couldn't find the input.)
       else st = "ok";
       n.status = st;
@@ -810,6 +855,7 @@ async function runNode(node, opts = {}) {
       if (!parsed) (n.issues = n.issues || []).push("no return JSON block parsed from pi output");
       if (contractMissing.length) (n.issues = n.issues || []).push(`contract breach — required artifact(s) missing: ${contractMissing.join(", ")}`);
       if (ownsBreach.length) (n.issues = n.issues || []).push(`contract warn — reported writes outside owned paths: ${ownsBreach.join(", ")}`);
+      if (declaredMissing && requiredPaths && requiredPaths.length) (n.issues = n.issues || []).push(`contract note — a self-reported artifact is empty/unresolved but the DRIVER-ARTIFACTS contract is satisfied (advisory, non-blocking)`);
       if (stderr.trim()) n.stderrTail = stderr.trim().slice(-500);
       n.endedAt = nowISO();
       n.durationMs = Date.now() - t0;
