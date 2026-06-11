@@ -38,6 +38,24 @@ If you cannot write narration that respects this rule for a cue, the visual is d
 
 **Language / L2 carve-out (pedagogy §4 / §9).** When the discovery IS an utterance the child must acquire — an English word, a sound, a tone — *the narration MUST voice that target*. Saying "Hello" / "I'm Sam" / "Goodbye" is the teaching act, not leakage: the child learns the sound by hearing it. The leakage rule still applies to everything that is not the target (don't narrate a count or a relation the picture reveals). Concretely, for a language lesson it is correct — and required — to write mixed lines like `看，他们见面，打招呼：Hello！` (Chinese frames the moment, the L2 word is the target). This is the natural shape; do not Chinese-only it.
 
+## Every narration line is a complete, grammatical utterance
+
+A narration line is one whole sentence a fluent speaker of that language would actually say aloud — correct word order, with every term the line is about present. Naming the target is necessary but NOT sufficient: the LINE must stand on its own, not a stranded token with a dangling verb that leans on the picture to finish it.
+
+The defect (language-agnostic): **a beat that teaches a RELATION — a part–whole bond, a transformation, a comparison, a question→answer, a greeting→reply — voiced as a stranded fragment that drops a term the relation BINDS.** A relation binds two-or-more terms (e.g. a whole and its parts; a before and an after; two quantities being compared; a prompt and its response). Speaking only some of those terms with the binding verb left dangling is the broken-fragment defect — the same class as a leak, in the opposite direction. State the relation as the FULL utterance that names every term it binds, in the direction(s) the beat teaches; never the bare term(s) with the relation stranded.
+
+Concrete illustration (this lesson is 分与合, a part–whole bond — read these as e.g., not as the rule):
+
+- Decompose direction — name the whole being split: `六可以分成一和五。` ✅  — not `一和五，分成。` ❌ (the whole 六 dropped, 分成 left dangling).
+- Recombine / conserve direction — name the recombined whole: `一和五合起来是六。` ✅  — not `一和五，合起来。` ❌ (the conserved whole 六 dropped).
+- Retrieve / recap — each item is a full utterance, or the set framed by what binds it: `六可以分成一和五、二和四、三和三。` ✅  — not the bare list `一和五。二和四。三和三。` ❌.
+
+(For other relation kinds the same shape holds: a comparison says the full claim `六比五多一` ✅, not a stranded `多一` ❌; an L2 greeting beat says the whole utterance `Hello!` / `跟我说：Hello`, where the lone word IS the complete utterance.)
+
+The lone-word carve-out above is the special case where the target IS a complete utterance on its own ("Hello"); a relation is not — speaking its terms without the whole it binds is the broken-fragment defect. If pedagogy/storyboard already state the relation as a complete utterance, carry it verbatim; never compress it to the bare terms to save characters.
+
+**Read-aloud self-check (every cue, before you finalize):** read each `narration` line out loud as if you were the teacher. If it is not a sentence a person would actually say — a fragment, a dangling verb, a missing term the relation binds, scrambled order — it is broken; rewrite it complete. A line that only passes because the picture "fills in" the missing term still fails: the spoken line itself must stand.
+
 **Place a syncable target at the HEAD of its cue, never buried at the tail.** The composer can only anchor a target's visual reveal (the gesture or swell that fires on the word) to `cue.startFrame + a small offset`, and the bilingual ASR timestamps only the carrier-language tokens, **not** an embedded L2 target — so the target's true spoken onset is invisible to the timeline. If a target sits at the END of its cue's line — schematically `<carrier framing>：<TARGET>`, where the carrier runs several seconds first — the picture fires the reveal seconds before the mouth says it (the desync a viewer notices). So when a cue's target must land on its animation: **lead the cue's narration with the target** (the L2 word inside the first ~0.5s, any framing/gloss after), **or** give the target its OWN short cue (the carrier framing becomes a separate preceding beat). Keep a syncable target's spoken onset within ~0.5s of its cue start. A long carrier sentence + a tail-buried target in one cue IS the desync bug — split it (this pairs with the storyboard giving such a target its own cue, like an echo cue). A pure-framing carrier line with no target to land can sit anywhere; only the target's onset is load-bearing.
 
 ## ASR risk flags
@@ -81,3 +99,4 @@ If `pedagogy.md`/`storyboard.md` mark a cue as reinforcement, the narration real
 - Per-cue: characters, estimated seconds, visual budget target (from visual-design), absolute / signed delta.
 - ASR risk flags + proposed mitigations.
 - Any narration-leakage fixes you made vs the storyboard draft.
+- Read-aloud confirmation: one line stating you read every cue's narration aloud and each is a complete, grammatical utterance that names every term its relation binds — no stranded token, no dangling verb, no dropped term (e.g. a whole, a result, a reply) — naming any line you rewrote from a fragment to a complete sentence.
