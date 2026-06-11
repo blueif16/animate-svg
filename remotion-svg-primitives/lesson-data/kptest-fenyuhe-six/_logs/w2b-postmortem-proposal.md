@@ -1,6 +1,6 @@
 # W2b audio/captions — post-mortem proposal (PENDING Gate-1 approval)
 
-_Produced by a DIAGNOSIS subagent on 2026-06-11 (per `hermes-skill-system/references/node-validation-loop.md`). NOT yet applied/committed — awaiting human approval. Next session: re-present at Gate 1 → on `y`, spawn the apply subagent → M3 re-run → independent judge._
+_Produced by a DIAGNOSIS subagent on 2026-06-11 (per `hermes-skill-system/references/node-validation-loop.md`). APPLIED + committed 2026-06-11 (Gate 1 approved; de-hardcoded per user review, read-aloud confirmation nit folded in), skillsys `<pending>`. Next: M3 re-run → independent judge → Gate 2._
 
 ## Verdict: FAIL (vs `.agents/skill-system-criteria.md` §"W2b audio/captions")
 
