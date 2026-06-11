@@ -196,12 +196,47 @@ const SANDBOX_TMPL = path.join(HERE, "sandbox", "read-scope.sb");
 // Render the node's read-scope profile: deny-all-read base (from the template) + the toolchain roots +
 // the node's DECLARED scope, plus a few always-needed run paths (node_modules, the node's own _pi dir).
 // Anything not granted — other lessons' src/lessons + lesson-data, other out/* — stays read-denied.
+// Resolve every top-level (and @scope) SYMLINK in each node_modules to its target realpath, so
+// workspace-linked packages (whose target lives outside node_modules) are readable under the sandbox.
+// Bounded to the top level (no deep recursion); generic (any linked dep, not just @studio).
+function linkedPkgTargets(nmDirs) {
+  const out = [];
+  for (const nm of nmDirs) {
+    let names = [];
+    try { names = fs.readdirSync(nm); } catch { continue; }
+    for (const name of names) {
+      const p = path.join(nm, name);
+      try {
+        if (name.startsWith("@")) {
+          for (const sub of fs.readdirSync(p)) {
+            const sp = path.join(p, sub);
+            if (fs.lstatSync(sp).isSymbolicLink()) out.push(fs.realpathSync(sp));
+          }
+        } else if (fs.lstatSync(p).isSymbolicLink()) {
+          out.push(fs.realpathSync(p));
+        }
+      } catch {}
+    }
+  }
+  return out;
+}
+
 function buildSandboxProfile(node, scopeRoots) {
   const tmpl = fs.readFileSync(SANDBOX_TMPL, "utf8");
   const auto = [
     path.join(RUN_CWD, "node_modules"),
     path.join(ROOT, "node_modules"),
     path.join(BASE_RUN_CWD, outRel, "_pi"),    // the node's own prompt + logs (always in the main tree)
+    // every -e extension pi is REQUIRED to load (the bundled contractExtension and/or an explicit
+    // --extension) lives outside the repo scope; pi EPERMs and never boots without it. Grant each
+    // one's dir (covers the .ts file + any sibling it imports).
+    ...[contractExtension, extension].filter(Boolean).map((e) => path.dirname(e)),
+    // workspace-linked deps are SYMLINKS inside node_modules pointing OUTSIDE it (e.g.
+    // @studio/* -> ../../../shared-narration). Seatbelt checks the symlink TARGET realpath, so
+    // granting node_modules alone EPERMs when tsc / webpack / node resolve them ("Cannot find
+    // module @studio/narration-kit") -- which derails the agent into a phantom module-hunt and
+    // breaks lesson:check/render. Grant each linked package's target.
+    ...linkedPkgTargets([path.join(RUN_CWD, "node_modules"), path.join(ROOT, "node_modules")]),
   ];
   // Seatbelt matches file-read on the RESOLVED realpath, not the lexical path (verified empirically).
   // Two consequences: (1) under --worktree, node_modules is a SYMLINK into the MAIN checkout, so we
@@ -210,7 +245,13 @@ function buildSandboxProfile(node, scopeRoots) {
   // realpath} so a symlinked root (node_modules, or a worktree-rewritten scope dir) reads correctly.
   const expand = (p) => { const a = path.resolve(p); try { const r = fs.realpathSync(a); return a === r ? [a] : [a, r]; } catch { return [a]; } };
   const roots = [...new Set([...auto, ...scopeRoots].flatMap(expand))];
-  const allows = roots.map((p) => `  (subpath ${JSON.stringify(p)})`).join("\n");
+  // getcwd (node uv_cwd, every shell) needs file-read DATA on the process cwd directory ENTRY, not just
+  // metadata; if cwd is outside every granted root the process EPERMs on uv_cwd before pi even runs. Grant
+  // cwd as a NON-recursive (literal ...) so the dir entry reads but its subdirs (other lessons' lesson-data
+  // / src/lessons) stay denied -- a (subpath cwd) would re-expose the whole repo and defeat the isolation.
+  // Expand to {itself, realpath} like the roots so a symlinked cwd (worktree mode) matches too.
+  const cwdLits = [...new Set(expand(RUN_CWD))].map((p) => `  (literal ${JSON.stringify(p)})`).join("\n");
+  const allows = roots.map((p) => `  (subpath ${JSON.stringify(p)})`).join("\n") + "\n" + cwdLits;
   const out = tmpl
     .replaceAll("@HOME@", os.homedir())
     .replaceAll("@TMPDIR@", os.tmpdir().replace(/\/+$/, ""))
