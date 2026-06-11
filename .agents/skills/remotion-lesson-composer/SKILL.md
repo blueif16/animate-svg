@@ -126,20 +126,48 @@ Every lesson opens with a topic-intro beat (title + section + KP teaser). The cl
 
 ## File outputs
 
-Mirror the existing lesson pattern. For lesson id `<lesson-id>` (kebab) → `<camelId>` → `<PascalId>`:
+Write exactly these files for your lesson. **The skeleton below IS the pattern — do NOT open another lesson to "see how it's done."** Reading any other `src/lessons/<other>*` or `lesson-data/<other>/` is a READING-LAW violation (under `--sandbox` it is an OS-level `EPERM`, not a style note): a prior lesson is presumed flawed, and copying its shape is hidden hard-coding that masks whether the skill itself is sufficient. Everything you need is in THIS skill + `catalog-digest.md` + your own lesson's artifacts. For lesson id `<lesson-id>` (kebab) → `<camelId>` → `<PascalId>`:
 
-1. `src/lessons/<camelId>LessonTimeline.ts` — derives audio/caption/duration from generated timing
-2. `src/lessons/<PascalId>LessonScene.tsx` — the scene (frame-driven, cue-bounded)
-3. `src/lessons/Complete<PascalId>Lesson.tsx` — the composition wrapper (scene + voice + caption + bgm/sfx layers), **and in this same file** the registration descriptor:
-   ```ts
-   import type { LessonComposition } from "./lessonRegistryTypes";
-   export const lessonComposition: LessonComposition = {
-     id: "Complete<PascalId>Lesson",
-     component: Complete<PascalId>Lesson,
-     durationInFrames: <camelId>Duration,            // from the reconciled timeline module — NEVER a literal
-     defaultProps: complete<PascalId>LessonDefaultProps,
-   };
-   ```
+1. `src/lessons/<PascalId>LessonScene.tsx` — the scene (frame-driven, cue-bounded). Imports the reconciled `<camelId>Cues` from `./<camelId>LessonTimeline` (written by Wave 3.5 — you READ it, you do NOT author it), primitives from `../shape-primitives` / `../motion-primitives` / `../fx`, layout offsets from `./<camelId>/layout`, and `useMeasureHook` / `measureProps` from `./_measure/measureHook`.
+2. `src/lessons/<camelId>/layout.ts` (offset constants) + `src/lessons/<camelId>/manifest.ts` (bboxAt per load-bearing element; contract `./manifestTypes.ts`).
+3. `src/lessons/Complete<PascalId>Lesson.tsx` — the composition wrapper (scene + voice + caption + bgm/sfx layers), **and in this same file** the registration descriptor.
+
+Minimal shape of the two `.tsx` files (fill in YOUR cues/primitives; every frame derives from `cues[id].startFrame + <layout offset>`):
+
+```tsx
+// <PascalId>LessonScene.tsx
+export const <PascalId>LessonScene: React.FC<{ cues: CueMap }> = ({ cues }) => {
+  const frame = useCurrentFrame();
+  useMeasureHook();                                  // call ONCE at the scene root
+  return (
+    <AbsoluteFill style={{ backgroundColor: theme.bg }}>
+      {/* one cue-bounded group per beat; offsets are layout.ts constants, never literals */}
+      <g {...measureProps("introTitle")}>
+        <LessonIntroCard progress={spring({ frame: frame - cues.intro.startFrame, /* … */ })} />
+      </g>
+      {/* … */}
+    </AbsoluteFill>
+  );
+};
+
+// Complete<PascalId>Lesson.tsx
+export const Complete<PascalId>Lesson: React.FC = () => (
+  <AbsoluteFill>
+    <<PascalId>LessonScene cues={<camelId>Cues} />
+    <LessonAudioLayer voiceClips={<camelId>VoiceClips} />
+    <LessonCaptionLayer captions={<camelId>Captions} />
+    <LessonBgmLayer bed={audioCues.bed} windows={spansToWindows(voiceoverSpans)} totalFrames={<camelId>Duration} />
+    <LessonSfxLayer events={sfxEvents} />
+  </AbsoluteFill>
+);
+import type { LessonComposition } from "./lessonRegistryTypes";
+export const lessonComposition: LessonComposition = {
+  id: "Complete<PascalId>Lesson",
+  component: Complete<PascalId>Lesson,
+  durationInFrames: <camelId>Duration,              // from the reconciled timeline module — NEVER a literal
+  defaultProps: complete<PascalId>LessonDefaultProps,
+};
+```
 
 **Code hygiene — lint-clean is part of "done."** The Wave-5 render gate runs whole-repo `npm run lint` = `eslint src && tsc`, so a single dirty file in YOUR lesson blocks EVERY lesson's render. Three rules make your output pass first try:
 - **The scene component is PascalCase** — `export const <PascalId>LessonScene: React.FC<…>` (wrapper: `Complete<PascalId>Lesson`). A lowercase component name (`<camelId>LessonScene`) makes every `useCurrentFrame()`/`useMeasureHook()` inside it a `react-hooks/rules-of-hooks` ERROR — React only treats Capitalized names as components/hooks.
@@ -153,6 +181,8 @@ Do NOT write or modify primitives. If a primitive is missing or wrong, FAIL and 
 ## Sound layer (bed + SFX) — when `audio-cues.json` exists
 
 Music+SFX is a SECOND audio track you ADD; it consumes the reconciled timeline and changes no cue length. Two halves, different owners of the frame:
+
+> **Every key in `audio-cues.json` is already verified to resolve.** Wave 3c (`_logs/sound-asset.md`) confirmed each `bed` / `sting` / `sfx` key maps to a real WAV in the curated library (`public/audio/_beds|_stings|_sfx/`), and the `<LessonBgmLayer>` / `<LessonSfxLayer>` kit resolves the key string itself. **Pass the key through verbatim — do NOT locate, open, or verify the `.wav`, and NEVER search `node_modules`, `@studio/*`, or the filesystem for an audio asset.** The key IS the API; hunting for the file is the exact wasted spelunk this note prevents.
 
 - **Bed = mechanical.** In the Complete wrapper, render `<LessonBgmLayer bed={audioCues.bed} windows={spansToWindows(voiceoverSpans)} totalFrames={durationInFrames} />`. The duck envelope + 0.75s edge fades come from `bedVolume` — you wire it, you don't tune it. If `audioCues.toneSafe`, the bed key is already a flat pad; do NOT add a melodic sting under narration. See `CAPABILITIES.md#lesson-music-bed`.
 - **SFX = you own the frame.** For each row in `audioCues.sfx`, build an `SfxEvent` whose `fromFrame` is `cues[row.cue].startFrame + <named layout.ts offset>` — the SAME offset the triggering motion uses (a `pop` lands on its `<PopIn>`'s entrance frame; `count`+`perStep` emits one `tick` per counted item at each step frame, with ascending `semitones` if `risingPitch`). Pass the assembled array to `<LessonSfxLayer events={sfxEvents} />`. NEVER a frame literal. See `CAPABILITIES.md#lesson-sfx-layer`.
