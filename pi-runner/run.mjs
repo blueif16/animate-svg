@@ -69,6 +69,13 @@ loadDefaults();
 //                    Default = ROOT.
 // PI_RUNNER_WORKFLOW path to the workflow .js. Relative paths resolve vs ROOT.
 // PI_RUNNER_UNTIL    optional default for --until (e.g. an early phase during bring-up).
+// PI_RUNNER_PROVIDER optional default provider the driver passes (--provider overrides). Default
+//                    "cp". Set it (e.g. "minimax") to pin THIS repo's model lane once in wiring,
+//                    instead of typing --provider every run. The named provider must exist in pi's
+//                    ~/.pi/agent/models.json. Verify the resolved model before a real run.
+// PI_RUNNER_MODEL    optional default model the driver pins (--model overrides; checked BEFORE the
+//                    provider-specific PI_CP_MODEL). Empty → pi uses the named provider's first/default
+//                    model. Set it (e.g. "MiniMax-M3") to pin THIS repo's model alongside PI_RUNNER_PROVIDER.
 // PI_RUNNER_NODE_TIMEOUT  optional default node hard-kill seconds (--node-timeout overrides).
 //                    Set generously: heavy nodes (long TTS / build / render steps) run long on a
 //                    cheap coding-plan model. Default 1800 (30 min); 600 was too tight.
@@ -87,7 +94,7 @@ const WORKFLOW = resolveFrom(BASE_ROOT, process.env.PI_RUNNER_WORKFLOW, path.joi
 // ==========================================================================================
 
 function parseArgs(argv) {
-  const a = { until: process.env.PI_RUNNER_UNTIL || "all", provider: "cp", dryRun: false, wfArgs: {} };
+  const a = { until: process.env.PI_RUNNER_UNTIL || "all", provider: process.env.PI_RUNNER_PROVIDER || "cp", dryRun: false, wfArgs: {} };
   const setRun = (v) => { a.run = v; if (a.wfArgs.lessonId === undefined) a.wfArgs.lessonId = v; if (a.wfArgs.id === undefined) a.wfArgs.id = v; };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
@@ -115,7 +122,7 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const model = args.model || process.env.PI_CP_MODEL || ""; // empty → pi uses the provider's default model
+const model = args.model || process.env.PI_RUNNER_MODEL || process.env.PI_CP_MODEL || ""; // empty → pi uses the provider's default model
 // Provider/credential/model come from pi's OWN global config (~/.pi/agent/models.json); NO provider
 // extension is loaded by default. --extension stays available only for a provider that needs a
 // custom API implementation or OAuth flow (then pi loads it via -e).
