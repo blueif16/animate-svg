@@ -186,11 +186,12 @@ Use the matching skill at each step:
 
 ## Skill ownership
 
-Three locations, one canonical home per skill (every entry in `~/.claude/skills/` is a symlink — `ls -la ~/.claude/skills/<name>` shows the target):
+Four locations, one canonical home per skill (every entry in `~/.claude/skills/` is a symlink — `ls -la ~/.claude/skills/<name>` shows the target):
 
 - **`animation-test/.agents/skills/`** — owns kids visual taste and lesson-pipeline skills (`lesson-pedagogy`, `kids-eye`, `early-childhood-visual-taste`, `visual-discipline`, `complete-video-pipeline`, `lesson-*`, `lesson-sound-design`, `remotion-lesson-composer`, `sketch-explainer-layer`).
 - **`shared-3d/.agents/skills/`** — owns kit skills (`three-effects-composition`, `three`, `three-effects-registry`). Theme-agnostic — references kids taste but doesn't bake it in.
 - **`vlog_test/.agents/skills/`** — owns render-lab/tech taste and vlog production skills.
+- **`shared-harness/.agents/skills/`** (git-versioned) — owns project-agnostic harness skills (`capability-registry-harness`, with copy-paste `templates/`). Instantiated per project (this repo: `remotion-svg-primitives/scripts/registry/` + `src/capabilities/schema.ts`); project learnings flow BACK into the skill's optimization log, never fork it.
 
 Edit at the symlink target. Never duplicate kit content into a consumer skill, or kids content into the kit/vlog.
 
