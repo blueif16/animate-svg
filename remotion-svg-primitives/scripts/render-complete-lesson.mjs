@@ -249,19 +249,57 @@ const main = () => {
   ]);
   probe(output);
 
-  // Master loudness — normalize the mix to -16 LUFS / -1 dBTP (single-pass
-  // loudnorm, video copied so it stays byte-stable). Deterministic 2nd pass.
-  // Non-fatal: skip silently if ffmpeg is unavailable or there is no audio.
+  // Master loudness — normalize the mix to -16 LUFS / -1 dBTP via a TRUE
+  // deterministic 2-pass loudnorm: pass 1 measures the master, pass 2 applies
+  // LINEAR gain from the measured values (video copied so it stays
+  // byte-stable), then a VERIFY re-measure prints the final file loudness.
+  // NOTE on loudnorm print JSON: input_* IS the file being measured;
+  // output_* describes a hypothetical further pass — NEVER report output_*
+  // as the master's loudness.
+  // Non-fatal: skip loudly if ffmpeg is unavailable or there is no audio.
   // See docs/proposals/sound-layer-integration.md §6 (resolves music open-item O2).
   if (!args.skipLoudnorm) {
     const normalized = output.replace(/\.mp4$/u, ".norm.mp4");
+    const LOUDNORM = "I=-16:TP=-1.0:LRA=11";
+    const measureLoudness = (label, file) => {
+      console.log(`\n== ${label}`);
+      const startedAt = Date.now();
+      try {
+        const res = spawnSync(
+          "ffmpeg",
+          [
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            file,
+            "-af",
+            `loudnorm=${LOUDNORM}:print_format=json`,
+            "-f",
+            "null",
+            "-",
+          ],
+          { encoding: "utf8" },
+        );
+        if (res.status !== 0) {
+          throw new Error(
+            `ffmpeg loudnorm measure failed (${res.status}): ${(res.stderr || "").slice(-400)}`,
+          );
+        }
+        const text = `${res.stdout ?? ""}${res.stderr ?? ""}`;
+        const json = text.slice(text.lastIndexOf("{"), text.lastIndexOf("}") + 1);
+        return JSON.parse(json);
+      } finally {
+        stepTimings.push({ step: label, ms: Date.now() - startedAt });
+      }
+    };
     try {
-      run("Loudnorm (-16 LUFS / -1 dBTP)", "ffmpeg", [
+      const m = measureLoudness("Loudnorm pass 1 (measure)", output);
+      run("Loudnorm pass 2 (-16 LUFS / -1 dBTP, linear)", "ffmpeg", [
         "-y",
         "-i",
         output,
         "-af",
-        "loudnorm=I=-16:TP=-1.0:LRA=11",
+        `loudnorm=${LOUDNORM}:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
         "-c:v",
         "copy",
         "-ar",
@@ -269,6 +307,11 @@ const main = () => {
         normalized,
       ]);
       fs.renameSync(normalized, output);
+      const v = measureLoudness("Loudnorm verify (re-measure)", output);
+      console.log(
+        `Loudnorm verified: I=${v.input_i} LUFS, TP=${v.input_tp} dBTP ` +
+          `(target -16 LUFS / -1 dBTP; these input_* numbers ARE the master's loudness)`,
+      );
     } catch (error) {
       console.warn(`Loudnorm skipped: ${error.message || error}`);
       try {

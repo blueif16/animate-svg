@@ -472,7 +472,7 @@ const rRender = run('render') ? await agent([
   `INPUT: ${REPO}/${P.pipeline} ; the composed scene + ${P.timeline} ; the frozen ${P.voiceWav}.`,
   `STEP 1 — render (voice frozen from W3a; the script auto-skips voice when the timing module exists, but pass --skip-voice to be explicit): (cd ${REPO} && RENDER_SCALE=${renderScale} npm run lesson:render -- --config ${P.pipeline} --skip-voice). This auto-builds the contact sheet at the end.`,
   'STEP 2 — a post-render ffmpeg loudnorm pass normalizes the master to -16 LUFS / -1 dBTP (deterministic 2nd pass; it runs inside lesson:render unless --skip-loudnorm). For a fast scale<1 iteration you MAY pass --skip-loudnorm, but the final 1.0 render must be normalized.',
-  `OUTPUT: ${REPO}/${P.mp4} ; ${REPO}/${P.contact} (+ contact json) ; ${REPO}/${P.bbox}. Report ffprobe WxH/fps/frames/duration + measured loudness.`,
+  `OUTPUT: ${REPO}/${P.mp4} ; ${REPO}/${P.contact} (+ contact json) ; ${REPO}/${P.bbox}. Report ffprobe WxH/fps/frames/duration + the script's printed "Loudnorm verified" loudness (in any loudnorm print JSON, input_* IS the file; output_* is a hypothetical further pass — NEVER report output_* as the master's loudness).`,
   contract({ artifacts: [P.mp4, P.contact, P.bbox], owns: [out], readScope: codeScope, note: 'everything generated lands under out/<id>/.' }),
 ].join('\n'), { label: 'W5 render', phase: 'Render', agentType: 'claude', schema: NODE_RESULT }) : (log(`W5 ${skip('render')}`), null)
 
