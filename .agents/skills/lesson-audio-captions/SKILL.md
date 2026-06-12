@@ -52,11 +52,32 @@ Concrete illustration (this lesson is 分与合, a part–whole bond — read th
 
 (For other relation kinds the same shape holds: a comparison says the full claim `六比五多一` ✅, not a stranded `多一` ❌; an L2 greeting beat says the whole utterance `Hello!` / `跟我说：Hello`, where the lone word IS the complete utterance.)
 
-The lone-word carve-out above is the special case where the target IS a complete utterance on its own ("Hello"); a relation is not — speaking its terms without the whole it binds is the broken-fragment defect. If pedagogy/storyboard already state the relation as a complete utterance, carry it verbatim; never compress it to the bare terms to save characters.
+The lone-word carve-out above is the special case where the target IS a complete utterance on its own ("Hello"); a relation is not — speaking its terms without the whole it binds is the broken-fragment defect. If pedagogy/storyboard already state the relation as a complete utterance, carry it verbatim; never compress it to the bare terms to save characters. **"Carry it verbatim; never compress" means never DROP a term the relation binds to save chars — it does NOT mean the terse template IS the target. A complete-but-flat line is not finished: the finalized line must still pass `## Register` below.**
 
-**Read-aloud self-check (every cue, before you finalize):** read each `narration` line out loud as if you were the teacher. If it is not a sentence a person would actually say — a fragment, a dangling verb, a missing term the relation binds, scrambled order — it is broken; rewrite it complete. A line that only passes because the picture "fills in" the missing term still fails: the spoken line itself must stand.
+**Read-aloud self-check (every cue, before you finalize):** read each `narration` line out loud as if you were the teacher. If it is not a sentence a person would actually say — a fragment, a dangling verb, a missing term the relation binds, scrambled order — it is broken; rewrite it complete. A line that only passes because the picture "fills in" the missing term still fails: the spoken line itself must stand. The same read-aloud now confirms BOTH completeness AND register: that it sounds like a warm teacher speaking to a child, not a label being read — and that no single sentence-template is stamped across multiple cues (see `## Register` below).
 
 **Place a syncable target at the HEAD of its cue, never buried at the tail.** The composer can only anchor a target's visual reveal (the gesture or swell that fires on the word) to `cue.startFrame + a small offset`, and the bilingual ASR timestamps only the carrier-language tokens, **not** an embedded L2 target — so the target's true spoken onset is invisible to the timeline. If a target sits at the END of its cue's line — schematically `<carrier framing>：<TARGET>`, where the carrier runs several seconds first — the picture fires the reveal seconds before the mouth says it (the desync a viewer notices). So when a cue's target must land on its animation: **lead the cue's narration with the target** (the L2 word inside the first ~0.5s, any framing/gloss after), **or** give the target its OWN short cue (the carrier framing becomes a separate preceding beat). Keep a syncable target's spoken onset within ~0.5s of its cue start. A long carrier sentence + a tail-buried target in one cue IS the desync bug — split it (this pairs with the storyboard giving such a target its own cue, like an echo cue). A pure-framing carrier line with no target to land can sit anywhere; only the target's onset is load-bearing.
+
+## Register — the teacher's voice
+
+**Completeness is necessary but NOT sufficient.** A line that is complete + on-budget but flat is not done. Narration must sound like a warm teacher speaking TO a 4–6-year-old, not a label being read aloud. The robotic stamp — same sentence frame repeated across cues, 书面语 stiffness, a procedure announced at the content instead of an invitation to the child — is a NAMED defect this section exists to kill.
+
+**Persona.** Default = a warm, encouraging teacher voice: second person, gentle, talking to one small child. A lesson MAY override the persona via a brief-level `**Teacher.**` field (mirrors how `**Style.**` works); absent that field, use the warm default. The persona is a MANNER, never a script — it is topic-agnostic and reused verbatim across every lesson.
+
+**The five register laws** (general rule + a tiny SHAPE illustration — never a copyable line):
+
+1. **Speak TO the child, not AT the content.** Direct address — lead with an invitation or a look-hook (shape: `我们一起…` / `你看…` / `猜猜看…`), not a third-person statement of fact.
+2. **Hand the thinking over with a guiding question** at least once per teaching arc — elicit, don't only declare (shape: `你发现了什么？` / `你是怎么知道的？` / `谁来告诉我？`).
+3. **State the reverse / the insight in your OWN warm words** — a small discovery, never a cloned mirror clause of the forward line (shape: the recombine after a split is a `抱在一起又变回…` moment, not a stamped second sentence).
+4. **Vary every repeated beat — identical template across N cues is a NAMED defect (the "stamp").** Same pedagogy, fresh connective/framing each time (shape: `再看…` / `这次最特别…` / `还可以这样…`). Stamping one sentence frame across 3 cues is the canonical failure this section exists to kill.
+5. **Short, concrete, positive.** Natural spoken particles where a real teacher would (shape: `呀` / `啦` / `吧`); never 书面语 stiffness, never an abstract framing where a concrete one fits.
+
+**Orthogonality guard (critical — do not let warmth break the existing discipline).** Register is layered ON TOP of the complete-utterance rule, the ASR-safety rules, the no-drone / no-ellipsis rule, and the length budget. Warmth NEVER licenses dropping a term the relation binds, re-introducing a `……` drone, breaking ASR-safety, or blowing the budget. A line must be warm AND complete AND ASR-safe AND on-budget; spoken particles add ~0 chars and don't move the budget. (The read-aloud self-check above now confirms BOTH completeness and register.)
+
+**Exemplars are SHAPE, not copy — read these as SHAPE; never copy a phrase into a lesson.** Two before/after pairs, purely to illustrate the transform:
+
+- A stamped relation → a warm, varied version. ❌ `<whole>可以分成<a>和<b>。<a>和<b>合成<whole>。` (×3, identical) → ✅ first split: a look-hook + the split, then the recombine as a `抱在一起又变回…` discovery; second split: `再看…还可以这样分…` with a *different* image (`手拉手`); third: genuine affect (`这次最特别啦…`). Same pedagogy, three fresh frames.
+- A bare quiz → a guiding question handed to the child. ❌ `<whole>可以分成几和几？` → ✅ `那现在，谁来告诉我——<whole>可以分成几和几呀？`
 
 ## ASR risk flags
 
@@ -100,3 +121,4 @@ If `pedagogy.md`/`storyboard.md` mark a cue as reinforcement, the narration real
 - ASR risk flags + proposed mitigations.
 - Any narration-leakage fixes you made vs the storyboard draft.
 - Read-aloud confirmation: one line stating you read every cue's narration aloud and each is a complete, grammatical utterance that names every term its relation binds — no stranded token, no dangling verb, no dropped term (e.g. a whole, a result, a reply) — naming any line you rewrote from a fragment to a complete sentence.
+- Register confirmation: one line stating each cue's narration passes the five register laws (`## Register`) — warm teacher voice, no stamped template across cues — and naming any cue you de-stamped or warmed from a flat draft.

@@ -134,6 +134,7 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 
 **Acceptance criteria**
 - Every narration string is grammatical, complete, and well-formed in its language: correct word order, the whole subject/object/result present, no truncated or fragmentary lines, and pedagogically faithful to that cue's discovery (a fluent human reads each line aloud and it makes sense as a teacher's spoken sentence).
+- Beyond complete, every line is in **warm child-directed teacher register** (the `## Register` law): speaks TO the child (direct address / a look-hook, not a third-person statement at the content), hands the thinking over with at least one guiding question per teaching arc, states the reverse/insight in its own warm words (not a cloned mirror clause), VARIES every repeated beat (no single sentence-template stamped across cues), and uses natural spoken Mandarin particles — never flat 书面语. A complete-but-flat line is not finished.
 - Exactly one row per cue in BOTH files and they agree: the cue IDs, narration text, and caption text in audio-captions.md match the corresponding fields in script-cues.json one-to-one (no cue in one file but missing in the other, no divergent wording).
 - Each caption is the spoken narration verbatim (broken only at natural phrase boundaries when long) — never a paraphrase, never a separate authored sentence, never content the voice does not say.
 - Narration honors the leakage rule: the narrator NAMES the action/unit/target and lets the picture deliver any count, relation, or reveal — except a genuine L2/utterance/acquisition target, which the narration MUST voice because hearing it is the teaching act (the §4 carve-out).
@@ -144,6 +145,7 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 
 **Red flags**
 - Broken, backwards, or incomplete narration — fragments, dropped words, scrambled order, or a missing whole/result (e.g. an announce line stating the parts but omitting the number being split, or a conserve line omitting the recombined whole) — and captions that faithfully mirror the broken narration.
+- **Robotic / stamped register** — the same sentence-template repeated across N cues (the canonical `<whole>可以分成<a>和<b>。<a>和<b>合成<whole>` ×3 stamp), 书面语 stiffness, a procedure announced at the content instead of direct address to the child, or an unnatural construction a real teacher would never say aloud (e.g. `我们来分六`). Complete but lifeless still fails.
 - Caption diverges from spoken narration: paraphrased, summarized, translated, or carrying content the voice never says (or narration with no matching caption).
 - script-cues.json and audio-captions.md disagree: different cue set, mismatched wording, or a cue in one and absent from the other; missing required fields (id/narration/phrase/caption).
 - Leakage: the narration announces the count/answer/relation the visual is meant to reveal — or, conversely, an L2/sound/word acquisition target is Chinese-only'd / paraphrased away instead of being voiced.
