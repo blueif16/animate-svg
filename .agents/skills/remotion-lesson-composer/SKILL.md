@@ -116,6 +116,8 @@ Read `visual-design.md` for the identity-invariant line. Common invariants for e
 
 The composer enforces these by structure: one `<StickGroup count={10}>` mounted at the root of the scene, parameterized per cue by its `layout` and `revealUpTo` props. NOT ten `<StickGroup>`s per cue.
 
+**Identity is also temporal.** The persistent teaching unit fades in ONCE at its first mount and holds full opacity across every later cue boundary; each cue's motion starts from the PREVIOUS cue's settled positions. A per-cue opacity-0 re-entrance (each motion window ramping from 0) visually destroys and recreates the unit — the canvas plays empty under live narration for the pre-motion stretch of every cue (shipped failure: dots invisible through every conserve cue's bond phase and the reveal cue's opening). The manifest's `opacityAt` must mirror the scene's actual opacity — a manifest that says 1 while the scene renders 0 hides the blink from every check.
+
 ## Intro card choreography (don't stack the cast on the title)
 
 Every lesson opens with a topic-intro beat (title + section + KP teaser). The classic failure — shipped and caught only by a human — is rendering the **intro card and the teaching cast in the same instant at overlapping positions**, so the figures sit on top of the title and hide its letters.
