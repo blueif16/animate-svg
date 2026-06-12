@@ -72,6 +72,10 @@ const main = async () => {
         // caption vs phrase per cue; present on AlignedLessonCue.
         caption: c.caption ?? null,
         phrase: c.phrase ?? null,
+        // design-intent acquisition flag (set by the author on a read-along /
+        // pronunciation beat); lets caption-redundancy exempt a read-along
+        // target (caption == the spoken phrase BY DESIGN) from the WARN.
+        emphasis: c.emphasis ?? false,
       })),
       zones: manifest.zones ?? null,
       manifestByFrame,
