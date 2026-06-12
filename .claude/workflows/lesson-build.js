@@ -206,12 +206,16 @@ function discipline(extra) {
 // OS-enforced under --sandbox, inert otherwise) — EVERY producing node declares one (same tier as owns).
 // `note` = an optional extra owned-path caveat. Full spec:
 // ~/.claude/skills/transform-workflow-to-pi/reference/artifact-contract.md.
-function contract({ artifacts = [], owns = [], readScope = [], note = '', lint = false }) {
+function contract({ artifacts = [], owns = [], readScope = [], note = '', lint = false, log = '' }) {
   const abs = (p) => `${REPO}/${p}`
   const code = artifacts.filter((p) => /\.tsx?$/.test(p)) // the .ts/.tsx artifacts this node is on the hook to lint
+  // Tier-2 log is a REQUIRED artifact (observability law), not a courtesy: a node that skips it
+  // must fail the driver's filesystem check (kptest-fenyuhe-six W3.5 wrote zero log and went ok).
+  // A CONCRETE per-node name also kills the `<wave>.md` drift (W2a.md vs w2a-visual-design.md).
+  const required = log ? [...artifacts, `${P.logs}/${log}`] : artifacts
   return [
     'OUTPUT CONTRACT — you are DONE only when EVERY file below exists and is non-empty at EXACTLY its path. Write NOTHING outside the owned paths (never another lesson\'s files). If you cannot produce them, set status="blocked" and say why — do NOT exit clean (an empty or wrong-path artifact set is a FAILURE, not an ok).',
-    `DRIVER-ARTIFACTS: ${artifacts.map(abs).join(' ')}`,
+    `DRIVER-ARTIFACTS: ${required.map(abs).join(' ')}`,
     `DRIVER-OWNS: ${[...(owns.length ? owns : artifacts), `${P.logs}/*`].map(abs).join(' ')}`, // every node may always write its own _logs/<wave>.md (observability) — never over-block it
     // READ-SCOPE — the node's full legitimate read surface (its own data/out dirs + the shared
     // skills/catalog roots it reads). ABSOLUTE roots joined AS-IS (NOT abs()-prefixed — they span
@@ -409,7 +413,7 @@ const rReconcile = run('reconcile') ? await agent([
   `COMPREHENSION-FLOOR ADVISORY (advisory, NEVER blocking — like lesson:check): if ${REPO}/${P.storyboard} declares an \`exposures\` ledger and the lesson has acquisition targets, compare per-target counts against the lesson-pedagogy §8 floor (≥6–10 spaced exposures; ≥3–5s wait-time per echo) and the reconciled per-cue durations. If a target lands UNDER its floor, record a WARN in this node's \`issues\` + \`pipelineFindings\` (e.g. "acquisition target 'I'm' has 4 exposures < §8 floor"). Report the emergent total length as-is — never score it against a number. If the ledger is absent, print \`SKIP: no exposures ledger\` — do not silently pass.`,
   skipSmoke ? 'ANIMATIC GATE: skipped (args.skipSmoke).' : `ANIMATIC GATE (pre-W4): (cd ${REPO} && npm run lesson:animatic -- --config ${P.pipeline}) — render the cue-boundary animatic strip + waveform; confirm each cue's clip sits inside its window before composing.`,
   `OUTPUT: ${REPO}/${P.timeline} carries the ${camel}Cues + ${camel}VoiceClips arrays.`,
-  contract({ artifacts: [P.timeline], readScope: codeScope, lint: true }),
+  contract({ artifacts: [P.timeline], readScope: codeScope, lint: true, log: 'w3-5-reconcile.md' }),
 ].join('\n'), { label: 'W3.5 reconcile', phase: 'Reconcile', agentType: 'claude', schema: NODE_RESULT }) : (log(`W3.5 ${skip('reconcile')}`), null)
 
 // ===========================================================================
