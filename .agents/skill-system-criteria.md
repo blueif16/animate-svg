@@ -185,7 +185,8 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 **Purpose.** The frozen, ASR-verified per-cue voice clips + exact narrationFrames that lock the lesson's audio truth — every downstream wave reads this timing and never re-records.
 
 **Acceptance criteria**
-- TRANSCRIPT MATCHES SCRIPT, CUE BY CUE: a human reading transcriptText against the script confirms each cue's spoken words are present and correct — no truncated, dropped, swapped, or extra words. This is the verification this node exists to do and the gate for freezing.
+- EACH CUE'S SPOKEN WORDS MATCH THE SCRIPT, CUE BY CUE: no truncated, dropped, swapped, or extra words. Verified from the ACTUAL audio — per-clip ASR coverage of the expected phrase, plus a human spot-listen on any low-coverage clip. (The dedicated-TTS model emits NO `transcriptText` self-report, so coverage is read from ASR on the rendered WAV, never a model self-report.) This is the acquisition-quality bar the node protects — NOT the freeze gate (see next).
+- TRUNCATION IS STRUCTURALLY PREVENTED, NOT GATED: the dedicated-TTS model (`gemini-3.1-flash-tts-preview`, single-payload `generateContent`) cannot cut mid-utterance, so full clips are the structural default; a per-cue truncation ADVISORY (per-clip ASR coverage + cohort-relative duration) is a NON-BLOCKING canary that surfaces residue for a spot-listen. The HARD freeze gate is drone / empty-short / dead-air only — a noisy ASR/cohort backstop must never block a clean render.
 - PER-CUE ALIGNMENT CONFIDENCE IS HONEST AND HIGH: every cue carries a real matchScore/confidence; the reported status reflects the WORST cue, not the best. Low-evidence cues are re-rolled, re-phrased, or carry an explicit written justification — never silently accepted.
 - CUE FRAME WINDOWS ARE MONOTONIC AND DISTINCT: startFrame/endFrame increase cue-over-cue with no two cues collapsed onto the same window and no overlap; each window plausibly contains its own words.
 - CLIPS ARE TRIMMED TO REAL SPEECH: each narrationFrames equals the trimmed clip length (TTS lead-in/tail removed); neither padded with dead air nor clipped mid-word; values sane for the caption length at the calibrated rate.
@@ -195,7 +196,7 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - A VERIFICATION AUDIT NOTE EXISTS: `_logs/voice.md` records the per-cue transcript-vs-script check, any re-rolls/edits, and the final accept decision — showing the audio was verified, not trusted, before freeze.
 
 **Red flags**
-- AUDIO FROZEN ON A FALSE PASS: node reports ok while the transcript is clearly truncated/wrong vs the script — locks broken speech into every downstream wave.
+- A TRUNCATED CLIP FROZEN INTO THE TIMELINE: a cue's clip cut mid-phrase (judged from the rendered WAV / its per-clip ASR coverage, not a model self-report) accepted and frozen — locks broken speech into every downstream wave. With the dedicated-TTS cure this should not occur; if the advisory canary fires on a genuinely cut clip, re-roll — never freeze it.
 - STATUS LAUNDERED FROM THE BEST CUE: an overall ok hiding multiple low-evidence cues, or a matchScore far below threshold accepted with no re-roll and no justification.
 - COLLAPSED / SHARED FRAME WINDOWS: several cues sharing one startFrame/endFrame — the aligner found no distinct evidence and the timing is fiction.
 - BAKED DEAD-AIR OR BAKED PAUSE: silence padded inside a clip, or a learner-response pause encoded as in-clip silence instead of a typed gap.
