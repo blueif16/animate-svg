@@ -43,6 +43,10 @@ const wrapEnd = Math.min(wrapStart + WRAP_DURATION_FRAMES, bundleActionEnd);
 
 Same rule for sketch marks: every TeacherMark's `drawProgress` is interpolated against `[cueStart + relativeOffset, cueStart + relativeOffset + duration]`, then clamped against `cueEnd`. No `drawStart: 891` literals in the scene file.
 
+## Sketch-overlay numbers are consumed VERBATIM
+
+`sketch-overlay.md` is a numeric contract, not a suggestion. Every onset, duration, and anchor in a mark's spec is consumed VERBATIM (as the cue-relative value it states) — the composer never re-derives or "corrects" a spec number from its own reading of the motion phases. If a spec number disagrees with your layout's motion plan, that disagreement is a FLAGGED pipelineFinding stated in the report-back, never a silent substitution (shipped failure: spec onset 105 → the scene shipped `UNDERLINE_REL_START = 60` with a comment claiming 75 — three mutually contradictory numbers in one line — so the underline drew mid-motion under dots still in flight instead of on the settled state). When the spec marks a manifest `marks` entry as REQUIRED, omitting it is a contract breach — the linear pre-filter is blind to an unregistered mark.
+
 ## Cue-driven choreography
 
 Every cue has `startFrame`, `endFrame` from the **reconciled** timeline (Wave 3.5 — see `docs/pipeline-architecture.md`). In v4 **cue-anchored audio** the reconciled cue length is `max(narrationFrames + gapFrames, visualMotionFrames) + tail`, and each cue's voice is its OWN measured clip mounted at `cue.startFrame` (the timeline also exports a `<X>VoiceClips` array). Motion within a cue is parameterized as named offsets relative to cue boundaries, never absolute frames.
