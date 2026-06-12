@@ -67,6 +67,9 @@ const main = async () => {
       // not declare it serialize to `undefined` and the downstream check stays a
       // no-op, so this is backward-compatible.
       zones: manifest.zones ?? null,
+      // Manifest-declared intentional element-id overlap pairs (allowedOverlaps).
+      // Zone tags never grant a collision exemption — only these pairs do.
+      allowedOverlaps: manifest.allowedOverlaps ?? null,
       keyFrames,
     }),
   );

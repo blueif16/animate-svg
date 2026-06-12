@@ -113,16 +113,26 @@ const ALLOWED_OVERLAPS = new Set([
   "labels:decoration",
   "decoration:marks",
   "marks:decoration",
-  // APEX-STACK: whole-number card (objects) over the top row of its own
-  // decomposition column (labels) is intentional fen-he layout (ruling
-  // 2026-05-29). Keep in sync with manifestTypes.ts ALLOWED_OVERLAPS.
-  "objects:labels",
-  "labels:objects",
+  // APEX-STACK (objects:labels) is NO LONGER blanket-exempt — the predicted
+  // misdetection class appeared (kptest-fenyuhe-six question-text-on-dots went
+  // vacuously green). Intentional overlaps are declared per element-id PAIR on
+  // the manifest (`allowedOverlaps`), forwarded by _measured-extract.ts.
+  // Keep in sync with manifestTypes.ts ALLOWED_OVERLAPS.
   "decoration:decoration",
 ]);
 const isZoneOverlapAllowed = (a, b) => {
   if (a === "caption" || b === "caption") return true;
   return ALLOWED_OVERLAPS.has(`${a}:${b}`);
+};
+// Manifest-declared intentional overlaps: element-id pairs, order-insensitive.
+// A zone tag never grants a collision exemption — only an explicit pair does.
+const buildAllowedPairSet = (pairs) => {
+  const set = new Set();
+  for (const [a, b] of pairs || []) {
+    set.add(`${a}:${b}`);
+    set.add(`${b}:${a}`);
+  }
+  return set;
 };
 
 // ---------------------------------------------------------------------------
@@ -372,6 +382,7 @@ const main = async () => {
   const extracted = extractMeasured(camelId, peakFrames);
   const width = extracted.width ?? 1280;
   const height = extracted.height ?? 720;
+  const allowedPairs = buildAllowedPairSet(extracted.allowedOverlaps);
 
   // --- SSR: bundle once, renderStill each peak frame with __measure flag -----
   const sharpMod = await import("sharp");
@@ -508,6 +519,7 @@ const main = async () => {
           const b = list[j];
           if (a.opacity <= OPACITY_THRESHOLD || b.opacity <= OPACITY_THRESHOLD) continue;
           if (isZoneOverlapAllowed(a.zone, b.zone)) continue;
+          if (allowedPairs.has(`${a.id}:${b.id}`)) continue; // manifest-declared intentional pair
           const overlap = intersectArea(a.bbox, b.bbox);
           if (overlap <= 0) continue;
           const minArea = Math.min(bboxArea(a.bbox), bboxArea(b.bbox));

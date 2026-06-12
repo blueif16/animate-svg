@@ -50,6 +50,10 @@ export type LessonManifest = {
   keyFrames: readonly KeyFrame[];
   elements: readonly SceneElement[];
   zones?: Partial<Record<ZoneName, Bbox>>;
+  // Intentional element overlaps, declared per element-id pair with the
+  // manifest (e.g. the apex-stack whole-card on its own decomposition column).
+  // Zone tags NEVER grant a collision exemption.
+  allowedOverlaps?: ReadonlyArray<readonly [string, string]>;
 };
 
 // Which zone pairs may overlap without being flagged.
@@ -77,15 +81,11 @@ const ALLOWED_OVERLAPS = new Set<string>([
   "labels:decoration",
   "decoration:marks",
   "marks:decoration",
-  // APEX-STACK (objects ∩ labels): a whole-number card (objects) sitting
-  // directly above/touching the top row of its own decomposition column
-  // (labels) is intentional fen-he layout, not crowding — e.g. fen-yu-he's
-  // "5" card over column-row-0. Allowed by explicit ruling (2026-05-29).
-  // TRADEOFF: this also exempts a label genuinely covering a countable
-  // elsewhere; if that misdetection class appears, narrow this to an
-  // element-id allow-list rather than a blanket zone pair.
-  "objects:labels",
-  "labels:objects",
+  // APEX-STACK (objects ∩ labels) is NO LONGER blanket-exempt. The predicted
+  // misdetection class appeared (kptest-fenyuhe-six: question text ON the
+  // dots, tagged labels:objects, both collision passes vacuously green) — an
+  // intentional overlap (e.g. the apex-stack ruling 2026-05-29) is now
+  // declared per element-id PAIR via LessonManifest.allowedOverlaps.
   // decoration is explicitly non-load-bearing chrome (see ZoneName) — it may
   // overlap itself freely. Every OTHER same-zone pair is now flagged.
   "decoration:decoration",

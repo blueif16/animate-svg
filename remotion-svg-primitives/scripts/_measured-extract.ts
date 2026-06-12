@@ -78,6 +78,9 @@ const main = async () => {
         emphasis: c.emphasis ?? false,
       })),
       zones: manifest.zones ?? null,
+      // Manifest-declared intentional element-id overlap pairs (allowedOverlaps).
+      // Zone tags never grant a collision exemption — only these pairs do.
+      allowedOverlaps: manifest.allowedOverlaps ?? null,
       manifestByFrame,
     }),
   );

@@ -380,4 +380,9 @@ export const LESSON_MANIFEST: LessonManifest = {
     marks: ZONES.divider,
     caption: ZONES.caption,
   },
+  // APEX-STACK (explicit ruling 2026-05-29): the whole-number "5" glyph
+  // (objects) sits directly on the top row of its OWN decomposition column
+  // (labels) — intentional fen-he layout, not crowding. Declared per
+  // element-id pair; the former blanket objects:labels zone exemption is dead.
+  allowedOverlaps: [["glyph-whole", "column-row-0"]],
 };
