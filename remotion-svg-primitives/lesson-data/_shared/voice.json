@@ -5,7 +5,7 @@
   "genaiEntry": "/Users/tk/Desktop/Omniscience/node_modules/@google/genai/dist/node/index.mjs",
   "generationMode": "perCue",
   "maxClipSeconds": 6.5,
-  "model": "gemini-3.1-flash-live-preview",
+  "model": "gemini-3.1-flash-tts-preview",
   "promptTemplate": "请用温柔、清晰的语速完整朗读下面这一句教师旁白，面对6岁孩子。从第一个字一直读到最后一个字，每个字都发清楚，不要省略也不要重复任何字或词。语调亲切，节奏适中偏慢（不要太慢），像在给小朋友讲故事。绝对不要添加开场白、解释、编号、翻译、结尾或重复开头。只读一遍这一整句。\\n\\n{{script}}",
   "scriptField": "narration",
   "sherpaPython": "/Users/tk/Desktop/Omniscience/agent/.venv/bin/python",

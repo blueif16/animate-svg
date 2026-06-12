@@ -22,32 +22,56 @@
 //      The clip is loud, trimmed, and long enough to pass checks 1–3, but it is
 //      missing the END of the line — and it gets FROZEN. Two deterministic,
 //      language-GENERAL signals (no lesson content, no magic absolute rate):
-//        (a) TRANSCRIPT COVERAGE — tokenize the expected phrase AND the model's
-//            per-cue transcriptText self-report with voice.json's tokenPattern
-//            (CJK char OR latin word), then coverage = (expected tokens present,
-//            IN ORDER, in the transcript) / (expected token count). The model
-//            literally reports speaking fewer tokens — the strongest signal.
-//            If transcriptText is ABSENT (a dedicated-TTS model may omit it),
-//            (a) SKIPs and the gate falls back to (b) alone.
+//        (a) ASR COVERAGE (GENERATION-INDEPENDENT) — tokenize the expected phrase
+//            AND a per-cue transcription of what was ACTUALLY spoken, with
+//            voice.json's tokenPattern (CJK char OR latin word), then coverage =
+//            (expected tokens present, IN ORDER, in the transcription) / (expected
+//            token count). The transcription is sourced ONLY from signals that do
+//            NOT depend on the TTS model, in this precedence:
+//              1. PER-CLIP ASR — the gate ASRs each cue's OWN clip WAV (via the
+//                 sherpa config in voice.json + scripts/asr-clip-coverage.py).
+//                 ASR runs on the rendered audio regardless of which TTS produced
+//                 it, so this is the durable, principled "what was said" signal.
+//                 (coverageSource: "asr-clip")
+//              2. asr-alignment.json per-cue `asrText` — a FALLBACK used only when
+//                 per-clip ASR can't run. NOTE: the kit's whole-recording ASR
+//                 emits `asrText` as a window EXCERPT of one continuous transcript
+//                 (overlapping, weaker per cue), so it is a backstop, not the
+//                 primary. (coverageSource: "asr-align")
+//              3. gemini-voice.json transcriptText self-report — corroborator ONLY
+//                 when present (the Live path). The dedicated-TTS model DROPS it,
+//                 which is exactly why coverage no longer DEPENDS on it.
+//                 (coverageSource: "transcript")
+//            We deliberately do NOT just reuse asr-alignment's matchScore — that
+//            is a fuzzy window-fit ratio, not a measure of how much of the line
+//            was spoken; coverage is computed fresh from the transcription tokens.
 //        (b) DURATION SANITY — per-cue seconds-per-token vs the cohort: compute
 //            this lesson's OWN median s/char and flag a cue whose s/char is far
 //            below it (a clip much shorter than its peers for its length is cut).
 //            Self-calibrating per lesson + voice — no hard-coded rate. A loose
 //            absolute floor is kept only as a documented secondary backstop.
+//      Coverage is calibrated COHORT-RELATIVELY (ASR is imperfect even on a full
+//      clip, so a flat self-report floor would false-positive good cues): a cue
+//      trips coverage if its coverage is far below THIS lesson's own median ASR
+//      coverage (median × factor) OR below a loose absolute floor. No hard-coded
+//      per-lesson value — the cohort baseline self-calibrates per lesson + model.
 //      A cue is TRUNCATED if (a) trips OR (b) trips. This is the check the
 //      kptest-fenyuhe-six post-mortem added: 5/9 Mandarin cues were silently
 //      cut mid-phrase and frozen, invisible to checks 1–3 (matchScore is
 //      informational and nothing checked transcript-vs-script fidelity).
 //
 // Reads out/<id>/voice-clips.json (the generator manifest) + the per-cue clip
-// WAVs + (for check 4a) out/<id>/gemini-voice.json's per-cue transcriptText +
-// voice.json's tokenPattern. Advisory by contract (CLAUDE.md: "the check is advisory, not blocking")
+// WAVs + (for check 4a) per-clip ASR of those WAVs (else asr-alignment.json
+// asrText, else gemini-voice.json transcriptText) + voice.json's tokenPattern +
+// sherpa ASR config. Advisory by contract (CLAUDE.md: "the check is advisory, not blocking")
 // — it prints a loud PASS/FAIL banner and writes a JSON report, but never blocks
 // the build. A gate that cannot run prints `SKIP: <reason>` (never a silent
 // pass). Exit code is 0 unless `--strict` is passed.
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const SR_FALLBACK = 24000;
 const SILENCE_ABS = 180; // ~ -45 dB
@@ -59,11 +83,24 @@ const EDGE_SILENCE_MAX = 0.3; // trimmed clips should start/end on speech
 const MIN_CLIP_SECONDS = 0.25; // a cue with a phrase is always longer; near-zero = TTS silently failed to render it
 
 // --- TRUNCATION / COVERAGE (check 4) ---------------------------------------
-// (a) transcript coverage: the model must report speaking at least this
-//     fraction of the expected tokens (in order). A short phrase that drops its
-//     final token reads as ~0.8 coverage, so the floor sits just above that —
-//     low enough that a fully-spoken line (coverage 1.0) NEVER trips.
-const COVERAGE_FLOOR = 0.85;
+// (a) ASR coverage: the fraction of the expected tokens (IN ORDER) that the
+//     per-cue ASR transcription contains. Calibrated COHORT-RELATIVELY because
+//     ASR is imperfect even on a fully-spoken clip (a small Mandarin model drops
+//     ~10–25% of tokens on good audio), so a flat self-report-era floor (0.85)
+//     would false-positive good cues. A cue trips coverage if it falls FAR below
+//     this lesson's OWN median ASR coverage (median × factor) OR below a loose
+//     absolute floor. Both are self-calibrating / language-general — no lesson id
+//     and no per-lesson magic number.
+//     COVERAGE_COHORT_FACTOR: a cue whose coverage < cohortMedianCoverage × this
+//     is a truncation outlier relative to its peers (catches a cut even when the
+//     whole cohort's ASR is noisy and the absolute floor would be too strict).
+const COVERAGE_COHORT_FACTOR = 0.8;
+//     COVERAGE_ABS_FLOOR: a loose absolute floor. On the kptest-fenyuhe-six bad
+//     run the per-clip ASR coverages separated cleanly — truncated cues topped
+//     out at 0.60 and the worst GOOD cue sat at 0.75 — so a floor inside that
+//     (0.60, 0.75) gap flags every truncated cue with zero false-positives. We
+//     sit at 0.70 (mid-gap), tuned from REAL numbers, not a guess.
+const COVERAGE_ABS_FLOOR = 0.7;
 // (b) duration sanity: flag a cue whose seconds-per-token is below this fraction
 //     of the lesson's OWN cohort-median s/char. Self-calibrating per lesson +
 //     voice — NOT a hard-coded rate. A truncated clip is far shorter than its
@@ -75,7 +112,7 @@ const SCHAR_COHORT_FACTOR = 0.65;
 // already depressed. The cohort-relative test above is the real signal.
 const SCHAR_ABS_BACKSTOP = 0.18;
 // At least this many phrased cues are needed before the cohort median is a
-// trustworthy baseline; below it, fall back to the absolute backstop alone.
+// trustworthy baseline; below it, fall back to the absolute floor(s) alone.
 const MIN_COHORT_FOR_MEDIAN = 4;
 
 // Tokenizer: split on the SAME pattern the ASR/voice config uses, so the check
@@ -111,6 +148,94 @@ const loadTokenizer = (configPath) => {
     pattern,
     tokenize: (s) => (typeof s === "string" ? s.match(re) || [] : []),
   };
+};
+
+// Resolve voice.json and return its full parsed object (for the sherpa ASR
+// config) — same lookup the tokenizer uses, kept separate so each can fail
+// independently. Returns null if unreadable (→ per-clip ASR SKIPs).
+const loadVoiceJson = (configPath) => {
+  try {
+    const voiceJsonPath = configPath
+      ? path.join(path.dirname(configPath), "..", "_shared", "voice.json")
+      : path.join("lesson-data", "_shared", "voice.json");
+    if (fs.existsSync(voiceJsonPath)) {
+      return JSON.parse(fs.readFileSync(voiceJsonPath, "utf8"));
+    }
+  } catch {
+    /* fall through to null */
+  }
+  return null;
+};
+
+// The streaming ASR emits filler markers ("sil" silence, stray "s") as tokens
+// under the latin part of the token pattern. They are not spoken words, so they
+// must be stripped before coverage — otherwise a noisy "sil sil" stretch would
+// inflate `got` and a truncated clip could look covered.
+const ASR_JUNK_TOKENS = new Set(["sil", "s"]);
+const stripAsrJunk = (tokens) =>
+  tokens.filter((t) => !ASR_JUNK_TOKENS.has(t.toLowerCase()));
+
+// Per-clip ASR (generation-independent coverage source #1). ASRs each cue's OWN
+// trimmed clip WAV via the sherpa config in voice.json + the python sidecar.
+// Returns a Map<clipSrc, asrText> (asrText may be ""/null per clip), or null if
+// it cannot run (no sherpa config / python / assets) so the gate falls back.
+const runPerClipAsr = (voiceJson, clips, publicRoot) => {
+  const py = voiceJson?.sherpaPython;
+  const asr = voiceJson?.asr;
+  if (!py || !asr?.decoder || !asr?.encoder || !asr?.joiner || !asr?.tokens) {
+    return null;
+  }
+  const helper = path.join(path.dirname(fileURLToPath(import.meta.url)), "asr-clip-coverage.py");
+  if (!fs.existsSync(helper) || !fs.existsSync(py)) return null;
+
+  // Absolute clip paths the helper can ffmpeg-decode; skip any missing on disk.
+  const present = clips
+    .map((c) => ({ clipSrc: c.clipSrc, abs: path.resolve(publicRoot, c.clipSrc) }))
+    .filter((c) => fs.existsSync(c.abs));
+  if (present.length === 0) return null;
+
+  const spec = {
+    decoder: asr.decoder,
+    encoder: asr.encoder,
+    joiner: asr.joiner,
+    tokens: asr.tokens,
+    sampleRate: asr.sampleRate || 16000,
+    clips: present.map((c) => c.abs),
+  };
+  try {
+    const out = execFileSync(py, [helper, JSON.stringify(spec)], {
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const byAbs = JSON.parse(out);
+    const byClipSrc = new Map();
+    for (const c of present) byClipSrc.set(c.clipSrc, byAbs[c.abs] ?? null);
+    // Empty result object = helper ran but produced nothing usable → fall back.
+    return byClipSrc.size > 0 ? byClipSrc : null;
+  } catch {
+    return null;
+  }
+};
+
+// asr-alignment.json per-cue `asrText` (generation-independent coverage source
+// #2, a FALLBACK). The kit's whole-recording ASR emits this as a window excerpt
+// of one continuous transcript, so it is weaker per cue than per-clip ASR, but
+// still ASR-derived (not the model self-report). Returns Map<cueId, asrText>.
+const loadAlignmentAsr = (outDir) => {
+  const p = path.join(outDir, "asr-alignment.json");
+  if (!fs.existsSync(p)) return null;
+  try {
+    const j = JSON.parse(fs.readFileSync(p, "utf8"));
+    if (!Array.isArray(j.cues)) return null;
+    const m = new Map();
+    for (const c of j.cues) {
+      if (c?.id && typeof c.asrText === "string") m.set(c.id, c.asrText);
+    }
+    return m.size > 0 ? m : null;
+  } catch {
+    return null;
+  }
 };
 
 // In-order subsequence coverage: how many of `expected`'s tokens appear, in the
@@ -243,11 +368,19 @@ const main = () => {
   const publicRoot = "public";
   console.log(`\n== Audio gate (${manifest.clips.length} clips) — ${manifestPath}`);
 
-  // --- Check 4 setup: tokenizer + per-cue transcriptText self-report ---------
+  // --- Check 4 setup: tokenizer + GENERATION-INDEPENDENT coverage sources -----
   const tok = loadTokenizer(configPath);
-  // gemini-voice.json carries the model's per-cue transcriptText, newline-joined
-  // and POSITIONALLY aligned to manifest.clips (one line per clip, in order).
-  // Absent on a dedicated-TTS model that omits the self-report → coverage SKIPs.
+  const voiceJson = loadVoiceJson(configPath);
+
+  // Source #1 (preferred): per-clip ASR — the durable "what was said on THIS
+  // cue's clip" signal, independent of which TTS model produced the audio.
+  const clipAsrBySrc = runPerClipAsr(voiceJson, manifest.clips, publicRoot);
+  // Source #2 (fallback): asr-alignment.json per-cue asrText (window excerpt).
+  const alignAsrById = clipAsrBySrc ? null : loadAlignmentAsr(outDir);
+
+  // Source #3 (corroborator ONLY, if present): gemini-voice.json transcriptText
+  // — the Live model's self-report. The dedicated-TTS model DROPS it, which is
+  // why coverage no longer DEPENDS on it; we keep it only to corroborate.
   let transcriptLines = null;
   const geminiVoicePath = path.join(outDir, "gemini-voice.json");
   if (fs.existsSync(geminiVoicePath)) {
@@ -255,25 +388,35 @@ const main = () => {
       const gv = JSON.parse(fs.readFileSync(geminiVoicePath, "utf8"));
       if (typeof gv.transcriptText === "string") {
         const lines = gv.transcriptText.split("\n");
-        // Only trust positional alignment when the line count matches the clips.
         if (lines.length === manifest.clips.length) transcriptLines = lines;
       }
     } catch {
-      /* leave transcriptLines null → coverage (a) SKIPs, falls back to (b) */
+      /* leave transcriptLines null */
     }
   }
+
+  // The coverage source actually used (first available, in precedence order).
+  const coverageSource = clipAsrBySrc
+    ? "asr-clip"
+    : alignAsrById
+      ? "asr-align"
+      : transcriptLines
+        ? "transcript"
+        : null;
 
   const findings = [];
   let droneFails = 0;
   let deadAirWarns = 0;
   let emptyClipFails = 0;
 
-  // PASS 1 — analyse every clip + gather the cohort baseline for check 4(b).
-  // Each entry carries its raw audio analysis, the expected phrase + token count
-  // and the model's transcript coverage, so PASS 2 can flag truncation relative
-  // to THIS lesson's own median s/char (self-calibrating, no hard-coded rate).
+  // PASS 1 — analyse every clip + gather the cohort baselines for check 4.
+  // Each entry carries its raw audio analysis, the expected phrase + token count,
+  // its per-cue ASR coverage and its s/char, so PASS 2 can flag truncation
+  // relative to THIS lesson's own median COVERAGE and median s/char (both
+  // self-calibrating, no hard-coded rate).
   const pre = [];
   const sCharCohort = [];
+  const coverageCohort = [];
   manifest.clips.forEach((clip, idx) => {
     const file = path.join(publicRoot, clip.clipSrc);
     if (!fs.existsSync(file)) {
@@ -289,11 +432,22 @@ const main = () => {
     // line shown on screen); falls back to phrase if a clip carries no caption.
     const expectedText = (clip.caption ?? clip.phrase ?? "").trim();
     const expectedTokens = tok.tokenize(expectedText);
-    const transcript = transcriptLines ? transcriptLines[idx] : null;
-    const hasTranscript = typeof transcript === "string";
-    const coverage = hasTranscript
-      ? orderedCoverage(expectedTokens, tok.tokenize(transcript))
-      : null;
+
+    // Per-cue ASR transcription, from the chosen generation-independent source.
+    let asrText = null;
+    if (coverageSource === "asr-clip") asrText = clipAsrBySrc.get(clip.clipSrc) ?? null;
+    else if (coverageSource === "asr-align") asrText = alignAsrById.get(clip.id) ?? null;
+    else if (coverageSource === "transcript")
+      asrText = transcriptLines ? transcriptLines[idx] : null;
+    const hasCoverage = typeof asrText === "string";
+    // Strip ASR filler markers (sil/s) before measuring how much was spoken.
+    const gotTokens = hasCoverage ? stripAsrJunk(tok.tokenize(asrText)) : [];
+    const coverage =
+      hasCoverage && expectedTokens.length > 0
+        ? orderedCoverage(expectedTokens, gotTokens)
+        : null;
+    if (coverage != null && phrase.length > 0) coverageCohort.push(coverage);
+
     const sCharRatio =
       expectedTokens.length > 0 ? a.durationSeconds / expectedTokens.length : null;
     if (sCharRatio != null && phrase.length > 0) sCharCohort.push(sCharRatio);
@@ -303,8 +457,8 @@ const main = () => {
       phrase,
       expectedText,
       expectedTokenCount: expectedTokens.length,
-      transcript,
-      hasTranscript,
+      asrText,
+      hasCoverage,
       coverage,
       sCharRatio,
     });
@@ -315,6 +469,16 @@ const main = () => {
   const cohortReliable =
     cohortMedian != null && sCharCohort.length >= MIN_COHORT_FOR_MEDIAN;
   const sCharFloor = cohortReliable ? cohortMedian * SCHAR_COHORT_FACTOR : null;
+
+  // Cohort baseline for check 4(a): this lesson's OWN median ASR coverage. ASR is
+  // imperfect even on a fully-spoken clip, so we flag a cue whose coverage is far
+  // BELOW its peers (median × factor) in addition to the loose absolute floor.
+  const coverageMedian = median(coverageCohort);
+  const coverageCohortReliable =
+    coverageMedian != null && coverageCohort.length >= MIN_COHORT_FOR_MEDIAN;
+  const coverageCohortFloor = coverageCohortReliable
+    ? coverageMedian * COVERAGE_COHORT_FACTOR
+    : null;
 
   const truncationFindings = [];
   let truncationFails = 0;
@@ -333,11 +497,15 @@ const main = () => {
 
     // --- Check 4: TRUNCATION (only meaningful for a cue that has a phrase, and
     // NOT for one already failing EMPTY/SHORT — that has its own re-roll path).
-    // (a) coverage trips when the model reports speaking < COVERAGE_FLOOR of the
-    //     expected tokens; (b) duration trips when s/char is far below the cohort
+    // (a) coverage trips when the per-cue ASR transcription covers far below this
+    //     lesson's cohort-median coverage (median × factor) OR below the loose
+    //     absolute floor; (b) duration trips when s/char is far below the cohort
     //     median (or below the absolute backstop). Either signal = truncated.
     const coverageTrips =
-      p.coverage != null && p.expectedTokenCount > 0 && p.coverage < COVERAGE_FLOOR;
+      p.coverage != null &&
+      p.expectedTokenCount > 0 &&
+      ((coverageCohortFloor != null && p.coverage < coverageCohortFloor) ||
+        p.coverage < COVERAGE_ABS_FLOOR);
     const durationTrips =
       p.sCharRatio != null &&
       ((sCharFloor != null && p.sCharRatio < sCharFloor) ||
@@ -354,7 +522,11 @@ const main = () => {
       id: clip.id,
       expectedTokens: p.expectedTokenCount,
       coverage: p.coverage,
-      coverageSkipped: !p.hasTranscript,
+      coverageSource: p.coverage == null ? null : coverageSource,
+      coverageSkipped: !p.hasCoverage,
+      asrText: p.asrText ?? null,
+      cohortMedianCoverage: coverageMedian,
+      coverageCohortFloor,
       sCharRatio: p.sCharRatio,
       cohortMedianSChar: cohortMedian,
       sCharFloor,
@@ -372,7 +544,7 @@ const main = () => {
         : null,
       isTruncated
         ? `🔴 TRUNCATED (${covStr}` +
-          (coverageTrips ? ` <${(COVERAGE_FLOOR * 100).toFixed(0)}%` : "") +
+          (coverageTrips ? " low-vs-cohort/floor" : "") +
           (p.sCharRatio != null ? `, s/char ${p.sCharRatio.toFixed(3)}` : "") +
           (durationTrips ? " short-vs-cohort" : "") +
           `) — clip cut mid-phrase, re-roll`
@@ -392,14 +564,21 @@ const main = () => {
 
   const truncation = {
     fails: truncationFails,
-    coverageFloor: COVERAGE_FLOOR,
+    // Coverage (4a) — generation-independent ASR source + cohort-relative floor.
+    coverageSource, // "asr-clip" | "asr-align" | "transcript" | null
+    coverageAvailable: coverageSource != null,
+    coverageCohortFactor: COVERAGE_COHORT_FACTOR,
+    coverageAbsFloor: COVERAGE_ABS_FLOOR,
+    cohortMedianCoverage: coverageMedian,
+    coverageCohortFloor,
+    coverageCohortReliable,
+    // Duration sanity (4b).
     sCharCohortFactor: SCHAR_COHORT_FACTOR,
     sCharAbsBackstop: SCHAR_ABS_BACKSTOP,
     cohortMedianSChar: cohortMedian,
     sCharFloor,
     cohortReliable,
     tokenPattern: tok.pattern,
-    coverageAvailable: transcriptLines != null,
     findings: truncationFindings,
   };
 
@@ -425,14 +604,19 @@ const main = () => {
   }
   if (truncationFails > 0) {
     console.log(
-      `   A TRUNCATED clip is non-empty but stops mid-phrase: the model reported speaking < ${(COVERAGE_FLOOR * 100).toFixed(0)}% of the expected tokens, ` +
+      `   A TRUNCATED clip is non-empty but stops mid-phrase: its per-cue ASR coverage is far below this lesson's cohort median ` +
+        `(${coverageMedian != null ? (coverageMedian * 100).toFixed(0) : "n/a"}%) or below the ${(COVERAGE_ABS_FLOOR * 100).toFixed(0)}% floor, ` +
         `and/or its seconds-per-token is far below this lesson's cohort median (${cohortMedian != null ? cohortMedian.toFixed(3) : "n/a"}s/char). ` +
         `Re-roll that cue's voice; if it keeps truncating after a few attempts, shorten/split the cue's text in script-cues.json or record an explicit justification — NEVER freeze a clip that cuts off mid-line.`,
     );
   }
-  if (truncation.coverageAvailable === false) {
+  if (coverageSource == null) {
     console.log(
-      `   NOTE: coverage signal (4a) SKIPPED — no per-cue transcriptText self-report in gemini-voice.json (a dedicated-TTS model may omit it). Truncation relied on duration-sanity (4b) alone.`,
+      `   NOTE: coverage signal (4a) SKIPPED — no generation-independent ASR source available (per-clip ASR could not run, no asr-alignment.json asrText, no transcriptText). Truncation relied on duration-sanity (4b) alone.`,
+    );
+  } else if (coverageSource !== "asr-clip") {
+    console.log(
+      `   NOTE: coverage signal (4a) used the "${coverageSource}" fallback source (per-clip ASR unavailable). asr-clip is the most reliable per-cue source when the sherpa ASR config + clips are present.`,
     );
   }
 
