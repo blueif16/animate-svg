@@ -2,6 +2,10 @@
 // Source of truth = each src/lessons/Complete*Lesson.tsx that exports `lessonComposition`.
 // Add a lesson by exporting that descriptor from its own file; never edit this file or Root.tsx.
 import type { LessonComposition } from "./lessonRegistryTypes";
+import { lessonComposition as completeKptestCompareMoreFewerLessonComposition } from "./CompleteKptestCompareMoreFewerLesson";
+import { lessonComposition as completeKptestFenyuheSixLessonComposition } from "./CompleteKptestFenyuheSixLesson";
 
 export const AUTO_LESSON_COMPOSITIONS: LessonComposition[] = [
+  completeKptestCompareMoreFewerLessonComposition,
+  completeKptestFenyuheSixLessonComposition,
 ];

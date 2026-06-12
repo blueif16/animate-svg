@@ -1,0 +1,19 @@
+{
+  "lessonId": "kptest-fenyuhe-six",
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": { "sting": "mandarin-accent" },
+  "outro": { "resolve": true },
+  "sfx": [
+    {
+      "cue": "split-3-and-3",
+      "event": "reward",
+      "sound": "ta-da"
+    },
+    {
+      "cue": "recap",
+      "event": "reward",
+      "sound": "chime"
+    }
+  ]
+}

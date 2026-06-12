@@ -21,3 +21,11 @@ remotion-svg-primitives/public/audio/*/clips/
 # out of git. Authored .md/.json inputs under lesson-data/ stay tracked.
 remotion-svg-primitives/lesson-data/**/*.mp4
 remotion-svg-primitives/lesson-data/**/*.png
+
+# Archived prior pipeline runs — heavy generated output (MP4, contact PNGs,
+# per-node event transcripts, voice WAV clips). Snapshots, not source.
+_prior-runs/
+
+# Editor/pipeline backup snapshots + one-off throwaway scripts.
+*.backup
+remotion-svg-primitives/compute_timeline.js

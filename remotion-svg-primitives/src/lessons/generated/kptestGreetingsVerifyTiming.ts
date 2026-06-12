@@ -1,0 +1,202 @@
+import type { AlignedLessonCue } from "@studio/narration-kit";
+
+export const kptestGreetingsVerifyAlignedDuration = 1083;
+
+export const kptestGreetingsVerifyAlignedCues = [
+  {
+    "asrText": "今 天 我 们 来 学 打 招 呼 介 绍 自 己 还 有 说 再 见 看 他 们 见",
+    "caption": "今天我们来学打招呼、介绍自己，还有说再见。",
+    "confidence": "asr-derived",
+    "endFrame": 161,
+    "endSeconds": 5.37,
+    "id": "topic-intro",
+    "matchScore": 1.0,
+    "matchText": "今 天 我 们 来 学 打 招 呼 介 绍 自 己 还 有 说 再 见",
+    "phrase": "今天我们来学打招呼介绍自己还有说再见",
+    "startFrame": 8,
+    "startSeconds": 0.25,
+    "targetTokens": [
+      "今",
+      "天",
+      "我",
+      "们",
+      "来",
+      "学",
+      "打",
+      "招",
+      "呼",
+      "介",
+      "绍",
+      "自",
+      "己",
+      "还",
+      "有",
+      "说",
+      "再",
+      "见"
+    ]
+  },
+  {
+    "asrText": "有 说 再 见 看 他 们 见 面 了 打 招 呼 hello 嗨 s sil im sam",
+    "caption": "看，他们见面了，打招呼：Hello！Hi！",
+    "confidence": "asr-derived",
+    "endFrame": 323,
+    "endSeconds": 10.77,
+    "id": "greet",
+    "matchScore": 0.941,
+    "matchText": "看 他 们 见 面 了 打 招 呼 hello 嗨",
+    "phrase": "看他们见面了打招呼 Hello Hi",
+    "startFrame": 180,
+    "startSeconds": 6.0,
+    "targetTokens": [
+      "看",
+      "他",
+      "们",
+      "见",
+      "面",
+      "了",
+      "打",
+      "招",
+      "呼",
+      "hello",
+      "hi"
+    ]
+  },
+  {
+    "asrText": "你 来 试 试 im sam 要 分 开 了",
+    "caption": "I'm Sam。我是Sam。",
+    "confidence": "asr-derived",
+    "emphasis": true,
+    "endFrame": 628,
+    "endSeconds": 20.95,
+    "id": "im-slow-model",
+    "matchScore": 0.923,
+    "matchText": "im sam",
+    "phrase": "I'm Sam",
+    "startFrame": 621,
+    "startSeconds": 20.7,
+    "targetTokens": [
+      "i'm",
+      "sam"
+    ]
+  },
+  {
+    "asrText": "你 来 试 试 im sam 要 分 开 了 说 再 见 good",
+    "caption": "I'm Sam。跟我说：I'm Sam。",
+    "confidence": "asr-low-evidence",
+    "endFrame": 689,
+    "endSeconds": 22.97,
+    "id": "im-choral-echo",
+    "matchScore": 0.551,
+    "matchText": "im sam 要 分 开 了",
+    "phrase": "I'm Sam 跟我说 I'm Sam",
+    "startFrame": 621,
+    "startSeconds": 20.7,
+    "targetTokens": [
+      "i'm",
+      "sam",
+      "跟",
+      "我",
+      "说",
+      "i'm",
+      "sam"
+    ]
+  },
+  {
+    "asrText": "呼 hell hello hi 介 绍 自 己 im sa sam 分 别 的",
+    "caption": "你来试试：I'm Sam。",
+    "confidence": "asr-derived",
+    "endFrame": 955,
+    "endSeconds": 31.85,
+    "id": "im-learner-gap",
+    "matchScore": 0.643,
+    "matchText": "介 绍 自 己 im sa",
+    "phrase": "你来试试 I'm Sam",
+    "startFrame": 900,
+    "startSeconds": 30.0,
+    "targetTokens": [
+      "你",
+      "来",
+      "试",
+      "试",
+      "i'm",
+      "sam"
+    ]
+  },
+  {
+    "asrText": "自 己 im sa sam 分 别 的 时 候 说 goodb goodbye goodbyebye",
+    "caption": "要分开了，说再见：Goodbye！Bye-Bye！",
+    "confidence": "asr-derived",
+    "endFrame": 964,
+    "endSeconds": 32.15,
+    "id": "farewell",
+    "matchScore": 0.638,
+    "matchText": "sam 分 别 的 时 候 说 goodb goodbye goodbyebye",
+    "phrase": "要分开了说再见 Goodbye Bye-Bye",
+    "startFrame": 957,
+    "startSeconds": 31.9,
+    "targetTokens": [
+      "要",
+      "分",
+      "开",
+      "了",
+      "说",
+      "再",
+      "见",
+      "goodbye",
+      "bye",
+      "bye"
+    ]
+  },
+  {
+    "asrText": "自 己 im sa sam 分 别 的 时 候 说 goodb goodbye goodbyebye",
+    "caption": "见面打招呼：Hello！Hi！介绍自己：I'm Sam。",
+    "confidence": "asr-low-evidence",
+    "endFrame": 984,
+    "endSeconds": 32.8,
+    "id": "recap-1",
+    "matchScore": 0.021,
+    "matchText": "sam 分 别 的 时 候 说 goodb goodbye goodbyebye",
+    "phrase": "见面打招呼 Hello Hi 介绍自己 I'm Sam",
+    "startFrame": 957,
+    "startSeconds": 31.9,
+    "targetTokens": [
+      "见",
+      "面",
+      "打",
+      "招",
+      "呼",
+      "hello",
+      "hi",
+      "介",
+      "绍",
+      "自",
+      "己",
+      "i'm",
+      "sam"
+    ]
+  },
+  {
+    "asrText": "己 im sa sam 分 别 的 时 候 说 goodb goodbye goodbyebye",
+    "caption": "分别的时候说：Goodbye！Bye-Bye！I'm。",
+    "confidence": "asr-derived",
+    "endFrame": 1043,
+    "endSeconds": 34.77,
+    "id": "recap-2",
+    "matchScore": 0.83,
+    "matchText": "分 别 的 时 候 说 goodb",
+    "phrase": "分别的时候说 Goodbye I'm",
+    "startFrame": 986,
+    "startSeconds": 32.85,
+    "targetTokens": [
+      "分",
+      "别",
+      "的",
+      "时",
+      "候",
+      "说",
+      "goodbye",
+      "i'm"
+    ]
+  }
+] satisfies AlignedLessonCue[];

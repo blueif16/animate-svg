@@ -1,0 +1,58 @@
+{
+  "lessonId": "kptest-fenyuhe-five",
+  "cues": [
+    {
+      "id": "cue-announce-topic-split-1of4",
+      "narration": "一和四",
+      "phrase": "一和四",
+      "caption": "一和四",
+      "emphasis": false
+    },
+    {
+      "id": "cue-conserve-1of4",
+      "narration": "看着合",
+      "phrase": "看着合",
+      "caption": "看着合",
+      "emphasis": false
+    },
+    {
+      "id": "cue-split-2of3",
+      "narration": "二和三",
+      "phrase": "二和三",
+      "caption": "二和三",
+      "emphasis": false
+    },
+    {
+      "id": "cue-conserve-2of3",
+      "narration": "现在合",
+      "phrase": "现在合",
+      "caption": "现在合",
+      "emphasis": false
+    },
+    {
+      "id": "cue-learner-response-gap",
+      "narration": "想",
+      "phrase": "想",
+      "caption": "想",
+      "gap": {
+        "seconds": 3,
+        "reason": "learner-response"
+      },
+      "emphasis": false
+    },
+    {
+      "id": "cue-reveal-answer",
+      "narration": "看",
+      "phrase": "看",
+      "caption": "看",
+      "emphasis": false
+    },
+    {
+      "id": "cue-spaced-recap-both",
+      "narration": "分合",
+      "phrase": "分合",
+      "caption": "分合",
+      "emphasis": false
+    }
+  ]
+}

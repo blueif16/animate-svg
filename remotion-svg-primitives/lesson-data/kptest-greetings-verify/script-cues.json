@@ -1,0 +1,58 @@
+{
+  "lessonId": "kptest-greetings-verify",
+  "cues": [
+    {
+      "id": "topic-intro",
+      "narration": "今天我们来学打招呼、介绍自己，还有说再见。",
+      "phrase": "今天我们来学打招呼介绍自己还有说再见",
+      "caption": "今天我们来学打招呼、介绍自己，还有说再见。"
+    },
+    {
+      "id": "greet",
+      "narration": "看，他们见面了，打招呼：Hello！Hi！",
+      "phrase": "看他们见面了打招呼 Hello Hi",
+      "caption": "看，他们见面了，打招呼：Hello！Hi！"
+    },
+    {
+      "id": "im-slow-model",
+      "narration": "I'm Sam。I'm Sam。",
+      "phrase": "I'm Sam",
+      "caption": "I'm Sam。我是Sam。",
+      "emphasis": true
+    },
+    {
+      "id": "im-choral-echo",
+      "narration": "I'm Sam。跟我说：I'm Sam。",
+      "phrase": "I'm Sam 跟我说 I'm Sam",
+      "caption": "I'm Sam。跟我说：I'm Sam。"
+    },
+    {
+      "id": "im-learner-gap",
+      "narration": "你来试试：I'm Sam。",
+      "phrase": "你来试试 I'm Sam",
+      "caption": "你来试试：I'm Sam。",
+      "gap": {
+        "seconds": 4,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "farewell",
+      "narration": "要分开了，说再见：Goodbye！Bye-Bye！",
+      "phrase": "要分开了说再见 Goodbye Bye-Bye",
+      "caption": "要分开了，说再见：Goodbye！Bye-Bye！"
+    },
+    {
+      "id": "recap-1",
+      "narration": "见面打招呼，Hello，Hi。介绍自己，I'm Sam。",
+      "phrase": "见面打招呼 Hello Hi 介绍自己 I'm Sam",
+      "caption": "见面打招呼：Hello！Hi！介绍自己：I'm Sam。"
+    },
+    {
+      "id": "recap-2",
+      "narration": "分别的时候说，Goodbye，Bye-Bye。I'm。",
+      "phrase": "分别的时候说 Goodbye I'm",
+      "caption": "分别的时候说：Goodbye！Bye-Bye！I'm。"
+    }
+  ]
+}

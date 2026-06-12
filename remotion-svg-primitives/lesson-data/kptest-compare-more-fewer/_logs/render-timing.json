@@ -1,0 +1,35 @@
+{
+  "lessonId": "kptest-compare-more-fewer",
+  "generatedAt": "2026-06-12T01:34:13.110Z",
+  "totalMs": 40522,
+  "steps": [
+    {
+      "step": "Audio gate",
+      "ms": 116
+    },
+    {
+      "step": "Lesson registry",
+      "ms": 85
+    },
+    {
+      "step": "Typecheck + lint",
+      "ms": 4705
+    },
+    {
+      "step": "Bundle",
+      "ms": 2669
+    },
+    {
+      "step": "Render MP4",
+      "ms": 20436
+    },
+    {
+      "step": "Loudnorm (-16 LUFS / -1 dBTP)",
+      "ms": 2801
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 9710
+    }
+  ]
+}

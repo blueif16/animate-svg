@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-teen-numbers",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestTeenNumbersLesson",
+  "cuePlan": "lesson-data/kptest-teen-numbers/script-cues.json",
+  "output": "out/kptest-teen-numbers/kptest-teen-numbers.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-teen-numbers-voice.wav",
+    "metaOut": "out/kptest-teen-numbers/gemini-voice.json",
+    "alignOutJson": "out/kptest-teen-numbers/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestTeenNumbersTiming.ts",
+    "constPrefix": "kptestTeenNumbers"
+  }
+}
