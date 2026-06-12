@@ -198,7 +198,26 @@ _The **product-quality ledger**: one line per skill/workflow edit that changes w
 - 2026-06-11 — lesson-build (+ scripts/lesson-measured.mjs, scripts/_measured-extract.ts) — captionRedundancy gate exempts read-along acquisition cues (emphasis:true AND caption⊆phrase ⇒ exempt:"read-along-target"; genuine label-dup still WARNs) (skillsys `e793be8`) — kptest-compare-more-fewer Track B
 - 2026-06-11 — primitive-builder (+ check-lesson-primitives.mjs) — registry:check-lesson resolves bare-kebab citations via the registry id→component map + anti-vacuous guard fails a 0-citations-extracted gap-scan that names primitives + SKILL mandates dual-form kebab-id (`Component`) (skillsys `455ce83`) — kptest-compare-more-fewer Track B
 
-### RUN STATUS — last validated 2026-06-08 (read this first next session)
+### RUN STATUS — kptest-fenyuhe-six post-mortem sweep · updated 2026-06-12 (read this first next session)
+
+**Sweep status — node-by-node (🎯 = next; full detail in the bullets below):**
+
+| Node | Status | Evidence |
+|---|---|---|
+| W0 pedagogy | ✅ DONE | `a3b38fe` — acquisition carve-out + complete-utterance |
+| W1 storyboard | ✅ DONE | `893e490`/`c089d71` — referential complete-utterance bond; one recap |
+| W2a visual-design | ✅ DONE | `99be61f` — arithmetic zones · ⚠ latent dimension bug (zones 1920×1080 vs the 1280×720 rig), parked |
+| W2b audio-captions | ✅ DONE | `522cfff` — complete-utterance for every relation/retrieval beat |
+| W2c sound-design | ✅ CLEAN | diagnosis + blind judge PASS, no edit |
+| W3a voice+ASR | ✅ DONE | Live-model misuse → dedicated-TTS cure `50776dc` (kit) + advisory gate `807ad3c` + ASR re-source `2360045` |
+| W3b primitive | ✅ CLEAN | flaw already closed by the membership gate (`c6c6849`/`009229a`) |
+| W3.5 reconcile | ⬜ pending | mechanical / chain-owned |
+| **W4a composer** | 🎯 **NEXT** | the marquee — text-on-dots overlap + blind self-grade |
+| W4b sketch · W5 render | ⬜ pending | — |
+
+**Side-tracks done this session:** Track B generalization run (`kptest-compare-more-fewer`) = PASS + 3-tier observability landed + 9-cluster backlog synthesized; 3 broken gates fixed+pushed (`d008715` animatic-fallback, `e793be8` captionRedundancy-read-along, `455ce83` registry-bare-kebab). **After the sweep:** closing full setup→W5 run · revisit parked W2a-83 + the W2a dimension bug · the Track B backlog (top: hybrid lesson-kind, triad-expansion, zone-dimension-independence, W6-no-ear).
+
+### Sweep narrative (full detail) — last validated 2026-06-08
 
 - **★ IN PROGRESS (2026-06-11) — PER-NODE QUALITY POST-MORTEM of `kptest-fenyuhe-six`** (the W6-GREEN-but-bad-MP4 run). **Loop discipline:** human = the eye; go node-by-node; fix each flawed node's SKILL durably (NEVER patch the one lesson); validate by a clean-room **MiniMax-M3** re-run of that node + an independent judge; judge output against `.agents/skill-system-criteria.md`; only then advance. **W6 verification is RETIRED for this pass** — it is blind to pixels (its model can't view PNGs, it GREEN-stamped the bad run from the same JSON the measured gate got wrong). Do NOT run or rely on it; we are the eye.
   - **DONE + committed:** (1) **W0 pedagogy** — root cause of the broken script/captions ("一和五，分成。": backwards fragments that drop the whole 六 + suppress conservation). Fixed §4 (acquisition carve-out beyond L2) + §8 (complete-utterance for EVERY relation/retrieval beat). VALIDATED by a clean-room M3 W0 re-run + independent judge. `a3b38fe`. (2) **Criteria fixture** `.agents/skill-system-criteria.md` (12 nodes) — the standing judging bar; `02b4529`. (3) **Criteria-as-fixture practice** in `hermes-skill-system` (seed/maintain) + `transform-workflow-to-pi` (create at adoption) — global-skill repos `2e8719b` / `ae1ab39`. (4) **`primitive-builder` skill extracted** from the inlined W3b craft; `009229a`. (5) **W1 storyboard** — fidelity ≠ blind transcription (complete-utterance bond intent, stated referentially; ONE retrieval recap, not twin closers); VALIDATED clean-room M3 W1 re-run + independent judge = PASS (the node cited the new recap rule back); `893e490` + referential clarification `c089d71`. (6) **W2a visual-design** — spatial claims must carry arithmetic (computed-disjoint zones + `separation-gap-min` + correct-denominator occupancy); VALIDATED clean-room M3 + judge, red-flags 81/82 CLEAR + 83's axis-error fixed; `99be61f`. (7) **pi default → MiniMax-M3** (the config had lagged the map's recorded intent); `cd00cff`. (8) **The post-mortem loop is now CRYSTALLIZED** — portable method in `hermes-skill-system/references/node-validation-loop.md` (+ OPERATE pointer); repo binding in the `## Per-node post-mortem — node bindings` section above (now `--only <node-id>` resume + node table + sweep-order). (9) **W2b audio/captions** — complete-utterance for every relation/retrieval beat (de-hardcoded structural defect class); VALIDATED clean-room M3 `--only w2b` re-run + BLIND judge = PASS (6 cues, whole-framed recap, bidirectional bonds); `522cfff`. (10) **node-binding → `--only <node-id>` resume + loop artifacts live at repo-root `_prior-runs/<id>/`** (out of every node's read-scope, so a clean-room re-run can't teach-to-the-fix or thrash on the clutter); hermes loop-doc rule `396d8ee`.
