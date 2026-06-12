@@ -76,6 +76,7 @@ Every lesson opens with a short topic-intro card (title + section + KP teaser) �
 A LEAN reuse/gap table — a 2-column `demand → primitive` REUSE table citing catalog ids. The reader has `catalog-digest.md`, so:
 
 - NEVER paste a catalog `useWhen` blurb — cite the primitive by id.
+- **Cite every reuse/gap row in the DUAL form `` kebab-id (`ComponentName`) ``** — the catalog id AND its Pascal component, e.g. `` `comparison-symbol` (`ComparisonSymbol`) ``. A BARE kebab id alone (`` `comparison-symbol` `` with no `` (`ComponentName`) ``) is forbidden: the membership gate (`registry:check-lesson`) cannot tell a bare-kebab primitive citation from a teaching-action / cue / skill id, so a bare-only table extracts ZERO components and the anti-vacuous guard FAILS the node. Dual form is the only machine-verifiable citation.
 - NO upstream-hedge narration, NO intro-card prop re-spec, NO hardest-frame re-derivation.
 - If zero-gap (the common case), the result line + the REUSE list IS the whole artifact.
 
