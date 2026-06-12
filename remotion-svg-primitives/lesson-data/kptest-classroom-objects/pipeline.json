@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-classroom-objects",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestClassroomObjectsLesson",
+  "cuePlan": "lesson-data/kptest-classroom-objects/script-cues.json",
+  "output": "out/kptest-classroom-objects/kptest-classroom-objects.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-classroom-objects-voice.wav",
+    "metaOut": "out/kptest-classroom-objects/gemini-voice.json",
+    "alignOutJson": "out/kptest-classroom-objects/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestClassroomObjectsTiming.ts",
+    "constPrefix": "kptestClassroomObjects"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-fenyuhe-six",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestFenyuheSixLesson",
+  "cuePlan": "lesson-data/kptest-fenyuhe-six/script-cues.json",
+  "output": "out/kptest-fenyuhe-six/kptest-fenyuhe-six.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-fenyuhe-six-voice.wav",
+    "metaOut": "out/kptest-fenyuhe-six/gemini-voice.json",
+    "alignOutJson": "out/kptest-fenyuhe-six/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestFenyuheSixTiming.ts",
+    "constPrefix": "kptestFenyuheSix"
+  }
+}

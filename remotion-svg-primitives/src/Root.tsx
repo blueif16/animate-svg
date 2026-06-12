@@ -96,14 +96,12 @@ import {
   OrdinalLabelTokenHardest,
   OrdinalLabelTokenMultiplicity,
 } from "./scenes/OrdinalLabelTokenDemo";
-import { PrimitiveTestDemo } from "./scenes/PrimitiveTestDemo";
 import {
   CountingDemo,
   CompleteComparisonLesson,
   CompleteFenYuHeLesson,
   CompleteKp1FenYuHeIntroLesson,
   CompleteKp1HelloGreetingsLesson,
-  CompleteKptestGreetingsVerifyLesson,
   CompleteKp2CountingByTensLesson,
   CompleteKp2v2CountingByTensLesson,
   CompleteMakeTenLesson,
@@ -137,8 +135,6 @@ import {
   completeKp1FenYuHeIntroLessonDuration,
   completeKp1HelloGreetingsLessonDefaultProps,
   completeKp1HelloGreetingsLessonDuration,
-  completeKptestGreetingsVerifyLessonDefaultProps,
-  completeKptestGreetingsVerifyLessonDuration,
   completeKp2CountingByTensLessonDefaultProps,
   completeKp2CountingByTensLessonDuration,
   completeKp2v2CountingByTensLessonDefaultProps,
@@ -290,13 +286,6 @@ export const RemotionRoot: React.FC = () => {
         component={CompleteKp1HelloGreetingsLesson}
         durationInFrames={completeKp1HelloGreetingsLessonDuration}
         defaultProps={completeKp1HelloGreetingsLessonDefaultProps}
-        {...compositionDefaults}
-      />
-      <Composition
-        id="CompleteKptestGreetingsVerifyLesson"
-        component={CompleteKptestGreetingsVerifyLesson}
-        durationInFrames={completeKptestGreetingsVerifyLessonDuration}
-        defaultProps={completeKptestGreetingsVerifyLessonDefaultProps}
         {...compositionDefaults}
       />
       <Composition
@@ -467,12 +456,6 @@ export const RemotionRoot: React.FC = () => {
         id="ReadAlongHighlightEnglish"
         component={ReadAlongHighlightEnglish}
         durationInFrames={READ_ALONG_HIGHLIGHT_DEMO_DURATION}
-        {...compositionDefaults}
-      />
-      <Composition
-        id="PrimitiveTestDemo"
-        component={PrimitiveTestDemo}
-        durationInFrames={1}
         {...compositionDefaults}
       />
       <Composition

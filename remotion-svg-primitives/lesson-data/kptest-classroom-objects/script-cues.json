@@ -1,0 +1,87 @@
+{
+  "lessonId": "kptest-classroom-objects",
+  "cues": [
+    {
+      "id": "pencil-reveal",
+      "narration": "pencil！看，铅笔出来了",
+      "phrase": "pencil看铅笔出来了",
+      "caption": "pencil！\n看，铅笔出来了"
+    },
+    {
+      "id": "pencil-invite-echo",
+      "narration": "跟我说一下：pencil吧",
+      "phrase": "跟我说一下pencil吧",
+      "caption": "跟我说一下：pencil吧",
+      "gap": {
+        "seconds": 3.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "pencil-replay",
+      "narration": "pencil！看，铅笔出来了",
+      "phrase": "pencil看铅笔出来了",
+      "caption": "pencil！\n看，铅笔出来了"
+    },
+    {
+      "id": "pen-reveal",
+      "narration": "pen！看，钢笔出来了",
+      "phrase": "pen看钢笔出来了",
+      "caption": "pen！\n看，钢笔出来了"
+    },
+    {
+      "id": "pen-invite-echo",
+      "narration": "跟我说一下：pen吧",
+      "phrase": "跟我说一下pen吧",
+      "caption": "跟我说一下：pen吧",
+      "gap": {
+        "seconds": 3.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "pen-replay",
+      "narration": "pen！看，钢笔出来了",
+      "phrase": "pen看钢笔出来了",
+      "caption": "pen！\n看，钢笔出来了"
+    },
+    {
+      "id": "ruler-reveal",
+      "narration": "ruler！看，尺子出来了",
+      "phrase": "ruler看尺子出来了",
+      "caption": "ruler！\n看，尺子出来了"
+    },
+    {
+      "id": "ruler-invite-echo-first",
+      "narration": "请跟我说：ruler吧",
+      "phrase": "请跟我说ruler吧",
+      "caption": "请跟我说：ruler吧",
+      "gap": {
+        "seconds": 3.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "ruler-invite-echo-additional",
+      "narration": "请跟我说：ruler吧",
+      "phrase": "请跟我说ruler吧",
+      "caption": "请跟我说：ruler吧",
+      "gap": {
+        "seconds": 3.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "ruler-replay",
+      "narration": "ruler！看，尺子出来了",
+      "phrase": "ruler看尺子出来了",
+      "caption": "ruler！\n看，尺子出来了"
+    },
+    {
+      "id": "recall-together",
+      "narration": "看，铅笔：pencil。看，钢笔：pen。看，尺子：ruler",
+      "phrase": "看铅笔pencil看钢笔pen看尺子ruler",
+      "caption": "看，铅笔：pencil。\n看，钢笔：pen。\n看，尺子：ruler"
+    }
+  ]
+}

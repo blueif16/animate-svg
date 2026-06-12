@@ -1,0 +1,45 @@
+{
+  "lessonId": "kptest-fenyuhe-six",
+  "cues": [
+    {
+      "id": "routine-reprise",
+      "narration": "六的分与合。和五的分与合一样，我们来分六。",
+      "phrase": "六的分与合和五的分与合一样我们来分六",
+      "caption": "六的分与合。和五的分与合一样，我们来分六。"
+    },
+    {
+      "id": "split-1-and-5",
+      "narration": "六可以分成一和五。一和五合成六。",
+      "phrase": "六可以分成一和五一和五合成六",
+      "caption": "六可以分成一和五。一和五合成六。",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "split-2-and-4",
+      "narration": "六可以分成二和四。二和四合成六。",
+      "phrase": "六可以分成二和四二和四合成六",
+      "caption": "六可以分成二和四。二和四合成六。",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "split-3-and-3",
+      "narration": "六可以分成三和三。三和三合成六。",
+      "phrase": "六可以分成三和三三和三合成六",
+      "caption": "六可以分成三和三。三和三合成六。",
+      "gap": { "seconds": 5, "reason": "learner-response" }
+    },
+    {
+      "id": "aggregator-prompt",
+      "narration": "六可以分成几和几？",
+      "phrase": "六可以分成几和几",
+      "caption": "六可以分成几和几？",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "recap",
+      "narration": "一和五。二和四。三和三。它们合起来，都是六。",
+      "phrase": "一和五二和四三和三它们合起来都是六",
+      "caption": "一和五。二和四。三和三。它们合起来，都是六。"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-make-ten",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestMakeTenLesson",
+  "cuePlan": "lesson-data/kptest-make-ten/script-cues.json",
+  "output": "out/kptest-make-ten/kptest-make-ten.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-make-ten-voice.wav",
+    "metaOut": "out/kptest-make-ten/gemini-voice.json",
+    "alignOutJson": "out/kptest-make-ten/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestMakeTenTiming.ts",
+    "constPrefix": "kptestMakeTen"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "lessonId": "kptest-greetings-verify",
+  "generatedAt": "2026-06-09T07:37:05.354Z",
+  "totalMs": 35413,
+  "steps": [
+    {
+      "step": "Audio gate",
+      "ms": 104
+    },
+    {
+      "step": "Typecheck + lint",
+      "ms": 4503
+    },
+    {
+      "step": "Bundle",
+      "ms": 3123
+    },
+    {
+      "step": "Render MP4",
+      "ms": 18247
+    },
+    {
+      "step": "Loudnorm (-16 LUFS / -1 dBTP)",
+      "ms": 2139
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 7297
+    }
+  ]
+}

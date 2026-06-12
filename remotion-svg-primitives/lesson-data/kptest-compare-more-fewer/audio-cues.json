@@ -1,0 +1,12 @@
+{
+  "lessonId": "kptest-compare-more-fewer",
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": { "sting": "mandarin-accent" },
+  "outro": { "resolve": true },
+  "sfx": [
+    { "cue": "two-groups", "event": "popin", "sound": "pop" },
+    { "cue": "match", "event": "reward", "sound": "chime" },
+    { "cue": "not-by-size", "event": "reward", "sound": "chime" }
+  ]
+}

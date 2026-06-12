@@ -1,0 +1,37 @@
+{
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": {
+    "sting": null
+  },
+  "outro": {
+    "resolve": true
+  },
+  "sfx": [
+    {
+      "cue": "cue-announce-topic-split-1of4",
+      "event": "transition",
+      "sound": "whoosh"
+    },
+    {
+      "cue": "cue-conserve-1of4",
+      "event": "transition",
+      "sound": "whoosh"
+    },
+    {
+      "cue": "cue-split-2of3",
+      "event": "transition",
+      "sound": "whoosh"
+    },
+    {
+      "cue": "cue-conserve-2of3",
+      "event": "transition",
+      "sound": "whoosh"
+    },
+    {
+      "cue": "cue-reveal-answer",
+      "event": "reward",
+      "sound": "chime"
+    }
+  ]
+}

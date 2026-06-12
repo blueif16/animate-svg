@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-compare-more-fewer",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestCompareMoreFewerLesson",
+  "cuePlan": "lesson-data/kptest-compare-more-fewer/script-cues.json",
+  "output": "out/kptest-compare-more-fewer/kptest-compare-more-fewer.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-compare-more-fewer-voice.wav",
+    "metaOut": "out/kptest-compare-more-fewer/gemini-voice.json",
+    "alignOutJson": "out/kptest-compare-more-fewer/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestCompareMoreFewerTiming.ts",
+    "constPrefix": "kptestCompareMoreFewer"
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "lessonId": "kptest-make-ten",
+  "cues": [
+    {
+      "id": "announce-topic",
+      "narration": "我们来学凑十。",
+      "phrase": "我们来学凑十",
+      "caption": "我们来学凑十。"
+    },
+    {
+      "id": "bond-9-1",
+      "narration": "还有几个空？",
+      "phrase": "还有几个空",
+      "caption": "还有几个空？",
+      "gap": {
+        "seconds": 4,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "bond-8-2",
+      "narration": "还需要几个点？",
+      "phrase": "还需要几个点",
+      "caption": "还需要几个点？",
+      "gap": {
+        "seconds": 4,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "bond-7-3",
+      "narration": "还缺几个点？",
+      "phrase": "还缺几个点",
+      "caption": "还缺几个点？",
+      "gap": {
+        "seconds": 4,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "bond-6-4",
+      "narration": "还需要几个点才能满？",
+      "phrase": "还需要几个点才能满",
+      "caption": "还需要几个点才能满？",
+      "gap": {
+        "seconds": 4,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "bond-5-5",
+      "narration": "还放几个点？",
+      "phrase": "还放几个点",
+      "caption": "还放几个点？",
+      "gap": {
+        "seconds": 4,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "recap",
+      "narration": "接下来，九加一，八加二，七加三，六加四，五加五。",
+      "phrase": "接下来九加一八加二七加三六加四五加五",
+      "caption": "九加一，八加二，七加三，六加四，五加五。"
+    }
+  ]
+}

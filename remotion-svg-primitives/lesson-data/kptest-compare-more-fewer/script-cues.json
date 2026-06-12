@@ -1,0 +1,78 @@
+{
+  "lessonId": "kptest-compare-more-fewer",
+  "cues": [
+    {
+      "id": "intro",
+      "narration": "谁多谁少，我们来比一比。",
+      "phrase": "谁多谁少我们来比一比",
+      "caption": "谁多谁少，我们来比一比。"
+    },
+    {
+      "id": "two-groups",
+      "narration": "上面五个，下面三个，两群点点。",
+      "phrase": "上面五个下面三个两群点点",
+      "caption": "上面五个，下面三个"
+    },
+    {
+      "id": "match",
+      "narration": "每个上面的点，向下找一个朋友。",
+      "phrase": "每个上面的点向下找一个朋友",
+      "caption": "每个上面的点，向下找一个朋友"
+    },
+    {
+      "id": "more-direction",
+      "narration": "五比三多。五比三多。五比三多。",
+      "phrase": "五比三多五比三多五比三多",
+      "caption": "五比三多",
+      "emphasis": true
+    },
+    {
+      "id": "echo-more",
+      "narration": "跟我说：五比三多。",
+      "phrase": "跟我说五比三多",
+      "caption": "跟我说：五比三多",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "more-replay",
+      "narration": "五比三多。五比三多。五比三多。",
+      "phrase": "五比三多五比三多五比三多",
+      "caption": "五比三多",
+      "emphasis": true
+    },
+    {
+      "id": "fewer-direction",
+      "narration": "三比五少。同样的点，倒过来看，三比五少。",
+      "phrase": "三比五少同样的点倒过来看三比五少",
+      "caption": "三比五少",
+      "emphasis": true
+    },
+    {
+      "id": "echo-fewer",
+      "narration": "跟我说：三比五少。",
+      "phrase": "跟我说三比五少",
+      "caption": "跟我说：三比五少",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "fewer-replay",
+      "narration": "三比五少。同样的点，倒过来看，三比五少。",
+      "phrase": "三比五少同样的点倒过来看三比五少",
+      "caption": "三比五少",
+      "emphasis": true
+    },
+    {
+      "id": "not-by-size",
+      "narration": "看起来变多了吗？再连一连，上面还是多两个。",
+      "phrase": "看起来变多了吗再连一连上面还是多两个",
+      "caption": "看起来变多了吗？"
+    },
+    {
+      "id": "recap",
+      "narration": "都想起来了吗？五比三多。三比五少。",
+      "phrase": "都想起来了吗五比三多三比五少",
+      "caption": "五比三多 · 三比五少",
+      "emphasis": true
+    }
+  ]
+}

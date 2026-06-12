@@ -1,0 +1,35 @@
+{
+  "lessonId": "kptest-fenyuhe-six",
+  "generatedAt": "2026-06-11T01:00:44.014Z",
+  "totalMs": 28843,
+  "steps": [
+    {
+      "step": "Audio gate",
+      "ms": 63
+    },
+    {
+      "step": "Lesson registry",
+      "ms": 49
+    },
+    {
+      "step": "Typecheck + lint",
+      "ms": 4743
+    },
+    {
+      "step": "Bundle",
+      "ms": 1723
+    },
+    {
+      "step": "Render MP4",
+      "ms": 16632
+    },
+    {
+      "step": "Loudnorm (-16 LUFS / -1 dBTP)",
+      "ms": 1906
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 3727
+    }
+  ]
+}

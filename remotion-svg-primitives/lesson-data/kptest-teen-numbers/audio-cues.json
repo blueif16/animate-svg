@@ -1,0 +1,73 @@
+{
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": {
+    "sting": null
+  },
+  "outro": {
+    "resolve": true
+  },
+  "sfx": [
+    {
+      "cue": 0,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 1,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 2,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 3,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 4,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 5,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 6,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 7,
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": 8,
+      "event": "reward",
+      "sound": "ta-da"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-whats-your-name",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestWhatsYourNameLesson",
+  "cuePlan": "lesson-data/kptest-whats-your-name/script-cues.json",
+  "output": "out/kptest-whats-your-name/kptest-whats-your-name.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-whats-your-name-voice.wav",
+    "metaOut": "out/kptest-whats-your-name/gemini-voice.json",
+    "alignOutJson": "out/kptest-whats-your-name/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestWhatsYourNameTiming.ts",
+    "constPrefix": "kptestWhatsYourName"
+  }
+}

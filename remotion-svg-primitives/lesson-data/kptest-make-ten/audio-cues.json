@@ -1,0 +1,23 @@
+{
+  "bed": "tone-safe-pad",
+  "toneSafe": true,
+  "intro": {
+    "sting": "kids-section-lift"
+  },
+  "outro": {
+    "resolve": "sting-outro-resolve"
+  },
+  "sfx": [
+    { "cue": "announce-topic", "event": "title-settle", "sound": "chime" },
+    { "cue": "bond-9-1", "event": "highlight-empty", "sound": "tick" },
+    { "cue": "bond-9-1", "event": "slide-in-dots", "sound": "whoosh" },
+    { "cue": "bond-8-2", "event": "highlight-empty", "sound": "tick" },
+    { "cue": "bond-8-2", "event": "slide-in-dots", "sound": "whoosh" },
+    { "cue": "bond-7-3", "event": "highlight-empty", "sound": "tick" },
+    { "cue": "bond-7-3", "event": "slide-in-dots", "sound": "whoosh" },
+    { "cue": "bond-6-4", "event": "highlight-empty", "sound": "tick" },
+    { "cue": "bond-6-4", "event": "slide-in-dots", "sound": "whoosh" },
+    { "cue": "bond-5-5", "event": "highlight-empty", "sound": "tick" },
+    { "cue": "bond-5-5", "event": "slide-in-dots", "sound": "whoosh" }
+  ]
+}

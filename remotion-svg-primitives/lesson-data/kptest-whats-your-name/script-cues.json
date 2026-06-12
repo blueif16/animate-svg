@@ -1,0 +1,56 @@
+{
+  "lessonId": "kptest-whats-your-name",
+  "cues": [
+    {
+      "id": "ask",
+      "narration": "听，他在问名字",
+      "phrase": "他在问名字",
+      "caption": "听，他在问名字",
+      "emphasis": true,
+      "gap": {
+        "seconds": 4.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "answer",
+      "narration": "说自己的名字",
+      "phrase": "说自己的名字",
+      "caption": "说自己的名字",
+      "emphasis": true,
+      "gap": {
+        "seconds": 4.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "ask‑swap",
+      "narration": "现在轮到你问",
+      "phrase": "现在轮到你问",
+      "caption": "现在轮到你问",
+      "emphasis": false,
+      "gap": {
+        "seconds": 4.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "answer‑swap",
+      "narration": "现在轮到你答",
+      "phrase": "现在轮到你答",
+      "caption": "现在轮到你答",
+      "emphasis": false,
+      "gap": {
+        "seconds": 4.0,
+        "reason": "learner-response"
+      }
+    },
+    {
+      "id": "recap",
+      "narration": "这样问答认识朋友",
+      "phrase": "这样问答认识朋友",
+      "caption": "这样问答认识朋友",
+      "emphasis": false
+    }
+  ]
+}

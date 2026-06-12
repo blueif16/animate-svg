@@ -1,0 +1,144 @@
+{
+  "bed": {
+    "key": "literacy-playful-76",
+    "toneSafe": false
+  },
+  "intro": {
+    "sting": {
+      "key": "soft-rise"
+    }
+  },
+  "outro": {
+    "resolve": {
+      "key": "kids-outro-resolve"
+    }
+  },
+  "sfx": [
+    {
+      "cue": "pencil-reveal",
+      "event": "objectLift",
+      "sound": {
+        "key": "whoosh"
+      }
+    },
+    {
+      "cue": "pencil-reveal",
+      "event": "wordAppear",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "pencil-invite-echo",
+      "event": "inviteStart",
+      "sound": {
+        "key": "tick"
+      }
+    },
+    {
+      "cue": "pencil-replay",
+      "event": "objectLift",
+      "sound": {
+        "key": "whoosh"
+      }
+    },
+    {
+      "cue": "pencil-replay",
+      "event": "wordAppear",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "pen-reveal",
+      "event": "objectLift",
+      "sound": {
+        "key": "whoosh"
+      }
+    },
+    {
+      "cue": "pen-reveal",
+      "event": "wordAppear",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "pen-invite-echo",
+      "event": "inviteStart",
+      "sound": {
+        "key": "tick"
+      }
+    },
+    {
+      "cue": "pen-replay",
+      "event": "objectLift",
+      "sound": {
+        "key": "whoosh"
+      }
+    },
+    {
+      "cue": "pen-replay",
+      "event": "wordAppear",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "ruler-reveal",
+      "event": "objectLift",
+      "sound": {
+        "key": "whoosh"
+      }
+    },
+    {
+      "cue": "ruler-reveal",
+      "event": "wordAppear",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "ruler-invite-echo-first",
+      "event": "inviteStart",
+      "sound": {
+        "key": "tick"
+      }
+    },
+    {
+      "cue": "ruler-invite-echo-additional",
+      "event": "inviteStart",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "ruler-replay",
+      "event": "objectLift",
+      "sound": {
+        "key": "whoosh"
+      }
+    },
+    {
+      "cue": "ruler-replay",
+      "event": "wordAppear",
+      "sound": {
+        "key": "chime"
+      }
+    },
+    {
+      "cue": "recall-together",
+      "event": "pointingGesture",
+      "sound": {
+        "key": "pop"
+      }
+    },
+    {
+      "cue": "recall-together",
+      "event": "highlight",
+      "sound": {
+        "key": "sparkle"
+      }
+    ]
+  }
+}

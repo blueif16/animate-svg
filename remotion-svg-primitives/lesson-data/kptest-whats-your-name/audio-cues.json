@@ -1,0 +1,15 @@
+{
+  "lessonId": "kptest-whats-your-name",
+  "bed": "literacy-playful-76",
+  "toneSafe": false,
+  "intro": { "sting": "mandarin-accent" },
+  "outro": { "resolve": true },
+  "sfx": [
+    { "cue": "intro", "event": "transition", "sound": "whoosh" },
+    { "cue": "ask", "event": "popin", "sound": "pop" },
+    { "cue": "answer", "event": "popin", "sound": "pop" },
+    { "cue": "ask-swap", "event": "popin", "sound": "pop" },
+    { "cue": "answer-swap", "event": "popin", "sound": "pop" },
+    { "cue": "recap", "event": "reward", "sound": "ta-da" }
+  ]
+}
