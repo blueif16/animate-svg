@@ -224,6 +224,8 @@ After writing the scene, the composer:
 4. If the still fails the contract: **redesign the failing region.** Do not patch with a wrapper. Do not declare done from code inspection.
 5. Re-render. Re-grade. Stop only when the still IS the contract.
 
+**If the still-render path cannot run** (sandbox EPERM, env/webpack crash, missing browser), Wave 4 is **NOT done**: return `status="blocked"` naming the blocker. The stills are the load-bearing verification; the bbox/measured JSON is a pre-filter and is NEVER a substitute. Declaring `ok` on programmatic gates alone is the exact shipped failure — twice: the Node-24 wasm-hash crash (2026-06-09) and the sandbox `.env.local` EPERM (2026-06-10), both "green JSON" runs that shipped text-on-dots and empty frames.
+
 The composer reports back with the path to the still and a 1-line grade per Contract bullet.
 
 ## On-screen target text must match the cue's own audio
