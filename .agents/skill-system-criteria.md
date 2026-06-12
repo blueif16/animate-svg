@@ -266,7 +266,7 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 **Acceptance criteria**
 - Cue windows are COMPUTED, not authored: the module imports the per-cue clip truth and a per-cue motion-budget map and calls the kit reconcile helper (reconcileClipTimeline). No cue start/end frame is hand-typed or copied from any other file.
 - The reconcile formula is the v4 cue-anchored one verbatim: `cueFrames = max(narrationFrames + gapFrames, motionFrames) + tail`, cues chained end-to-end from frame 0, tail ≤ ~9 frames / 0.3s. The duration export equals the last cue's endFrame.
-- EXACTLY ONE per-cue entry in each direction — every cue in the generated clip module appears in the visual-motion-budget map and the output cue list, matching cue IDs, no extras/omissions (a missing budget should throw, not silently default).
+- EXACTLY ONE per-cue entry in each direction — parity is judged against the CLIP MODULE: every cue in the generated clip module appears in the visual-motion-budget map and the output cue list, matching IDs (a missing budget should throw, not silently default). visual-design may legitimately budget MORE beats than reach voice — W2b folds echo/wait beats into a typed gap on a carrying cue; those design-only rows get NO budget entry and their dwell must be covered by the carrying cue's gapFrames. Dropping them is a conscious, logged decision, never a silent omission.
 - Three views derived from the SAME reconciled object — Cues, per-cue VoiceClips, CaptionCues all flow from one reconcile call; captions mapped from reconciled cues (not re-authored); each VoiceClip anchored to its own cue's startFrame for its measured narration length only.
 - Narration audio treated as frozen input: narrationFrames come straight from the measured/trimmed clip module; the module reads them rather than re-deriving from ASR or raw WAVs. Any intra-cue pause is a typed gap.
 - The motion budget per cue is a sensible floor sourced from visual-design's visualMotionSeconds (seconds), and where narration exceeds it the window stretches to fit the spoken span plus tail (max() actually binds, visible per cue).
@@ -281,6 +281,7 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - Budget/clip mismatch passes silently — a cue missing from the budget map gets a hidden default, or a cue in one list absent from the other.
 - Captions or VoiceClips authored independently of the reconciled cues (separate caption timing, voice clip fromFrame ≠ its cue startFrame, or durationInFrames padded beyond the measured clip).
 - Lesson-specific contamination: topic words, Chinese strings, or specific frame totals baked into the reconcile logic.
+- No tier-2 log (`_logs/w3-5-reconcile.md`) — the animatic-gate verdict and the comprehension-floor advisory result are unauditable without it.
 
 ---
 
@@ -307,6 +308,17 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - Manifest drift or gaps: a load-bearing element missing from the manifest, or a bboxAt computed from different constants/easing than the scene; missing/mismatched measureProps ids.
 - Intro title-occlusion: title and cast rendered at the same instant in overlapping positions.
 - Shared-file or primitive edits: touching Root.tsx/Composition.tsx, modifying a shape-primitive instead of kicking back to Wave 3, or hardcoding hex; or dead air in a learner-response gap (a bare low-opacity glow with no readable label/glyph).
+- **Vacuous green** — a 0-collision report that never compared the failing pair: a blanket zone-pair exemption (or a missing manifest entry, or a wrong zone tag) swallows exactly the overlap on screen. A green count is only meaningful if the pair is actually checked — verify WHAT the gate compared, not just its number.
+- **Justification laundering** — a collision/gate-failure "justification" that names an element, frame, or cause not present in the failing JSON row (e.g. attributing a contrast FAIL to a different element's intentional dimming).
+- **Per-cue re-entrance blink** — the persistent teaching unit re-enters from opacity 0 inside each cue (motion-window fade-in), so the canvas is empty under live narration before every motion phase; often paired with a manifest that reports opacity 1 for the same frames.
+
+**Exemplars**
+- 🟢 **Gold** — PENDING (slot reserved until the closing-run re-compose yields a validated scene).
+- 🔴 **Red-flag** — `src/lessons/kptestFenyuheSix/manifest.ts` (the 2026-06-10 M3 re-compose) · surfaced by the 2026-06-12 W4a post-mortem
+  > `{ id: "question-prompt", zone: "labels", … }` — bbox = ZONE_QUESTION ⊂ ZONE_OBJECTS; pair labels:objects blanket-exempt ⇒ measured pass green at frame 1061 while the prompt renders on the dots.
+  > _Log:_ "contrast — the single failure is the dimmed recap sub-beat at dimOpacity=0.32" — the actual failing row is `bond-glyph@640 ratio 1.37`.
+
+  _Why red:_ a vacuous green trusted in place of looking (the zone tag routed the one real overlap through a blanket exemption), plus a gate justification that names an element the gate never flagged.
 
 ---
 
@@ -322,10 +334,10 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - VOCABULARY + ZONE DISCIPLINE: only an authorized kind (underline / wrap-arc / label-arrow / vs-mark) — no invented circles/ticks/sparkles; anchors may trace zone-objects but NEVER sit inside zone-labels; label-arrow ends explicit; the kind chosen is justified over alternatives.
 - ANCHORS RESOLVABLE WITHOUT LITERALS: endpoints are named element ids (or coords) the composer resolves against live geometry at build time.
 - SKETCH LANGUAGE SPECIFIED ONCE AND CONSISTENT: a single ink color from theme tokens, stroke width, opacity, jitter declared up front; opt-in boil/settle only within their gates (boil only on a long-held decorative mark, settle climax-only, never on the teaching primitive) with the reasoning shown.
-- COMPOSER HAND-OFF COMPLETE: the `<TeacherMark>` instance shape, the cue→real-frame resolution math (clamped to cue end), and a required manifest "marks" entry (bboxAt = padded anchor span, opacityAt = the draw-on × fade-out math) so lesson:check can see the mark and flag collisions.
+- COMPOSER HAND-OFF COMPLETE: the `<TeacherMark>` instance shape, the cue→real-frame resolution math (clamped to cue end), and a required manifest "marks" entry (bboxAt = padded anchor span, opacityAt = the draw-on × fade-out math) so lesson:check can see the mark and flag collisions. Fade-out is SEMANTICALLY end-anchored — accept `fadeOutRelativeStart` only when stated as the expression `cueLength − 8` (or an explicit end-anchored field), never a resolved literal, so the value survives re-timing.
 
 **Red flags**
-- A climax/emphasis mark whose span covers the whole scene or every countable object, so it emphasizes nothing — e.g. one underline stretched under all items (the real post-mortem failure).
+- A climax/emphasis mark whose span covers the whole scene or every countable object, so it emphasizes nothing — e.g. one underline stretched under all items (the real post-mortem failure) — UNLESS the cue's discovery IS a relation over exactly that span (e.g. an underline binding two clusters the cue teaches as an equal pair, prescribed by the Visual Contract). The flag is the indiscriminate sweep whose span is not the discovery's referent.
 - Mark count at or above the ceiling, or a mark on most/every cue; a verbose mark table padded to look thorough.
 - Any absolute master-timeline frame number instead of a cueId-relative offset.
 - A mark anchored inside zone-labels, or anchors given as hand-coded x/y literals the composer can't re-resolve.
@@ -334,6 +346,18 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - fade-in reveal instead of stroke draw-on, or a mark that bleeds into the next cue.
 - Missing/hand-wavy composer hand-off: no manifest "marks" entry, or no clamped cue→frame resolution math.
 - No-mark cues left blank with no reason, or reasons that don't name the element already carrying the signal.
+
+**Exemplars**
+- 🟢 **Gold** — `lesson-data/kptest-fenyuhe-six/sketch-overlay.md` · PROVISIONAL (pending the closing-run revalidation)
+  > | `cue-split-3of3` | **y** | **underline** | span: bottom-left of left cluster → bottom-right of right cluster, slight arch dipping DOWN between them; both endpoints in `zone-objects`, never `zone-labels` | **105** | **24** | **151** | **CLIMAX** of the 3+3 equal split, the lesson's NEW property. See §3. |
+  > §1.1: "`CAPABILITIES.md#sketch-boil` requires `held ≥ 1.5s` to read as handwork; 0.73 s is below the threshold. Boil on a mark the eye barely registers would read as a rendering bug, not craft."
+
+  _Why gold:_ restraint at 1/9 with per-cue carrier-named reasons; onset derived from the composer's actual motion phase (105 = motion-end 90 + 15f settled dwell); an opt-in effect REFUSED with arithmetic.
+- 🔴 **Red-flag** — `_prior-runs/kptest-fenyuhe-six-20260609-173733/lesson-data/sketch-overlay.md` · surfaced by the 2026-06-12 W4b post-mortem
+  > anchor: `{ kind: "span", start: { x: 640, y: 500 }, end: { x: 1280, y: 500 } }`
+  > §1: "we ALWAYS supply `boil` for any held mark"
+
+  _Why red:_ hand-coded x/y literals the composer can't re-resolve against live geometry (red flag #4), and boil as a default policy instead of a gated opt-in.
 
 ---
 
@@ -344,7 +368,7 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 **Acceptance criteria**
 - MP4 is a valid, complete, playable file: H.264 video + AAC audio muxed, 1280×720 at 30fps, frame count = the reconciled total duration (no truncated/zero-length file, no missing audio track).
 - Video and audio durations agree with each other and with the reconciled timeline (contact.json totalDuration / fps): no audio ending early or running long past the picture.
-- Loudness normalized to spec: integrated loudness near −16 LUFS and true peak ≤ −1 dBTP (re-measuring lands within tolerance, not clipped, not far quieter/louder).
+- Loudness normalized to spec: integrated loudness near −16 LUFS and true peak ≤ −1 dBTP (re-measuring lands within tolerance, not clipped, not far quieter/louder). **The loudness claim quotes the FILE's measured `input_i`/`input_tp` from a re-measure (or the script's printed `Loudnorm verified` line) — a loudnorm print JSON's `output_*` fields describe a hypothetical further pass, never the file.**
 - The contact sheet PNG actually exists and renders as a real image (non-trivial file size, not blank/black/error) — the mandatory human review surface; its absence is a render failure, not a skipped nicety.
 - Contact sheet legible and complete: one row per cue in order, each labeled with cue ID + frame range, with the agreed samples per cue (start / narr-mid / narr-end / hold-mid / cue-end) so stagnation and dead holds are visible at a glance.
 - Contact sheet content matches the master: sampled frames look like real rendered lesson frames (correct background, primitives present, captions where expected), the same frames the MP4 plays — not stale, not from a different lesson, not all-identical.
@@ -359,3 +383,11 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - Contact sheet stale or mismatched: a previous render, a different lesson, or frames not matching what the MP4 plays.
 - Audio/picture desync in the master: voice clip leads/lags its cue's visuals (a regression of the continuous-WAV drift), or a clip bleeds across a cue boundary.
 - Artifacts disagree: contact.json / bbox-manifest report a duration, fps, or cue boundaries that don't match the actual MP4.
+- Loudness self-report quotes loudnorm `output_*` (telltale: the quoted LRA/thresh match the `output_lra`/`output_thresh` block) while the file's `input_*` measures differently — a false "in spec" claim.
+
+**Exemplars**
+- 🟢 **Gold** — PENDING (slot reserved until the post-fix rerun prints a `Loudnorm verified` line an independent re-measure confirms).
+- 🔴 **Red-flag** — `lesson-data/kptest-fenyuhe-six/_logs/w5-render.md` · surfaced by the 2026-06-12 W5 post-mortem
+  > `ffmpeg … -af loudnorm=I=-16:TP=-1.0:LRA=11:print_format=json -f null -` → measured I=-16.21, TP=-1.00, LRA=7.80, thresh=-27.93. The render's built-in loudnorm already brought the master into spec; this re-measure is a sanity check.
+
+  _Why red:_ the four quoted numbers are verbatim the print JSON's `output_*` block (what a FURTHER pass would produce); the file itself measures −16.97 LUFS / −1.77 dBTP (`input_*`) — a false "in spec" claim that propagated into the skill-system map.
