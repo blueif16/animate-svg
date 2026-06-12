@@ -33,6 +33,7 @@ import {
   parseBarrelValueExports,
   parseObjectKeys,
 } from "./code-unions.mjs";
+import {KIND_ORDER, MODULE_KIND} from "./families.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..", ".."); // remotion-svg-primitives
@@ -66,15 +67,8 @@ const LESSON_FAMILY_ORDER = LESSON_COMPONENT_FAMILIES.map((f) => f.family);
 const read = (p) => fs.readFileSync(p, "utf8");
 const readJson = (p) => JSON.parse(read(p));
 
-// Source-module suffix -> primitive kind (discriminant) + sort order.
-const MODULE_KIND = {
-  "./counting": "counting",
-  "./literacy": "literacy",
-  "./interaction": "interaction",
-  "./sketch": "sketch",
-  "./asset": "asset",
-};
-const KIND_ORDER = ["counting", "literacy", "interaction", "sketch", "asset"];
+// Source-module suffix -> primitive kind (discriminant) + sort order: ONE
+// shared copy in families.mjs (drift-report.mjs imports the same one).
 
 // PascalCase identifier -> kebab id. "FenHeDiagram" -> "fen-he-diagram",
 // "FXDefs" -> "fx-defs", "PopIn" -> "pop-in".
@@ -249,8 +243,8 @@ const printStranded = () => {
   for (const s of stranded) console.error(`  - ${s}`);
   console.error(
     "\nFix: move the export into a family file (src/shape-primitives/{counting,literacy," +
-      "interaction,sketch}.tsx), OR register a new family — add the module to MODULE_KIND + " +
-      "KIND_ORDER in scripts/registry/build-registry.mjs AND the `kind` union in " +
+      "interaction,sketch,asset}.tsx), OR register a new family — add the module to " +
+      "MODULE_KIND + KIND_ORDER in scripts/registry/families.mjs AND the `kind` union in " +
       "src/capabilities/schema.ts. A primitive must belong to a known family to be catalogued.",
   );
 };

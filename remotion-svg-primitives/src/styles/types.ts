@@ -3,8 +3,10 @@
 
 /**
  * Identifier of a registered style overlay. "default" means no overlay (the
- * canonical lesson appearance). Adding a new style means adding a new
- * literal to this union AND a corresponding entry in `STYLE_REGISTRY`.
+ * canonical lesson appearance). Adding a new style means adding a new literal
+ * to this union AND a styles[] entry in src/capabilities/primitive-registry.json,
+ * a runtime dir src/styles/<id>/, and a skill bundle .agents/styles/<id>/
+ * (membership-gated by registry:check, cross-checked by registry:drift).
  */
 export type StyleId = "default" | "ink-wash";
 

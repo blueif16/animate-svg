@@ -29,6 +29,7 @@ import {
   parseUnion,
   stripComments,
 } from "./code-unions.mjs";
+import {MODULE_KIND} from "./families.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..", ".."); // remotion-svg-primitives
@@ -51,14 +52,6 @@ const P = {
   agentStylesDir: path.join(repoRoot, ".agents/styles"),
   presetKids: path.join(root, "src/three-effects/preset-kids.ts"),
   kitTypes: path.join(desktop, "shared-3d/src/types.ts"),
-};
-
-// Source-module suffix -> primitive kind (discriminant). Mirrors the barrel.
-const MODULE_KIND = {
-  "./counting": "counting",
-  "./literacy": "literacy",
-  "./interaction": "interaction",
-  "./sketch": "sketch",
 };
 
 // --- set diff (the report shape) --------------------------------------------
@@ -112,7 +105,7 @@ console.log("\n=== capability-registry drift report (CUT 1, report-only — alwa
       `  ✗ STRANDED exports (PascalCase, UNREGISTERED family module — uncatalogued + registry:check-failing) [${stranded.length}]: ` +
         stranded.map((e) => `${e.name} (from "${e.module}")`).join(", "),
     );
-    console.log("      fix: move into a family file, or register the module (MODULE_KIND + KIND_ORDER + schema.ts kind union).");
+    console.log("      fix: move into a family file, or register the module (families.mjs MODULE_KIND/KIND_ORDER + schema.ts kind union).");
   }
   // Per-family breakdown so the gap reads at a glance.
   const byKind = {};
@@ -171,15 +164,19 @@ console.log("\n=== capability-registry drift report (CUT 1, report-only — alwa
     if (!exists(path.join(P.agentStylesDir, id)))
       crossNotes.push(`StyleId "${id}" has NO skill bundle .agents/styles/${id}`);
   }
-  // The types.ts doc-comment claims adding a style needs an entry in a
-  // STYLE_REGISTRY const. Confirm such a declaration actually exists (scan
-  // comment-stripped source so the doc-comment's own mention doesn't fool us).
-  const hasStyleRegistryConst = styleSourceFiles().some((f) =>
+  // Phantom-reference check: a doc-comment once claimed adding a style needs
+  // an entry in a STYLE_REGISTRY const that never existed. Flag any styles
+  // source that still MENTIONS STYLE_REGISTRY (comments included) without a
+  // real declaration (scan comment-stripped source for the declaration so a
+  // mention's own text doesn't fool us).
+  const styleSrcs = styleSourceFiles();
+  const mentions = styleSrcs.filter((f) => /STYLE_REGISTRY/.test(read(f)));
+  const hasStyleRegistryConst = styleSrcs.some((f) =>
     /export const STYLE_REGISTRY\b/.test(stripComments(read(f))),
   );
-  if (!hasStyleRegistryConst)
+  if (mentions.length && !hasStyleRegistryConst)
     crossNotes.push(
-      'styles/types.ts doc-comment references `STYLE_REGISTRY`, but no `export const STYLE_REGISTRY` exists in src/styles/ (stale doc / phantom reference).',
+      `STYLE_REGISTRY is referenced in ${mentions.map((f) => path.relative(root, f)).join(", ")} but no \`export const STYLE_REGISTRY\` exists in src/styles/ (stale doc / phantom reference).`,
     );
   if (crossNotes.length) {
     console.log("      (c) cross-source notes:");
