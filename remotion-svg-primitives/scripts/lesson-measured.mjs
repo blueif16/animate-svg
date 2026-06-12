@@ -232,13 +232,31 @@ const runLufsGate = (wavPath) => {
 
 // ---------------------------------------------------------------------------
 // Gate: caption-redundancy — char-set Jaccard caption vs narration per cue
-// (proposal Exp D4 / spike redundancy.mjs). EXEMPT literacy/pinyin lessons.
+// (proposal Exp D4 / spike redundancy.mjs). EXEMPT literacy/pinyin lessons,
+// AND — generally, in ANY lesson/language — read-along ACQUISITION cues.
+//
+// On a read-along/acquisition beat the child is meant to READ the target phrase
+// AS they hear it (e.g. on-screen `五比三多` while the voice says 五比三多), so
+// caption == spoken target is CORRECT BY DESIGN, not redundancy. We detect this
+// from metadata ALREADY on the cue — no lesson/cue/phrase literal:
+//   1. the cue is `emphasis:true` (the author's design-intent acquisition flag
+//      on a read-along / pronunciation beat), AND
+//   2. the caption IS the literal spoken target — its char-set is a SUBSET of
+//      the spoken phrase's char-set (the caption is a slice/repeat of what is
+//      spoken, NOT a separate authored label).
+// Genuine redundancy — a caption duplicating info shown ELSEWHERE on screen (a
+// label/badge/number) on a non-read-along cue — is NOT emphasis-flagged as the
+// spoken acquisition target and/or its caption is not a subset of the phrase, so
+// it still WARNs. Exempted cues are RECORDED (`exempt: "read-along-target"`),
+// never silently dropped.
 // ---------------------------------------------------------------------------
+const READ_ALONG_EXEMPT = "read-along-target";
+
 const runRedundancyGate = (cues, lessonId) => {
   if (isLiteracyLesson(lessonId)) {
     return { ran: false, skipReason: `literacy/pinyin lesson — caption≈narration expected (${lessonId})` };
   }
-  const strip = (s) => (s || "").replace(/[，。！？、,.!?\s]/gu, "");
+  const strip = (s) => (s || "").replace(/[，。！？、,.!?\s·]/gu, "");
   const rows = [];
   for (const c of cues) {
     if (!c.caption || !c.phrase) continue;
@@ -250,7 +268,16 @@ const runRedundancyGate = (cues, lessonId) => {
     for (const ch of sCap) if (sNar.has(ch)) inter += 1;
     const union = new Set([...sCap, ...sNar]).size || 1;
     const jaccard = Number((inter / union).toFixed(2));
-    rows.push({ cueId: c.id, jaccard, pass: jaccard <= CAPTION_REDUNDANCY_WARN });
+    // Read-along acquisition exemption: caption IS the spoken target on an
+    // author-flagged pronunciation/read-along beat — design intent, not clutter.
+    const captionIsSpokenTarget =
+      sCap.size > 0 && [...sCap].every((ch) => sNar.has(ch)); // caption ⊆ phrase
+    const exempt = c.emphasis === true && captionIsSpokenTarget;
+    if (exempt) {
+      rows.push({ cueId: c.id, jaccard, pass: true, exempt: READ_ALONG_EXEMPT });
+    } else {
+      rows.push({ cueId: c.id, jaccard, pass: jaccard <= CAPTION_REDUNDANCY_WARN });
+    }
   }
   if (rows.length === 0) {
     return { ran: false, skipReason: "no cues carry both caption and phrase" };
@@ -535,8 +562,9 @@ const main = async () => {
   } else {
     measured.gates.captionRedundancy = redundancy.rows;
     const failing = redundancy.rows.filter((r) => !r.pass);
+    const exempted = redundancy.rows.filter((r) => r.exempt);
     gateLines.push(
-      `${failing.length === 0 ? "PASS" : "WARN"}: caption-redundancy — ${failing.length}/${redundancy.rows.length} cue(s) jaccard>${CAPTION_REDUNDANCY_WARN}`,
+      `${failing.length === 0 ? "PASS" : "WARN"}: caption-redundancy — ${failing.length}/${redundancy.rows.length} cue(s) jaccard>${CAPTION_REDUNDANCY_WARN}${exempted.length ? ` (${exempted.length} read-along-target exempt)` : ""}`,
     );
   }
 
