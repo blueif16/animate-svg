@@ -106,6 +106,8 @@ Read tier 1 first; drop to tier 2 for a wave that looks wrong; tier 3 only to re
 
 - **ZERO FRAME LITERALS in scene code.** Every frame number in `src/lessons/<X>LessonScene.tsx` derives from `cues[id].startFrame + relativeOffset` or `cues[id].endFrame - relativeOffset`. Absolute master-timeline literals are a coordinate-space bug (same class as mixing client-rect pixels with viewBox coords).
 
+- **SPOKEN ENUMERATION BINDS TO TOKEN ONSETS, never a step constant.** Any animation that marks a spoken count/sequence (count 1→N, per-number point/circle, per-word pulse, read-along step) binds each step to that token's MEASURED ASR onset — `cue.tokenOnsets` (cue-local, index-aligned to `targetTokens`) via the kit `stepFramesFromOnsets`/`tokenOnsetFrame` helper and the primitive's onset prop (`<OrderedRowSpotlight stepFrames=…>`). A fixed cadence (`SWEEP_STEP_FRAMES`, an even grid from the cue head) is the SAME class as a frame literal — forbidden for spoken-synced stepping (the inter-word interval is voice-dependent and already measured). Constants stay fine for NON-spoken motion (pops, settles, breathe). Onsets unavailable → fall back to the constant AND emit a `pipelineFinding`.
+
 - **ZERO RAW MOTION LITERALS in scene code.** Every easing curve and spring config in `src/lessons/*.tsx` reaches for a named export — `EASE.*`, `SPRING.*` from `src/motion-primitives/curves.ts`. `<PopIn motion=...>` for entrance physics, `<TeacherMark boil=...>` for opt-in hand-drawn liveliness. Full reach guide and anti-patterns in `.agents/CAPABILITIES.md`.
 
 ## Capabilities

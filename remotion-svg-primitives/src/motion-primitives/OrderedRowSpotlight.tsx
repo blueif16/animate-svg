@@ -75,9 +75,25 @@ export type OrderedRowSpotlightProps = {
   atFrame: number;
   /**
    * Frames per pointer step of the 1→N walk (and the unit the spotlight pop /
-   * arrow draw-on are paced against). Default 18.
+   * arrow draw-on are paced against). Default 18. This is the FALLBACK cadence:
+   * a fixed, voice-INDEPENDENT grid. For a SPOKEN enumeration (the finger lands
+   * as the narration utters 第一/第二/第三) pass `stepFrames` instead so each step
+   * binds to the measured ASR onset, never this assumed interval.
    */
   stepDurationFrames?: number;
+  /**
+   * MEASURED per-position step frames (cue-LOCAL, same space as `atFrame`'s
+   * `local = frame - atFrame`): entry k is the local frame at which position k+1
+   * becomes active — i.e. the ASR onset of the k-th spoken ordinal/number, from
+   * `cue.tokenOnsets` via the kit `stepFramesFromOnsets` / `tokenOnsetFrame`
+   * helper. When provided, the count-walk, the per-position spotlight pop, and
+   * any per-step overlay advance on THESE onsets instead of the fixed
+   * `stepDurationFrames` grid — so the mark lands when the word is spoken. When
+   * ABSENT, the component falls back to the constant grid unchanged (no behavior
+   * change for current consumers). Must be non-decreasing; length ≥ N is ideal
+   * (a short array clamps the tail to its last onset).
+   */
+  stepFrames?: number[];
   /**
    * Draw the direction arrow (TeacherMark label-arrow) along the row toward the
    * position-1 end. On a `direction` flip the arrow re-points and re-draws — the
@@ -151,6 +167,7 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
   cardinalLabel,
   atFrame,
   stepDurationFrames = 18,
+  stepFrames,
   showDirectionArrow,
   rowGap = 150,
   arrowColor,
@@ -163,6 +180,35 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
   const n = items.length;
   const local = frame - atFrame;
   const D = Math.max(1, stepDurationFrames);
+
+  // ---- Measured per-step onsets (spoken-enumeration sync) -------------------
+  // When the caller supplies `stepFrames` (cue-local ASR onset frames per
+  // position), every spoken step binds to its MEASURED onset instead of the
+  // fixed `D` grid. `onsetMode` gates all the onset-aware branches below; absent
+  // → the existing constant-grid fallback runs unchanged.
+  const onsetMode = Array.isArray(stepFrames) && stepFrames.length > 0;
+  // The cue-local onset frame at which position `pos` (1-based) becomes active.
+  // Clamps a short array to its last onset (never invents an interval) and a
+  // long array to its tail, so it is total over any 1..N. Falls back to the
+  // grid (`(pos-1)*D`) when not in onset mode.
+  const stepOnset = (pos: number): number => {
+    if (!onsetMode) {
+      return (pos - 1) * D;
+    }
+    const idx = Math.min(stepFrames!.length - 1, Math.max(0, pos - 1));
+    return stepFrames![idx];
+  };
+  // Which position is active at `local`: the highest position whose onset has
+  // been reached (1..N). Pure linear scan — N is small (2..~8).
+  const stepFromOnsets = (): number => {
+    let active = 1;
+    for (let pos = 1; pos <= n; pos += 1) {
+      if (local >= stepOnset(pos)) {
+        active = pos;
+      }
+    }
+    return active;
+  };
   const ltr = direction === "ltr";
   const ink = arrowColor ?? colors.textNavy;
   const accent = spotlightColor ?? colors.coral;
@@ -205,20 +251,33 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
   // cardinal/ordinal panel shows neither — no spurious finger or count pill.
   const derivedStep = Math.floor(local / D); // 0,1,2,... advancing each window
   const explicit = pointerIndex !== undefined;
-  // The pointer counts by POSITION 1→N, so the active array index is
-  // indexOfPos(step+1). When `pointerIndex` is given, that array index IS the
+  // The pointer counts by POSITION 1→N. In onset mode the active position is the
+  // highest spoken onset reached (MEASURE, DON'T ASSUME); otherwise it advances
+  // on the fixed `D` grid. When `pointerIndex` is given, that array index IS the
   // current item and its position drives the tally.
   const currentPos = explicit
     ? posOf(Math.min(Math.max(0, Math.round(pointerIndex)), n - 1))
-    : Math.min(n, Math.max(1, derivedStep + 1));
+    : onsetMode
+      ? stepFromOnsets()
+      : Math.min(n, Math.max(1, derivedStep + 1));
   // The walk only renders once it has begun (local >= 0) and the caller asked
   // for it.
   const walkActive = (countWalk || explicit) && local >= 0 && n >= 1;
 
   // Sub-step progress 0→1 within the current window (for finger glide + settle).
+  // In onset mode the window opens at this position's measured onset and its
+  // length is the gap to the NEXT onset (or `D` for the final position); the
+  // finger settles within the first 70% of that window. Out of onset mode the
+  // window is the fixed `D` grid, unchanged.
+  const windowStart = onsetMode ? stepOnset(currentPos) : (currentPos - 1) * D;
+  // Gap to the next onset; for the final position there is no next onset, so the
+  // glide window falls back to the fixed `D` cadence.
+  const nextOnsetGap =
+    onsetMode && currentPos < n ? stepOnset(currentPos + 1) - windowStart : 0;
+  const windowLen = onsetMode ? (nextOnsetGap > 0 ? nextOnsetGap : D) : D;
   const stepProgress = explicit
     ? 1
-    : interpolate(local - (currentPos - 1) * D, [0, D * 0.7], [0, 1], {
+    : interpolate(local - windowStart, [0, windowLen * 0.7], [0, 1], {
         ...CLAMP,
         easing: EASE.outCubic,
       });
@@ -235,9 +294,16 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
   const spotIdx =
     spotlightOrdinal !== undefined ? indexOfPos(spotlightOrdinal) : -1;
   const spotValid = spotIdx >= 0 && spotIdx < n;
-  // The spotlight pops a beat after the walk reaches its position (or at start
-  // when there is no walk context).
-  const spotStart = explicit || !walkActive ? 0 : (spotlightOrdinal ?? 1) * D;
+  // The spotlight pops as the walk reaches its position. In onset mode that is
+  // the MEASURED onset of the spotlit ordinal (so the ring lands when the word
+  // is spoken); otherwise a beat after the grid step. At start when there is no
+  // walk context.
+  const spotStart =
+    explicit || !walkActive
+      ? 0
+      : onsetMode
+        ? stepOnset(spotlightOrdinal ?? 1)
+        : (spotlightOrdinal ?? 1) * D;
   const spotReveal = interpolate(local, [spotStart, spotStart + D * 0.7], [0, 1], {
     ...CLAMP,
     easing: EASE.overshoot,
