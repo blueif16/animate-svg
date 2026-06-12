@@ -8,6 +8,8 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 
 **Coverage.** 12 producing nodes. Setup (trivial scaffold) and W6 verification (retired) are omitted. Each entry: the artifact(s) → its downstream purpose → acceptance criteria (must-haves + quality dimensions) → red flags (what bad looks like). Node ids match the map's wave DAG.
 
+**Per-node exemplars (2026-06-11).** Each node carries a 🟢 **Gold** + 🔴 **Red-flag** — REAL artifact excerpts (copied verbatim, never invented), the calibration anchor the eye diffs a new run against (judge by *difference from the gold*, not cold-reading). Status: **VALIDATED** (confirmed by a clean-room rerun + judge), **PROVISIONAL** (best real artifact, not yet rerun-validated), or **PENDING** (no real artifact yet — slot reserved). When a fresh run would flip a frozen verdict, the criterion has been *redefined* — route that through the Hermes human gate, never a silent edit.
+
 ---
 
 ## W0 pedagogy — `lesson-data/<id>/pedagogy.md`
@@ -35,6 +37,18 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - A focal that is a static end-frame the child reads rather than a change the child watches; or multiple cognitive tasks bundled into one cue (count AND name, transform AND read-the-result-label) that should be split.
 - Reinforcement written as a copied template identical across cues regardless of each discovery's difficulty.
 
+**Exemplars**
+- 🟢 **Gold** — `lesson-data/kptest-fenyuhe-six/pedagogy.md` · VALIDATED `a3b38fe`
+  > lesson kind: **math-acquisition** (the three splits + their 合 are facts the child must produce on demand, not an insight the picture reveals)
+  > The complete utterances "6可以分成1和5" / "1和5合成6" name the whole being decomposed — never a fragment like "一和五" spoken without its whole.
+
+  _Why gold:_ honest acquisition lesson-kind triggers the §4 carve-out; every relation/retrieval beat is a complete utterance naming the whole + conserved total.
+- 🔴 **Red-flag** — `_prior-runs/kptest-fenyuhe-six/pedagogy.PRE-FIX.md` · surfaced by `a3b38fe`
+  > lesson kind: math-insight
+  > The §4 narration-leakage rule applies normally — the picture delivers the split, the narration names the result.
+
+  _Why red:_ mislabels an acquisition lesson as math-insight and forces the voice to withhold/fragment the bond → the downstream backwards fragment "一和五，分成。" that drops the whole 六 and suppresses conservation.
+
 ---
 
 ## W1 storyboard — `lesson-data/<id>/storyboard.md`
@@ -61,6 +75,17 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - invite-echo and its wait-time buried inside a model cue (no standalone echo cue), so the ≥3–5s silent learner-response beat cannot become real silence downstream.
 - Exposures ledger missing, or counts that are aspirational / don't match the cues actually present in the spine.
 
+**Exemplars**
+- 🟢 **Gold** — `lesson-data/kptest-fenyuhe-six/storyboard.md` · VALIDATED `893e490`+`c089d71`
+  > narration beat intent: the teacher voices the COMPLETE bond, in its own breath-group — "6可以分成1和5" on the split, "1和5合成6" on the recombine. The voice names the whole being decomposed; the picture delivers the parts.
+
+  _Why gold:_ bond intent stated referentially as a complete utterance (both directions); the two closers are kept only because their retrieval functions are explicitly distinct.
+- 🔴 **Red-flag** — `_prior-runs/kptest-fenyuhe-six/storyboard.PRE-W1FIX.md` · surfaced by `893e490`
+  > narration beat intent: announce the lesson topic "6的分与合", then model the bond "一和五", then the picture delivers the insight that six splits into one and five.
+  > ### cue-reveal-answer … ### cue-spaced-recap-all-three … recall all three splits in rapid succession — 1和5, then 2和4, then 3和3
+
+  _Why red:_ stranded-token bond intent ("model the bond 一和五" — the whole 六 dangles) + two near-identical closing beats (reveal-answer + recap) instead of one retrieval recap — red-flag 56.
+
 ---
 
 ## W2a visual-design — `lesson-data/<id>/visual-design.md`
@@ -86,6 +111,20 @@ _The per-node **OUTPUT ACCEPTANCE CRITERIA** fixture — the standing, human-jud
 - visualMotionSeconds missing for some cues, given as absolute frames, or set to pure transition time with no dwell.
 - Decoration creep: a card/panel/chrome behind the object that already has its own silhouette, a fifth meaningful color, the same fact shown twice (label + caption + badge), or emphasis effects on every cue diluting the climax.
 - Vague, non-load-bearing contract lines ("a clean friendly layout", "shows the change"), or freestyled one-off SVG instead of naming reusable registered primitives.
+
+**Exemplars**
+- 🟢 **Gold** — `_prior-runs/kptest-fenyuhe-six/visual-design.VALIDATED-99be61f.md` · VALIDATED `99be61f`
+  > **Disjointness (pairwise intersections, delivery frame):**
+  > - `zone-objects` ∩ `zone-pointer` = `{}` (objects y=475–605; pointer y=350–450).
+  > - `zone-objects` ∩ `zone-caption` = `{}` (objects y≤605; caption y≥920).
+
+  _Why gold:_ "disjoint" is a COMPUTED claim — pairwise bbox intersections shown empty with the actual y-coordinates, plus a `separation-gap-min ≥ 6% short-side = 65px` floor and a densest-cue fit-check.
+- 🔴 **Red-flag** — `_prior-runs/kptest-fenyuhe-six/visual-design.PRE-W2AFIX.md` · surfaced by `99be61f`
+  > zone-objects:   x=120, y=400, w=1680, h=380    | the six dots. NOTHING ELSE.
+  > zone-question:  x=240, y=440, w=1440, h=240    | (cue-learner-response-gap only)
+  > Six dots at 130 px + 30 px gaps = 930 px ≈ 86% of 1080 — they fit
+
+  _Why red:_ zones declared "Disjoint" but `zone-question` is fully contained in `zone-objects` (345600 px² overlap, both on-screen in the learner-gap cue, never computed); "86% of 1080" uses the wrong denominator for a horizontal 930px row (real 48% ÷1920) — "the single worst known failure."
 
 ---
 
