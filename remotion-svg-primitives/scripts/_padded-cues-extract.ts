@@ -51,22 +51,38 @@ type Cue = {
   narrationEndFrame?: number;
 };
 
+// v4 per-cue voice placement (`<camel>VoiceClips`): which clip plays, at which
+// composition frame, for how long. The animatic gate's no-scene fallback reads
+// these to draw each per-cue clip waveform and to verdict clip-fits-window.
+type VoiceClip = {
+  src: string;
+  fromFrame: number;
+  durationInFrames: number;
+};
+
 const main = async () => {
   // v4: prefer the reconciled timeline's cues, which carry the exact narration
   // window. Only fall back to the raw ASR Timing module (legacy lessons) when a
   // cue does not carry narration fields.
   let timelineCues: Cue[] | undefined;
   let timelineDuration: number | undefined;
+  let timelineVoiceClips: VoiceClip[] | undefined;
   if (!forceRaw) {
     try {
       const timelineMod = await import(pathToFileURL(timelinePath).href);
       const paddedKey = `${camelLessonId}Cues`;
       const durKey = `${camelLessonId}Duration`;
+      const durFramesKey = `${camelLessonId}DurationFrames`;
+      const voiceClipsKey = `${camelLessonId}VoiceClips`;
       if (Array.isArray(timelineMod[paddedKey])) {
         timelineCues = timelineMod[paddedKey];
         timelineDuration =
           timelineMod[durKey] ??
+          timelineMod[durFramesKey] ??
           timelineCues![timelineCues!.length - 1].endFrame;
+      }
+      if (Array.isArray(timelineMod[voiceClipsKey])) {
+        timelineVoiceClips = timelineMod[voiceClipsKey];
       }
     } catch {
       // Timeline file may not exist; fall back to raw below.
@@ -95,6 +111,7 @@ const main = async () => {
           narrationStartFrame: cue.narrationStartFrame,
           narrationEndFrame: cue.narrationEndFrame,
         })),
+        voiceClips: timelineVoiceClips ?? [],
       }),
     );
     return;
@@ -122,6 +139,9 @@ const main = async () => {
     fps: 30,
     totalDuration,
     source,
+    // Legacy/raw lessons have no per-cue VoiceClips export; the animatic
+    // fallback then derives windows from each cue's narration sub-span.
+    voiceClips: timelineVoiceClips ?? [],
     cues: cues.map((cue) => {
       const narration = narrationByCueId.get(cue.id);
       let narrationStartFrame = cue.startFrame;

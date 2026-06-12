@@ -101,6 +101,264 @@ const loadReconciledCues = async (camelLessonId) => {
   return JSON.parse(stdout.stdout);
 };
 
+// ---------------------------------------------------------------------------
+// No-scene fallback (runs at W3.5, before the W4 composer registers the scene).
+//
+// Renders the cue-boundary animatic from the RECONCILED TIMELINE MODULE ALONE:
+//   - one card per cue (cue id + window + narration sub-window + clip placement)
+//   - below each card, that cue's OWN voice-clip waveform, drawn inside a bracket
+//     of the cue window so a clip that overruns is visible at a glance
+//   - the clips-fit-windows VERDICT (pass/fail per clip + overall)
+//
+// Same artifact path/shape as the scene path:
+//   out/<lessonId>/<lessonId>-animatic.png  +  -animatic.json
+// The sidecar additionally carries a `verdict` block (the pass/fail signal).
+// ---------------------------------------------------------------------------
+const runNoSceneFallback = async ({
+  cues,
+  fps,
+  voiceClips,
+  lessonId,
+  composition,
+  wavPath,
+  outDir,
+  tmpDir,
+  source,
+  t0,
+}) => {
+  const sharpMod = await import("sharp");
+  const sharp = sharpMod.default;
+
+  // Per-cue clip placement, keyed by cue id. When the timeline module did not
+  // export VoiceClips (legacy/raw), synthesize the placement from the cue's
+  // narration sub-window so the verdict still has something to check.
+  const clipByCueId = new Map(
+    (voiceClips ?? []).map((vc, i) => {
+      // VoiceClips are emitted in storyboard (cue) order; pair positionally with
+      // cues, but key by id when the cue exists at that index.
+      const cue = cues[i];
+      return [cue ? cue.id : `__clip_${i}`, vc];
+    }),
+  );
+  const placementForCue = (cue) => {
+    const vc = clipByCueId.get(cue.id);
+    if (vc) {
+      return {
+        src: vc.src,
+        fromFrame: vc.fromFrame,
+        durationInFrames: vc.durationInFrames,
+        synthesized: false,
+      };
+    }
+    // Fallback synthesis from the narration sub-window.
+    const nStart = cue.narrationStartFrame ?? cue.startFrame;
+    const nEnd = cue.narrationEndFrame ?? cue.startFrame;
+    return {
+      src: null,
+      fromFrame: nStart,
+      durationInFrames: Math.max(0, nEnd - nStart),
+      synthesized: true,
+    };
+  };
+
+  // Verdict: each clip must sit fully inside its cue window.
+  const verdictRows = cues.map((cue) => {
+    const p = placementForCue(cue);
+    const clipStart = p.fromFrame;
+    const clipEnd = p.fromFrame + p.durationInFrames;
+    const fits = clipStart >= cue.startFrame && clipEnd <= cue.endFrame;
+    const overrunFrames = Math.max(0, clipEnd - cue.endFrame);
+    const underrunFrames = Math.max(0, cue.startFrame - clipStart);
+    return {
+      id: cue.id,
+      cueStartFrame: cue.startFrame,
+      cueEndFrame: cue.endFrame,
+      clipFromFrame: clipStart,
+      clipEndFrame: clipEnd,
+      clipSrc: p.src,
+      synthesized: p.synthesized,
+      fits,
+      overrunFrames,
+      underrunFrames,
+    };
+  });
+  const failures = verdictRows.filter((r) => !r.fits);
+  const pass = failures.length === 0;
+
+  // ── Layout. Same card dims as the scene strip; one card per cue. ──
+  const CARD_W = THUMB_W; // reuse the strip metrics for a consistent artifact
+  const CARD_H = THUMB_H;
+  const CUE_GAP = 16;
+  const stripW = PAD * 2 + cues.length * CARD_W + (cues.length - 1) * CUE_GAP;
+  const stripH = PAD + CARD_H + LABEL_H + PAD;
+
+  // Pixels-per-frame is computed PER CUE so each card's internal clip bar maps
+  // the clip placement into the cue window proportionally.
+  const cardSvg = (cue, p, row) => {
+    const dur = Math.max(1, cue.endFrame - cue.startFrame);
+    const innerW = CARD_W - 24;
+    const innerLeft = 12;
+    const barY = 96;
+    const barH = 26;
+    const pxPerFrame = innerW / dur;
+    const clipLeft =
+      innerLeft + (p.fromFrame - cue.startFrame) * pxPerFrame;
+    const clipW = Math.max(2, p.durationInFrames * pxPerFrame);
+    const clipColor = row.fits ? "#66bb6a" : "#ef5350";
+    const cueSec = (dur / fps).toFixed(1);
+    const narrSec = (p.durationInFrames / fps).toFixed(1);
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${CARD_H}">
+  <rect width="${CARD_W}" height="${CARD_H}" fill="#161616" stroke="#2a2a2a"/>
+  <text x="12" y="28" font-family="-apple-system, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#fafafa">${escapeSvg(truncate(cue.id, 28))}</text>
+  <text x="12" y="50" font-family="-apple-system, Helvetica, sans-serif" font-size="12" fill="#9e9e9e">cue f${cue.startFrame}–${cue.endFrame} · ${cueSec}s</text>
+  <text x="12" y="68" font-family="-apple-system, Helvetica, sans-serif" font-size="12" fill="#9e9e9e">clip f${p.fromFrame}–${p.fromFrame + p.durationInFrames} · ${narrSec}s${p.synthesized ? " (synth)" : ""}</text>
+  <!-- cue window track -->
+  <rect x="${innerLeft}" y="${barY}" width="${innerW}" height="${barH}" rx="3" fill="#0d0d0d" stroke="#3a3a3a"/>
+  <!-- clip placement bar -->
+  <rect x="${clipLeft.toFixed(1)}" y="${barY}" width="${clipW.toFixed(1)}" height="${barH}" rx="3" fill="${clipColor}" opacity="0.85"/>
+  <text x="12" y="${barY + barH + 22}" font-family="-apple-system, Helvetica, sans-serif" font-size="13" font-weight="700" fill="${clipColor}">${row.fits ? "FITS" : `OVERRUN +${row.overrunFrames}f`}</text>
+</svg>`;
+  };
+
+  // ── Render each cue's clip waveform (its own WAV) to a tile. ──
+  console.log(`== Rendering ${cues.length} per-cue clip waveforms...`);
+  const waveTiles = [];
+  for (let i = 0; i < cues.length; i += 1) {
+    const cue = cues[i];
+    const p = placementForCue(cue);
+    let waveBuf = null;
+    // clipSrc is public/-relative; resolve it against public/.
+    const clipAbs = p.src
+      ? path.resolve(process.cwd(), "public", p.src)
+      : null;
+    if (clipAbs && fs.existsSync(clipAbs)) {
+      const wavePngPath = path.join(tmpDir, `clipwave-${i}.png`);
+      const ff = spawnSync(
+        "ffmpeg",
+        [
+          "-y",
+          "-i",
+          clipAbs,
+          "-filter_complex",
+          `showwavespic=s=${CARD_W}x${WAVE_H}:colors=#7e9cff`,
+          "-frames:v",
+          "1",
+          wavePngPath,
+        ],
+        { encoding: "utf8" },
+      );
+      if (ff.status === 0 && fs.existsSync(wavePngPath)) {
+        waveBuf = await sharp(wavePngPath).png().toBuffer();
+      }
+    }
+    waveTiles.push(waveBuf);
+  }
+
+  // ── Compose: cue cards on the strip row, clip waveforms below each card. ──
+  const composites = [];
+  for (let i = 0; i < cues.length; i += 1) {
+    const cue = cues[i];
+    const p = placementForCue(cue);
+    const row = verdictRows[i];
+    const groupLeft = PAD + i * (CARD_W + CUE_GAP);
+    composites.push({
+      input: Buffer.from(cardSvg(cue, p, row)),
+      left: groupLeft,
+      top: PAD,
+    });
+    // A small label band under the card matching the scene strip's LABEL_H.
+    const labelSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${LABEL_H}">
+  <rect width="${CARD_W}" height="${LABEL_H}" fill="#0e0e0e"/>
+  <text x="6" y="19" font-family="-apple-system, Helvetica, sans-serif" font-size="13" font-weight="600" fill="${row.fits ? "#b0b0b0" : "#ef5350"}">${escapeSvg(truncate(p.src ? path.basename(p.src) : "(no clip)", 40))}</text>
+</svg>`;
+    composites.push({
+      input: Buffer.from(labelSvg),
+      left: groupLeft,
+      top: PAD + CARD_H,
+    });
+    // Clip waveform tile below the strip (per cue).
+    if (waveTiles[i]) {
+      composites.push({ input: waveTiles[i], left: groupLeft, top: stripH });
+    } else {
+      const noWaveSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${WAVE_H}">
+  <rect width="${CARD_W}" height="${WAVE_H}" fill="#0c0c0c"/>
+  <text x="8" y="${WAVE_H / 2}" font-family="-apple-system, Helvetica, sans-serif" font-size="12" fill="#666">clip WAV unavailable</text>
+</svg>`;
+      composites.push({
+        input: Buffer.from(noWaveSvg),
+        left: groupLeft,
+        top: stripH,
+      });
+    }
+  }
+
+  // Header label band over the waveform region.
+  const finalH = stripH + WAVE_H + WAVE_LABEL_H;
+  const waveLabelSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${stripW}" height="${WAVE_LABEL_H}">
+  <rect width="${stripW}" height="${WAVE_LABEL_H}" fill="#0e0e0e"/>
+  <text x="${PAD}" y="17" font-family="-apple-system, Helvetica, sans-serif" font-size="13" font-weight="600" fill="${pass ? "#66bb6a" : "#ef5350"}">TIMELINE-ONLY animatic (no scene yet) · per-cue clip waveforms · verdict: ${pass ? "PASS — every clip fits its cue window" : `FAIL — ${failures.length} clip(s) overrun`}</text>
+</svg>`;
+  composites.push({
+    input: Buffer.from(waveLabelSvg),
+    left: 0,
+    top: stripH + WAVE_H,
+  });
+
+  const finalImg = sharp({
+    create: {
+      width: stripW,
+      height: finalH,
+      channels: 3,
+      background: { r: 18, g: 18, b: 18 },
+    },
+  }).composite(composites);
+
+  const outPng = path.join(outDir, `${lessonId}-animatic.png`);
+  await finalImg.png().toFile(outPng);
+
+  const sidecar = {
+    lessonId,
+    composition,
+    fps,
+    wavPath,
+    source,
+    mode: "timeline-only-fallback",
+    dimensions: { width: stripW, height: finalH },
+    verdict: {
+      pass,
+      failingCues: failures.map((f) => f.id),
+      rows: verdictRows,
+    },
+    cues: cues.map((cue) => ({
+      id: cue.id,
+      startFrame: cue.startFrame,
+      endFrame: cue.endFrame,
+      startSeconds: Number((cue.startFrame / fps).toFixed(3)),
+      endSeconds: Number((cue.endFrame / fps).toFixed(3)),
+    })),
+  };
+  const outJson = path.join(outDir, `${lessonId}-animatic.json`);
+  fs.writeFileSync(outJson, `${JSON.stringify(sidecar, null, 2)}\n`);
+
+  const stat = fs.statSync(outPng);
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  console.log(
+    `\n== Animatic (timeline-only): ${outPng} (${stripW}x${finalH}, ${(stat.size / 1024).toFixed(0)} KB)`,
+  );
+  console.log(`== Sidecar:  ${outJson}`);
+  console.log(
+    `== VERDICT:  ${pass ? "PASS — every clip fits its cue window" : `FAIL — ${failures.length} clip(s) overrun: ${failures.map((f) => `${f.id} (+${f.overrunFrames}f)`).join(", ")}`}`,
+  );
+  console.log(`== Runtime:  ${elapsed}s`);
+  if (!pass) {
+    process.exitCode = 1;
+  }
+};
+
 const main = async () => {
   const t0 = Date.now();
   const args = parseArgs(process.argv.slice(2));
@@ -142,10 +400,20 @@ const main = async () => {
   fs.mkdirSync(outDir, { recursive: true });
 
   // --------------------------------------------------------------------- //
-  // Step 1. Bundle once, selectComposition once, loop renderStill.        //
+  // Step 0. Decide scene-based vs no-scene fallback.                       //
+  //                                                                        //
+  // The lesson SCENE composition is registered by the W4 composer. At W3.5 //
+  // (where this gate runs) a FRESH lesson has no scene yet, so we cannot    //
+  // render scene stills. The gate's load-bearing job at W3.5 is only to     //
+  // confirm each cue's voice CLIP sits inside its reconciled cue window —   //
+  // which needs ONLY the reconciled timeline module. So we probe the bundle //
+  // for the composition id and, when it is absent (or un-renderable),       //
+  // fall back to a timeline-only animatic: synthetic per-cue cards + the    //
+  // per-clip waveforms + the clips-fit-windows verdict. When the scene IS   //
+  // registered (at/after W4) the original scene-still path runs verbatim.   //
   // --------------------------------------------------------------------- //
   const { bundle } = await import("@remotion/bundler");
-  const { selectComposition, renderStill } = await import(
+  const { selectComposition, getCompositions, renderStill } = await import(
     "@remotion/renderer"
   );
 
@@ -157,16 +425,50 @@ const main = async () => {
   });
   console.log(`   bundled in ${((Date.now() - tBundle) / 1000).toFixed(1)}s`);
 
-  const comp = await selectComposition({
-    serveUrl,
-    id: composition,
-    inputProps: {},
-  });
+  // Probe: is THIS lesson's scene composition registered in the bundle?
+  let comp = null;
+  let sceneAvailable = false;
+  try {
+    const registered = await getCompositions(serveUrl, { inputProps: {} });
+    if (registered.some((c) => c.id === composition)) {
+      comp = await selectComposition({ serveUrl, id: composition, inputProps: {} });
+      sceneAvailable = true;
+    } else {
+      console.log(
+        `== NO-SCENE FALLBACK: composition "${composition}" is not registered yet ` +
+          `(W4 composer has not run) — rendering the timeline-only animatic ` +
+          `(cue cards + per-clip waveforms + clips-fit-windows verdict).`,
+      );
+    }
+  } catch (probeErr) {
+    // Bundle enumeration / composition lookup failed (e.g. composition genuinely
+    // missing). Fall back rather than abort the W3.5 gate.
+    console.log(
+      `== NO-SCENE FALLBACK: could not resolve composition "${composition}" ` +
+        `(${probeErr?.message || probeErr}) — rendering the timeline-only animatic.`,
+    );
+  }
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "animatic-"));
   const samplesByCue = []; // { cue, samples: [{tag, frame, tilePath}] }
 
   try {
+    if (!sceneAvailable) {
+      await runNoSceneFallback({
+        cues,
+        fps,
+        voiceClips: extracted.voiceClips ?? [],
+        lessonId,
+        composition,
+        wavPath,
+        outDir,
+        tmpDir,
+        source: extracted.source,
+        t0,
+      });
+      return;
+    }
+
     console.log("== Rendering thumbnails...");
     const tStills = Date.now();
     for (const cue of cues) {
