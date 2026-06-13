@@ -5,3 +5,10 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# Capability gallery's derived data — regenerated from primitive-registry.json
+# by `npm run gallery:data` (or `npm run gallery`). The page + scripts are tracked.
+gallery/gallery-data.json
+# Rendered component previews (poster PNG + loop GIF per component) — derivable
+# via `npm run gallery:previews` from demoProps. Heavy + regenerable, so untracked.
+gallery/previews/
