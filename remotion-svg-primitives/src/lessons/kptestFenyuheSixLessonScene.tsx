@@ -439,6 +439,15 @@ function aggregatorStateAt(frame: number): AggregatorState | null {
   return { opacity: fadeIn, ringProgress };
 }
 
+// Recap sub-beat manifest ids — index-aligned to the manifest's
+// recap-beat-1-5 / 2-4 / 3-3 elements. Each rendered sub-beat <g> spreads
+// `measureProps(RECAP_BEAT_IDS[i])` so the measured id ≡ the manifest id.
+const RECAP_BEAT_IDS = [
+  "recap-beat-1-5",
+  "recap-beat-2-4",
+  "recap-beat-3-3",
+] as const;
+
 // ---------------------------------------------------------------------------
 // Recap state (cue 6). Returns the active sub-beat index, the ring's
 // draw/fade progress, and the active sub-beat's ringCenter.
@@ -578,11 +587,19 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
 
   // Recap sub-beat nodes (for the RecapSpotlight). Each sub-beat is a
   // static group of 6 dots in its X+Y layout, centered on the sub-beat's x.
+  // Each sub-beat <g> carries its OWN manifest id (measure-id ≡ manifest-id
+  // bijection, CLAUDE.md bbox-discipline) — NOT a single "recap" tag, which
+  // matched no manifest element and silently fell through to `decoration`
+  // (collision detection void). The ids index-align to the manifest's
+  // recap-beat-1-5 / 2-4 / 3-3 elements.
   const recapSubBeatNodes: React.ReactNode[] = ([0, 1, 2] as const).map(
     (beatIndex) => {
       const positions = recapSubBeatDotPositions(beatIndex);
       return (
-        <g key={`recap-beat-${beatIndex}`}>
+        <g
+          key={`recap-beat-${beatIndex}`}
+          {...measureProps(RECAP_BEAT_IDS[beatIndex])}
+        >
           {positions.map((p, i) => (
             <UnitBlock
               color={colors.reward}
@@ -776,35 +793,24 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
             ================================================================ */}
         {aggregator ? (
           <g {...measureProps("aggregator-prompt")}>
-            <circle
-              cx={QUESTION_PROMPT_X}
-              cy={QUESTION_PROMPT_Y}
-              fill="none"
-              opacity={aggregator.ringProgress * 0.4}
-              r={QUESTION_PROMPT_RING_RADIUS}
-              stroke={colors.sunshine}
-              strokeWidth={5}
-            />
-            <circle
-              cx={QUESTION_PROMPT_X}
-              cy={QUESTION_PROMPT_Y}
-              fill="none"
-              opacity={aggregator.ringProgress * 0.25}
-              r={QUESTION_PROMPT_RING_RADIUS * 0.75}
-              stroke={colors.sunshine}
-              strokeWidth={4}
-            />
-            {/* Mic glyph to the LEFT of the label. */}
+            {/* Decoration rings REMOVED: a 200px pulse ring inside this measured
+                group inflated aggregator-prompt's bbox to 516×400 — its bottom
+                arc sliced through the six-dots row, a phantom labels∩objects
+                collision (CLAUDE.md "BOUNDING BOX = TRUE FOOTPRINT"; the dots
+                never touched anything). The question label + mic are the
+                readable parts; the held silence IS the "your turn" affordance —
+                a bare ring is decoration-only AND collides, so it is cut. */}
+            {/* Mic glyph to the LEFT of the label (clear of the numeral). */}
             <Breathe
               amplitudeScale={0.005}
               bpm={15}
-              originX={QUESTION_PROMPT_X - 240}
+              originX={QUESTION_PROMPT_X - 340}
               originY={QUESTION_PROMPT_Y}
               phaseSeed="kp6-mic"
             >
               <g
                 opacity={aggregator.opacity}
-                transform={`translate(${QUESTION_PROMPT_X - 240} ${QUESTION_PROMPT_Y})`}
+                transform={`translate(${QUESTION_PROMPT_X - 340} ${QUESTION_PROMPT_Y})`}
               >
                 <IconAsset
                   name="microphone"
@@ -842,7 +848,10 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
             beat and fades in/out across the sub-beat's window.
             ================================================================ */}
         {recap ? (
-          <g {...measureProps("recap")}>
+          // No measureProps here: the load-bearing elements are the three
+          // sub-beats (each tagged with its own recap-beat-* id above). The
+          // outer wrapper is layout/decoration only.
+          <g>
             <Breathe
               amplitudeScale={0.005}
               bpm={15}

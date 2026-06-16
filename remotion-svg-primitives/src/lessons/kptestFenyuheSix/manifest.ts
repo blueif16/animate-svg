@@ -37,7 +37,7 @@ import {
   ZONE_RECAP_ROW,
   ZONE_TITLE,
   dotSize,
-  getRecapBeatX,
+  recapSubBeatDotPositions,
   sixDotsBboxRect,
   splitCueSchedule,
 } from "./layout";
@@ -225,13 +225,17 @@ function recapBeatBbox(beatIndex: 0 | 1 | 2) {
     if (beatIndex > active) {
       return null;
     }
-    const cx = getRecapBeatX(beatIndex);
+    // TRUE footprint = the thin row of 6 recap dots (NOT a 218×218 square — the
+    // old square diverged ~190px in height from the real ~RECAP_DOT_SIZE-tall
+    // row; CLAUDE.md "BOUNDING BOX = TRUE FOOTPRINT"). Derived from the SAME
+    // helper the scene renders, so measured ≈ declared by construction.
+    const positions = recapSubBeatDotPositions(beatIndex);
+    const xs = positions.map((p) => p.x);
+    const minX = Math.min(...xs) - RECAP_DOT_SIZE / 2;
+    const maxX = Math.max(...xs) + RECAP_DOT_SIZE / 2;
     const cy = RECAP_BEAT_Y;
-    // Sub-beat envelope: 6 recap dots + cluster gap. A square of side
-    // ~2 × (cluster span / 2 + 30) centered on (cx, cy).
-    const halfWidth = (3 * RECAP_DOT_SIZE + 2 * 8 + 28) / 2 + 24;
     return {
-      bbox: [cx - halfWidth, cy - halfWidth, halfWidth * 2, halfWidth * 2],
+      bbox: [minX, cy - RECAP_DOT_SIZE / 2, maxX - minX, RECAP_DOT_SIZE],
       opacity: beatIndex === active ? 1 : 0.3,
     };
   };
