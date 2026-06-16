@@ -48,7 +48,7 @@ const main = () => {
     args.config,
   ]);
   run("Contact sheet", "node", [
-    "scripts/lesson-contact-sheet.mjs",
+    "scripts/make-contact-sheet.mjs",
     "--config",
     args.config,
   ]);
@@ -60,7 +60,7 @@ const main = () => {
 
   const outDir = path.resolve(process.cwd(), "out", config.lessonId);
   const bboxPath = path.join(outDir, "bbox-manifest.json");
-  const sheetPath = path.join(outDir, "contact-sheet.png");
+  const sheetPath = path.join(outDir, `${config.lessonId}-contact.png`);
   const primitivesDir = path.join(outDir, "primitive-checks");
 
   // Opt-in MEASURED pass — runs AFTER the unchanged fast linear path. Renders

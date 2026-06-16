@@ -5,6 +5,9 @@
   "repository": {},
   "license": "UNLICENSED",
   "private": true,
+  "engines": {
+    "node": ">=20 <24"
+  },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
@@ -43,6 +46,7 @@
     "lesson:check": "node scripts/lesson-check.mjs",
     "lesson:audio-gate": "node scripts/lesson-audio-gate.mjs",
     "lesson:contact-sheet": "node scripts/make-contact-sheet.mjs",
+    "lesson:bbox": "node scripts/lesson-bbox-overlay.mjs",
     "lesson:animatic": "node scripts/lesson-animatic.mjs",
     "lessons:registry": "node scripts/build-lesson-registry.mjs",
     "gallery:data": "node scripts/gallery/build-gallery-data.mjs",

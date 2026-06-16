@@ -1,7 +1,26 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
+// Render the lesson's PrimitiveCheck* stills (if any) at real lesson scale.
+// LESSON-AGNOSTIC: no topic/id/frame literal.
+//
+// Bundling goes through the @remotion/bundler + @remotion/renderer NODE API,
+// NOT `npx remotion …`. The CLI path triggers webpack's persistent-cache
+// wasm-hash on Node 24, which crashes (`wasm-hash.js:151 reading 'length'`);
+// the programmatic bundle() avoids it. Every other pipeline script
+// (make-contact-sheet, lesson-measured, lesson-bbox-overlay) bundles this way
+// for the same reason — keep them consistent.
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+
+// @remotion/bundler + @remotion/renderer are TRANSITIVE deps (via @remotion/cli);
+// resolve them against the project-root package.json so a bare import from this
+// subdir module resolves.
+const requireFromRoot = createRequire(
+  pathToFileURL(path.join(process.cwd(), "package.json")),
+);
+const importFromRoot = async (specifier) =>
+  import(pathToFileURL(requireFromRoot.resolve(specifier)).href);
 
 const parseArgs = (argv) => {
   const args = { config: undefined };
@@ -27,11 +46,7 @@ const mergeConfig = (args) => {
     throw new Error("Missing required option: --config <path>");
   }
   const config = JSON.parse(fs.readFileSync(args.config, "utf8"));
-  return {
-    ...args,
-    lessonId: config.lessonId,
-    entry: config.entry,
-  };
+  return { ...args, lessonId: config.lessonId, entry: config.entry };
 };
 
 const toCamel = (kebab) =>
@@ -39,32 +54,6 @@ const toCamel = (kebab) =>
 const toPascal = (kebab) => {
   const camel = toCamel(kebab);
   return camel.charAt(0).toUpperCase() + camel.slice(1);
-};
-
-const run = (label, command, args) => {
-  console.log(`\n== ${label}`);
-  execFileSync(command, args, { stdio: "inherit" });
-};
-
-// Parses remotion compositions table output and returns composition IDs.
-// The table is rendered after a bundling progress section; each composition
-// row begins with the ID as the first whitespace-separated token.
-const parseCompositionIds = (stdout) => {
-  const lines = stdout.split(/\r?\n/);
-  const ids = [];
-  const headerIdx = lines.findIndex((l) =>
-    l.includes("The following compositions are available"),
-  );
-  const start = headerIdx === -1 ? 0 : headerIdx + 1;
-  for (let i = start; i < lines.length; i += 1) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const token = line.split(/\s+/)[0];
-    if (/^[A-Za-z][A-Za-z0-9]*$/.test(token)) {
-      ids.push(token);
-    }
-  }
-  return ids;
 };
 
 const main = async () => {
@@ -76,12 +65,13 @@ const main = async () => {
   const prefix = `PrimitiveCheck${toPascal(args.lessonId)}`;
 
   console.log(`\n== List compositions (filter ${prefix}*)`);
-  const stdout = execFileSync("npx", ["remotion", "compositions", args.entry], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
+  const bundler = await importFromRoot("@remotion/bundler");
+  const renderer = await importFromRoot("@remotion/renderer");
+  const serveUrl = await bundler.bundle({
+    entryPoint: path.resolve(process.cwd(), args.entry),
   });
-  const allIds = parseCompositionIds(stdout);
-  const matches = allIds.filter((id) => id.startsWith(prefix));
+  const comps = await renderer.getCompositions(serveUrl);
+  const matches = comps.filter((c) => c.id.startsWith(prefix));
 
   if (matches.length === 0) {
     console.log(`no primitive checks defined for ${args.lessonId}`);
@@ -96,19 +86,21 @@ const main = async () => {
   );
   fs.mkdirSync(outDir, { recursive: true });
 
-  for (const id of matches) {
-    const bare = id.slice(prefix.length) || "default";
+  for (const comp of matches) {
+    const bare = comp.id.slice(prefix.length) || "default";
     const outPath = path.join(outDir, `${bare}.png`);
-    run(`Still ${id}`, "npx", [
-      "remotion",
-      "still",
-      args.entry,
-      id,
-      outPath,
-    ]);
+    console.log(`\n== Still ${comp.id}`);
+    await renderer.renderStill({
+      composition: comp,
+      serveUrl,
+      output: outPath,
+      imageFormat: "png",
+    });
   }
 
-  console.log(`\n${matches.length} primitive check(s) written to ${path.relative(process.cwd(), outDir)}`);
+  console.log(
+    `\n${matches.length} primitive check(s) written to ${path.relative(process.cwd(), outDir)}`,
+  );
 };
 
 try {

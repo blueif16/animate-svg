@@ -81,6 +81,12 @@ const main = async () => {
       // Manifest-declared intentional element-id overlap pairs (allowedOverlaps).
       // Zone tags never grant a collision exemption — only these pairs do.
       allowedOverlaps: manifest.allowedOverlaps ?? null,
+      // FULL declared element id+zone set (every element, regardless of whether
+      // it is mounted at a sampled frame) — the bbox-binding bijection audit
+      // compares measured ids against THIS set, not the per-frame snapshots, so a
+      // declared element merely absent from the sampled frames is not a false
+      // "orphan tag".
+      elements: manifest.elements.map((e: any) => ({ id: e.id, zone: e.zone })),
       manifestByFrame,
     }),
   );

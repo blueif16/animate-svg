@@ -1,5 +1,5 @@
 // Lesson manifest contract — consumed by `scripts/lesson-manifest.mjs` (bbox
-// collision check) and `scripts/lesson-contact-sheet.mjs` (frame picker).
+// collision check) and `scripts/make-contact-sheet.mjs` (frame picker).
 //
 // A lesson manifest file is a PURE TS module (no React, no Remotion imports)
 // that exports a `LESSON_MANIFEST: LessonManifest`. Both the lesson scene

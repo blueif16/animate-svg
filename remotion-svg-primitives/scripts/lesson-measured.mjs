@@ -543,18 +543,79 @@ const main = async () => {
     gateLines.push(
       `${n === 0 ? "PASS" : "WARN"}: overlap-measured — ${n} measured collision(s) (linear path missed)`,
     );
+
+    // --- Gate: bbox-binding — measure-id ≡ manifest-id BIJECTION (both ways) --
+    // The join above silently defaults an unknown measured id to zone
+    // "decoration" (collision-exempt) — which HIDES (a) decoration nested inside
+    // a load-bearing group and (b) a scene/manifest id mismatch. A manifest
+    // element that is MOUNTED (opacity > threshold) at a sampled frame yet never
+    // measured is declared-but-untagged. Both void detection. Surface them
+    // loudly (CLAUDE.md "BOUNDING BOX = TRUE FOOTPRINT" bijection law).
+    const measuredIdsAll = new Set();
+    // FULL declared id set (every manifest element, frame-independent) so an
+    // element merely absent from the sampled frames is not a false orphan.
+    const manifestIdsAll = new Set((extracted.elements || []).map((e) => e.id));
+    const manifestMountedIds = new Set();
+    for (const frame of peakFrames) {
+      for (const id of Object.keys(measuredByFrame[frame] || {})) measuredIdsAll.add(id);
+      for (const el of extracted.manifestByFrame[frame] || []) {
+        manifestIdsAll.add(el.id);
+        if ((el.opacity ?? 1) > OPACITY_THRESHOLD) manifestMountedIds.add(el.id);
+      }
+    }
+    const measuredNotInManifest = [...measuredIdsAll]
+      .filter((id) => !manifestIdsAll.has(id))
+      .sort();
+    const manifestNeverMeasured = [...manifestMountedIds]
+      .filter((id) => !measuredIdsAll.has(id))
+      .sort();
+    const bindBreaks = measuredNotInManifest.length + manifestNeverMeasured.length;
+    measured.gates.bboxBinding = {
+      measuredNotInManifest,
+      manifestNeverMeasured,
+      pass: bindBreaks === 0,
+    };
+    if (bindBreaks === 0) {
+      gateLines.push("PASS: bbox-binding — measure-id ≡ manifest-id");
+    } else {
+      const parts = [];
+      if (measuredNotInManifest.length) {
+        parts.push(
+          `${measuredNotInManifest.length} measured id(s) not in manifest → defaulted to decoration [${measuredNotInManifest.join(", ")}]`,
+        );
+      }
+      if (manifestNeverMeasured.length) {
+        parts.push(
+          `${manifestNeverMeasured.length} manifest id(s) mounted but never measured — untagged or id-mismatch [${manifestNeverMeasured.join(", ")}]`,
+        );
+      }
+      gateLines.push(`WARN: bbox-binding — ${parts.join("; ")}`);
+    }
   }
 
   // --- Gate: LUFS ------------------------------------------------------------
-  const wavPath = config.voice?.out
+  // The DELIVERABLE is the loudnorm'd MASTER MP4 (Wave 5 normalizes to -16
+  // LUFS / -1 dBTP). Measure THAT when it exists — the only honest pass/fail.
+  // Before render (composer time) only the raw voice WAV exists; its loudness
+  // does NOT predict the normalized master (loudnorm always lands it on target),
+  // so measuring the WAV against -16 WARNs on EVERY lesson by construction —
+  // a false positive that erodes the gate. In that case we report the WAV as an
+  // INFO proxy and never fail the target. (Pre-fix bug: gate read -19.6 from the
+  // voice WAV while the master MP4 measured -16.1.)
+  const masterMp4 = config.output
+    ? path.resolve(process.cwd(), config.output)
+    : null;
+  const voiceWav = config.voice?.out
     ? path.resolve(process.cwd(), config.voice.out)
     : null;
-  const lufs = runLufsGate(wavPath);
+  const usingMaster = Boolean(masterMp4 && fs.existsSync(masterMp4));
+  const lufs = runLufsGate(usingMaster ? masterMp4 : voiceWav);
   if (!lufs.ran) {
     measured.gates.lufs = { skipped: lufs.skipReason };
     gateLines.push(`SKIP: lufs — ${lufs.skipReason}`);
-  } else {
+  } else if (usingMaster) {
     measured.gates.lufs = {
+      source: "master-mp4",
       integrated: lufs.integrated,
       truePeak: lufs.truePeak,
       lra: lufs.lra,
@@ -562,7 +623,20 @@ const main = async () => {
       note: lufs.note,
     };
     gateLines.push(
-      `${lufs.pass ? "PASS" : "WARN"}: lufs — I=${lufs.integrated} LUFS, truePeak=${lufs.truePeak} dBFS${lufs.note ? ` (${lufs.note})` : ""}`,
+      `${lufs.pass ? "PASS" : "WARN"}: lufs — I=${lufs.integrated} LUFS, truePeak=${lufs.truePeak} dBFS [master mp4]${lufs.note ? ` (${lufs.note})` : ""}`,
+    );
+  } else {
+    // Pre-loudnorm voice proxy — informational, never fails the -16 target.
+    measured.gates.lufs = {
+      source: "voice-wav-preloudnorm",
+      integrated: lufs.integrated,
+      truePeak: lufs.truePeak,
+      lra: lufs.lra,
+      pass: true,
+      note: "pre-loudnorm voice proxy — master normalized to -16 LUFS / -1 dBTP at render (Wave 5); render to check the deliverable",
+    };
+    gateLines.push(
+      `INFO: lufs — I=${lufs.integrated} LUFS [pre-loudnorm voice proxy; master normalized at render — render the MP4 to gate the deliverable]`,
     );
   }
 
