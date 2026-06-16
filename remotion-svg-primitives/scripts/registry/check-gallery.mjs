@@ -28,6 +28,7 @@ const reg = JSON.parse(fs.readFileSync(registryPath, "utf8"));
 const registeredIds = [
   ...reg.primitives,
   ...reg.motionComponents,
+  ...(reg.specialComponents ?? []),
   ...reg.fxComponents,
 ].map((e) => e.id);
 

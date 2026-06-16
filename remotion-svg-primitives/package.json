@@ -36,6 +36,7 @@
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
+    "test:layout": "tsx src/layout/fitToZone.test.ts",
     "lesson:render": "node scripts/render-complete-lesson.mjs",
     "lesson:scaffold": "node scripts/scaffold-lesson.mjs",
     "lesson:voice": "node node_modules/@studio/narration-kit/bin/generate-voice.mjs --align",

@@ -1,6 +1,7 @@
 // kptest-fenyuhe-six — Complete composition wrapper.
 //
-// Wraps the lesson scene with the v4 cue-anchored audio layers:
+// v4 cue-anchored audio: 6 cues with one measured voice clip each (the
+// reconcile chains them). The Complete wrapper mounts:
 //   - LessonAudioLayer (per-cue voice clips; one <Sequence from={fromFrame}>
 //     per clip — the kit mounts them automatically)
 //   - LessonBgmLayer (mechanical ducked bed, derived from voice spans)
@@ -11,13 +12,12 @@
 // narration. SFX frames derive from cue starts + layout.ts offsets (no
 // frame literals). The intro sting and outro resolve play on top.
 
-import { AbsoluteFill, Sequence } from "remotion";
+import { AbsoluteFill, Html5Audio, Sequence } from "remotion";
 import { LessonAudioLayer } from "../lesson-media/LessonAudioLayer";
 import { LessonBgmLayer } from "../lesson-media/LessonBgmLayer";
 import { LessonCaptionLayer } from "../lesson-media/LessonCaptionLayer";
 import { LessonSfxLayer, type SfxEvent } from "../lesson-media/LessonSfxLayer";
 import { spansToWindows } from "../lesson-media/audioMix";
-import { Html5Audio } from "remotion";
 import { mediaSrc } from "../lesson-media/mediaSrc";
 import { KptestFenyuheSixLessonScene } from "./kptestFenyuheSixLessonScene";
 import {
@@ -27,7 +27,14 @@ import {
   kptestFenyuheSixVoiceClips,
 } from "./kptestFenyuheSixLessonTimeline";
 import { cueMap } from "./timingTypes";
-import { ANNOUNCE_TITLE_DURATION_FRAMES, REVEAL_ANSWER_THREE_THREE_DISPLAY_FRAMES, RECAP_BEAT_ONE_AND_FIVE_FRAMES, RECAP_BEAT_TWO_AND_FOUR_FRAMES, RECAP_BEAT_THREE_AND_THREE_FRAMES } from "./kptestFenyuheSix/layout";
+import {
+  CLIMAX_GLIN_DURATION_FRAMES,
+  RECAP_BEAT_ONE_AND_FIVE_FRAMES,
+  RECAP_BEAT_THREE_AND_THREE_FRAMES,
+  RECAP_BEAT_TWO_AND_FOUR_FRAMES,
+  SPLIT_MOTION_DURATION_FRAMES,
+  SPLIT_START_FRAMES,
+} from "./kptestFenyuheSix/layout";
 
 export type CompleteKptestFenyuheSixLessonProps = {
   showCaptions?: boolean;
@@ -56,42 +63,32 @@ export const CompleteKptestFenyuheSixLesson = ({
   );
 
   // ---- SFX events (audio-cues.json → composer-owned frames) ----
-  // Every fromFrame derives from cue starts + layout.ts offsets.
-  // Per audio-cues.json: cue-announce-split-1of5 fires a "pop" on the
-  // bond-glyph "一和五" appearance; cue-reveal-answer fires a "ta-da" on
-  // the 3|3 answer reveal.
-  const sfxEvents: SfxEvent[] = [];
-
-  // SFX #1: pop on the bond "一和五" entrance (cue-announce-split-1of5's
-  // bond phase begins at title-end). The bond phase is the model's
-  // audible "一和五" spoken word; the pop accents its appearance.
-  sfxEvents.push({
-    sound: "pop",
-    fromFrame:
-      cues["cue-announce-split-1of5"].startFrame +
-      ANNOUNCE_TITLE_DURATION_FRAMES,
-    volume: 0.5,
-  });
-
-  // SFX #2: ta-da on the 3|3 reveal-answer midpoint (the highlight
-  // moment per visual-design §2 "single transient sunshine highlight at
-  // midpoint").
-  sfxEvents.push({
-    sound: "ta-da",
-    fromFrame:
-      cues["cue-reveal-answer"].startFrame +
-      Math.floor(REVEAL_ANSWER_THREE_THREE_DISPLAY_FRAMES / 2),
-    volume: 0.55,
-  });
+  // Per audio-cues.json: split-3-and-3 fires a "ta-da" reward at the
+  // climax; recap fires a "chime" at its start. Every fromFrame derives
+  // from cue starts + layout.ts offsets.
+  const sfxEvents: SfxEvent[] = [
+    {
+      sound: "ta-da",
+      fromFrame:
+        cues["split-3-and-3"].startFrame +
+        SPLIT_START_FRAMES +
+        SPLIT_MOTION_DURATION_FRAMES,
+      volume: 0.55,
+    },
+    {
+      sound: "chime",
+      fromFrame: cues["recap"].startFrame,
+      volume: 0.5,
+    },
+  ];
 
   // Intro section-lift sting (audio-cues.json intro.sting = "mandarin-accent").
   // Fires 2 frames after the lesson starts — a calm rise as the lesson opens.
   const INTRO_STING_OFFSET_FRAMES = 2;
   const INTRO_STING_VOLUME = 0.45;
 
-  // Outro resolve (audio-cues.json outro.resolve = true). The recap is
-  // the lesson's closing arc; the resolve fires near the end of the
-  // recap's last sub-beat.
+  // Outro resolve (audio-cues.json outro.resolve = true). Fires near the end
+  // of the recap's last sub-beat.
   const OUTRO_RESOLVE_OFFSET_FRAMES =
     RECAP_BEAT_ONE_AND_FIVE_FRAMES +
     RECAP_BEAT_TWO_AND_FOUR_FRAMES +
@@ -109,14 +106,14 @@ export const CompleteKptestFenyuheSixLesson = ({
 
       <LessonBgmLayer
         bed="math-calm-68-cmaj"
-        windows={spansToWindows(voiceSpans)}
         totalFrames={completeKptestFenyuheSixLessonDuration}
+        windows={spansToWindows(voiceSpans)}
       />
       <LessonSfxLayer events={sfxEvents} />
 
       {/* Intro sting — calm rise as the lesson opens. */}
       <Sequence
-        from={cues["cue-announce-split-1of5"].startFrame + INTRO_STING_OFFSET_FRAMES}
+        from={cues["routine-reprise"].startFrame + INTRO_STING_OFFSET_FRAMES}
       >
         <Html5Audio
           src={mediaSrc("audio/_stings/kids-section-lift.wav")}
@@ -126,7 +123,7 @@ export const CompleteKptestFenyuheSixLesson = ({
 
       {/* Outro resolve — soft rising swell over the recap close. */}
       <Sequence
-        from={cues["cue-spaced-recap-all-three"].startFrame + OUTRO_RESOLVE_OFFSET_FRAMES}
+        from={cues["recap"].startFrame + OUTRO_RESOLVE_OFFSET_FRAMES}
       >
         <Html5Audio
           src={mediaSrc("audio/_stings/kids-outro-resolve.wav")}
@@ -150,3 +147,9 @@ export const lessonComposition: LessonComposition = {
   durationInFrames: kptestFenyuheSixDuration,
   defaultProps: completeKptestFenyuheSixLessonDefaultProps,
 };
+
+// Suppress unused-import warnings for layout constants consumed only by the
+// scene/manifest cross-references. The lesson does NOT re-introduce the v3
+// REVEAL_ANSWER_THREE_THREE_DISPLAY_FRAMES / CUES constants — those belong
+// to the old (pre-v4) timeline, replaced here by the v4 cue ids.
+void CLIMAX_GLIN_DURATION_FRAMES;

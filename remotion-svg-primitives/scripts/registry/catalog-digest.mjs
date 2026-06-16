@@ -30,18 +30,42 @@ const BANNER =
   "catalog's prose, then regenerate. -->";
 
 const cell = (s) => (s && String(s).trim() ? String(s).replace(/\|/g, "\\|").replace(/\n/g, " ") : "— needs prose —");
-// The component menu is a PICK list: an agent needs name + variants + a one-line
-// "what it's for" to choose. The full multi-sentence prose lives in
-// src/capabilities/primitive-registry.json (the source); pasting it verbatim into
-// a table cell bloated the digest to ~34k (73% useWhen), stalling cheap models.
-// menuCell emits only the first sentence (≤180 chars). Recoverable depth = the JSON.
-const MENU_CELL_MAX = 180;
-const menuCell = (s) => {
-  if (!s || !String(s).trim()) return "— needs prose —";
+
+// Cut a string on a SENTENCE boundary only (./。) — never mid-";" (the old bug
+// that left fen-he-diagram a dangling half-thought). Caps with an ellipsis.
+const sentenceFirst = (s, n) => {
   const t = String(s).replace(/\n/g, " ").trim();
-  let first = t.split(/(?<=[.;])\s+/)[0];
-  if (first.length > MENU_CELL_MAX) first = `${first.slice(0, MENU_CELL_MAX - 1).trimEnd()}…`;
-  return first.replace(/\|/g, "\\|");
+  let first = t.split(/(?<=[.。])\s+/)[0];
+  if (first.length > n) first = `${first.slice(0, n - 1).trimEnd()}…`;
+  return first;
+};
+const escPipe = (s) => s.replace(/\|/g, "\\|");
+
+// intent = the SELECTION SIGNAL the model picks on: ONE complete sentence, shown
+// WHOLE (≤200, effectively no cut). During the migration window an entry may still
+// hold the legacy keyword-tag array — fall back to the useWhen first-sentence so
+// the menu stays useful until that category is swept, flagged so the gap is visible.
+const INTENT_MAX = 200;
+const intentCell = (intent, useWhen) => {
+  if (typeof intent === "string" && intent.trim()) {
+    const t = intent.replace(/\n/g, " ").trim();
+    return escPipe(t.length > INTENT_MAX ? `${t.slice(0, INTENT_MAX - 1).trimEnd()}…` : t);
+  }
+  return useWhen && String(useWhen).trim()
+    ? `${escPipe(sentenceFirst(useWhen, INTENT_MAX))} _(needs intent sentence)_`
+    : "— needs prose —";
+};
+// useWhen = the CONFIRM read (functionality detail) — secondary, first 1-2
+// sentences, cap ~280. Full prose stays recoverable in primitive-registry.json.
+const USE_WHEN_MAX = 280;
+const useWhenCell = (s) => (s && String(s).trim() ? escPipe(sentenceFirst(s, USE_WHEN_MAX)) : "—");
+// avoidWhen = the BOUNDARY / "use <sibling> instead" — newly on every live row;
+// the single strongest defuser of sibling-confusion + duplicate-builds.
+const AVOID_MAX = 180;
+const avoidCell = (s) => {
+  if (!s || !String(s).trim()) return "—";
+  const t = String(s).replace(/\n/g, " ").trim();
+  return escPipe(t.length > AVOID_MAX ? `${t.slice(0, AVOID_MAX - 1).trimEnd()}…` : t);
 };
 const variantsCell = (v) =>
   v && Object.keys(v).length
@@ -50,10 +74,19 @@ const variantsCell = (v) =>
         .join("; ")
     : "—";
 
+// The PICK table. Columns ordered by the selection decision: intent (pick on this)
+// leads; variants + the confirm-read useWhen + the avoid→use boundary follow.
+// `source` and `status` are deliberately NOT columns (integration/noise — they
+// stay in primitive-registry.json). See registry-exposure-and-taxonomy brief §3.
 const componentTable = (entries) => {
-  const lines = ["| id | component | variants | use when (one-line; full prose in primitive-registry.json) |", "| --- | --- | --- | --- |"];
+  const lines = [
+    "| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |",
+    "| --- | --- | --- | --- | --- | --- |",
+  ];
   for (const e of entries)
-    lines.push(`| \`${e.id}\` | \`${e.component}\` | ${variantsCell(e.variants)} | ${menuCell(e.useWhen)} |`);
+    lines.push(
+      `| \`${e.id}\` | \`${e.component}\` | ${intentCell(e.intent, e.useWhen)} | ${variantsCell(e.variants)} | ${useWhenCell(e.useWhen)} | ${avoidCell(e.avoidWhen)} |`,
+    );
   return lines.join("\n");
 };
 
@@ -68,9 +101,11 @@ const KIND_TITLE = {
 
 const totalDocumented = (arr) => arr.filter((e) => e.useWhen && e.useWhen.trim()).length;
 const lessonComponents = reg.lessonComponents ?? [];
+const specialComponents = reg.specialComponents ?? [];
 const allEntries = [
   ...reg.primitives,
   ...reg.motionComponents,
+  ...specialComponents,
   ...reg.fxComponents,
   ...lessonComponents,
 ];
@@ -106,8 +141,15 @@ out.push(
     "hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.",
 );
 
-// --- SVG primitives (the PRIMITIVE tier), grouped by family -----------------
-out.push("\n## SVG teaching primitives\n");
+// The catalog is organized by COMPOSITION TIER (the axis a composing model
+// reasons on): ATOM → MODIFIER → COMPOSITE → INFRA. Subject is a sub-header inside
+// ATOM only. Effects/3D/styles live in MODIFIER/INFRA — never ATOM — so a
+// decorative effect can never be picked as the thing the child reasons about.
+// See research/registry-exposure-and-taxonomy-2026-06-14.md §5.
+
+// --- ATOM tier — teaching primitives (grouped by subject) -------------------
+out.push("\n## ATOM — teaching primitives\n");
+out.push("_The prop-driven shapes the child reasons about (count/progress/state drive them). Grouped by subject._\n");
 for (const kind of KIND_ORDER) {
   const entries = live(reg.primitives.filter((p) => p.kind === kind));
   if (!entries.length) continue;
@@ -116,21 +158,34 @@ for (const kind of KIND_ORDER) {
   out.push("");
 }
 
-// --- motion + fx components -------------------------------------------------
-out.push("## Motion components\n");
+// --- MODIFIER tier — motion + fx (wrap/animate an element; no teaching content) -
+out.push("## MODIFIER — motion & fx\n");
+out.push("_Wrap or animate an existing element; carry no teaching content of their own._\n");
+out.push("### Motion\n");
 out.push(componentTable(live(reg.motionComponents)));
 out.push("");
-out.push("## FX components\n");
+out.push("### FX\n");
 out.push(componentTable(live(reg.fxComponents)));
 out.push("");
+out.push("### Motion vocabulary\n");
+out.push(`- **EASE** (\`src/motion-primitives/curves.ts\`): ${reg.motionVocabulary.curves.map((c) => `\`${c}\``).join(", ")}`);
+out.push(`- **SPRING**: ${reg.motionVocabulary.springs.map((s) => `\`${s}\``).join(", ")}`);
+out.push("");
 
-// --- lesson-infra components ------------------------------------------------
-// The non-teaching components a Complete<Lesson> wrapper / scene mounts: audio &
-// caption layers, decorative 3D section transitions, and the root style wrapper.
-// Grouped by family so a composer sees the infra surface alongside the craft
-// surface. (The `styles[]` IDS table below is a DIFFERENT thing — those are the
-// aesthetic-overlay ids the <StylePreset> wrapper accepts.)
-out.push("## Lesson-infra components\n");
+// --- COMPOSITE tier — special components (ONE self-contained teaching beat) --
+out.push("## COMPOSITE — teaching beats\n");
+out.push(
+  "_Each orchestrates atoms + assets + modifiers into ONE self-contained teaching beat " +
+    "(count-and-mark, split-and-merge, match-pairs…). Reach for these FIRST when a whole move is needed._\n",
+);
+out.push(componentTable(live(specialComponents)));
+out.push("");
+
+// --- INFRA tier — lesson plumbing + styles ----------------------------------
+// Scene-mounted, non-teaching: audio/caption layers, decorative 3D section
+// transitions, the root style wrapper, and the aesthetic-overlay style ids.
+out.push("## INFRA — lesson plumbing\n");
+out.push("_Scene-mounted, non-teaching. Decorative 3D / styles frame a moment; they are never the teaching object._\n");
 for (const family of LESSON_FAMILY_ORDER) {
   const entries = live(lessonComponents.filter((c) => c.family === family));
   if (!entries.length) continue;
@@ -138,15 +193,7 @@ for (const family of LESSON_FAMILY_ORDER) {
   out.push(componentTable(entries));
   out.push("");
 }
-
-// --- motion vocabulary ------------------------------------------------------
-out.push("## Motion vocabulary\n");
-out.push(`- **EASE** (\`src/motion-primitives/curves.ts\`): ${reg.motionVocabulary.curves.map((c) => `\`${c}\``).join(", ")}`);
-out.push(`- **SPRING**: ${reg.motionVocabulary.springs.map((s) => `\`${s}\``).join(", ")}`);
-out.push("");
-
-// --- styles -----------------------------------------------------------------
-out.push("## Styles\n");
+out.push("### Styles\n");
 out.push("| id | use when | status |");
 out.push("| --- | --- | --- |");
 for (const s of reg.styles) out.push(`| \`${s.id}\` | ${cell(s.useWhen)} | ${s.status} |`);

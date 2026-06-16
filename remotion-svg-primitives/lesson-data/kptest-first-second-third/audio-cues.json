@@ -1,0 +1,20 @@
+{
+  "lessonId": "kptest-first-second-third",
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": { "sting": "mandarin-accent" },
+  "outro": { "resolve": true },
+  "sfx": [
+    { "cue": "arrive-first",  "event": "popin",  "sound": "pop" },
+    { "cue": "name-first",    "event": "popin",  "sound": "pop-2" },
+    { "cue": "arrive-second", "event": "popin",  "sound": "pop" },
+    { "cue": "count-second",  "event": "count",  "sound": "woodblock-count", "perStep": true, "risingPitch": true },
+    { "cue": "arrive-third",  "event": "popin",  "sound": "pop" },
+    { "cue": "count-third",   "event": "count",  "sound": "woodblock-count", "perStep": true, "risingPitch": true },
+    { "cue": "ask-second",    "event": "popin",  "sound": "pop" },
+    { "cue": "reveal-second", "event": "reward", "sound": "ta-da" },
+    { "cue": "ask-third",     "event": "popin",  "sound": "pop" },
+    { "cue": "reveal-third",  "event": "reward", "sound": "chime" },
+    { "cue": "recap-count",   "event": "count",  "sound": "woodblock-count", "perStep": true, "risingPitch": true }
+  ]
+}

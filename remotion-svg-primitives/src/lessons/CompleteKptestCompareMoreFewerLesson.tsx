@@ -21,7 +21,8 @@ import {
   kptestCompareMoreFewerVoiceClips,
 } from "./kptestCompareMoreFewerLessonTimeline";
 import * as L from "./kptestCompareMoreFewer/layout";
-import audioCues from "../../lesson-data/kptest-compare-more-fewer/audio-cues.json";
+import audioCuesRaw from "../../lesson-data/kptest-compare-more-fewer/audio-cues.json";
+const audioCues = audioCuesRaw as { bed?: string };
 
 // cues[] → id-keyed map the scene reads.
 const cueMap: CueMap = Object.fromEntries(
@@ -70,7 +71,7 @@ export const CompleteKptestCompareMoreFewerLesson: React.FC = () => (
     <LessonAudioLayer voiceClips={kptestCompareMoreFewerVoiceClips} />
     <LessonCaptionLayer cues={captionCues} />
     <LessonBgmLayer
-      bed={audioCues.bed}
+      bed={audioCues.bed ?? ""}
       totalFrames={kptestCompareMoreFewerDurationFrames}
       windows={bedWindows}
     />

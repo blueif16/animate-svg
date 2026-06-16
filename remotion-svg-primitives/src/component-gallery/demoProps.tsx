@@ -91,8 +91,28 @@ import { colors } from "../theme";
 export type GalleryDemo = {
   /** Optional taller cell hint (some primitives are big). */
   tall?: boolean;
+  /**
+   * Loop the demo every N frames in the preview (poster + gif). One-shot
+   * effects/entrances fire once then sit idle for the rest of the 64-frame
+   * clip; wrapping in <Loop durationInFrames={loopFrames}> (PreviewComposition)
+   * RESETS useCurrentFrame() each cycle so the effect VISIBLY RE-FIRES. Set it
+   * to the effect's natural period + a short idle tail. OMIT for static,
+   * progress-pinned primitives (they don't read frame — looping is a no-op and
+   * they stay still, which is correct).
+   */
+  loopFrames?: number;
   /** Local-space render of the component(s), centered on (0,0) in the cell. */
   render: () => ReactNode;
+  /**
+   * ONE instance at the component's DEFAULT size, centered on (0,0) — the
+   * "size" preview mode shows this single unit PLUS a typical group (the unit
+   * repeated) at 1:1 inside the to-scale 1280×720 frame, so its real on-canvas
+   * size reads honestly. Author it for any primitive used in GROUPS (dots,
+   * sticks, cards, badges). OMIT for a composite / single-use component — its
+   * `render()` is the focal element and the size view shows that once. Use NO
+   * size override here: the whole point is to show the determined default.
+   */
+  unit?: () => ReactNode;
 };
 
 // A small horizontal strip helper: lays out N nodes evenly about x=0 with an
@@ -145,6 +165,7 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+    unit: () => <AnswerTile text="A" label="apple" />,
   },
   "bundle-wrap": {
     render: () => (
@@ -198,6 +219,7 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+    unit: () => <CountableObject variant="fish" />,
   },
   "count-step-indicator": {
     render: () => (
@@ -210,6 +232,7 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+    unit: () => <CountStepIndicator value={1} progress={1} />,
   },
   "counting-bead-device": {
     render: () => (
@@ -277,6 +300,7 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+    unit: () => <NumberCard value={7} />,
   },
   "number-line-track": {
     render: () => (
@@ -358,6 +382,7 @@ export const demoProps: Record<string, GalleryDemo> = {
       />
     ),
     tall: true,
+    unit: () => <SmallStick highlight="idle" />,
   },
   "step-tally": {
     render: () => (
@@ -626,6 +651,7 @@ export const demoProps: Record<string, GalleryDemo> = {
         ]}
       />
     ),
+    unit: () => <RewardProgressToken variant="star" progress={1} />,
   },
   "sorting-bin": {
     render: () => (
@@ -700,7 +726,7 @@ export const demoProps: Record<string, GalleryDemo> = {
     // rungs → fully settled by local ≈ 130 ⇒ atFrame = 22 − 130. Native span is
     // ~1060 wide; scaled to fit the cell.
     render: () => (
-      <g transform="translate(0 14) scale(0.52)">
+      <g>
         <AbstractionLadder
           atFrame={22 - 130}
           count={5}
@@ -717,12 +743,13 @@ export const demoProps: Record<string, GalleryDemo> = {
     tall: true,
   },
   "conservation-morph-bundle": {
-    // The "ten ones → one roped ten that still IS ten ones" beat, held AFTER the
-    // morph with the conservation peek half-open (peekProgress 0.7) so the roped
-    // bundle x-rays to reveal the ten ones still inside. Prop values mirror the
-    // TenOnesMakeOneTen lesson. local must be past the morph: atFrame = 22 − 24.
+    // The "ten ones → one roped ten that still IS ten ones" beat. Loop re-runs
+    // the morph (frames 8-20) then settles with the conservation peek half-open
+    // (peekProgress 0.7) x-raying the ten ones still inside. Mirrors the
+    // TenOnesMakeOneTen lesson.
+    loopFrames: 54,
     render: () => (
-      <g transform="scale(0.72)">
+      <g>
         <ConservationMorphBundle
           asset={<IconAsset name="stick-bundle-roped" variant="color" width={300} />}
           centerX={0}
@@ -739,7 +766,7 @@ export const demoProps: Record<string, GalleryDemo> = {
               stickThickness={18}
             />
           }
-          morphAtFrame={22 - 24}
+          morphAtFrame={8}
           morphDurationInFrames={12}
           peekColor={colors.coral}
           peekHighlightInside
@@ -753,8 +780,9 @@ export const demoProps: Record<string, GalleryDemo> = {
     tall: true,
   },
   drag: {
-    // Drag staggers a chain of CountStepIndicators by startFrame. At the still
-    // frame the staggered children are at different reveal phases.
+    // Drag staggers a chain of bouncy pop-ins by startFrame. Loop re-runs the
+    // staggered entrance so the cascade reads live (the four pop in 1→4).
+    loopFrames: 40,
     render: () => (
       <g transform="scale(1.2)">
         <Drag staggerFrames={6} delayProp="delay">
@@ -803,12 +831,12 @@ export const demoProps: Record<string, GalleryDemo> = {
     ),
   },
   "asset-morph": {
-    // Frame-driven: atFrame/duration are tuned so the gallery still frame (22)
-    // lands MID-SWAP — sticks fading out, the roped-bundle asset arriving, the
-    // SparkleBurst masking the seam. See AssetMorphDemo for the full motion.
+    // The sticks fade out, the roped-bundle asset arrives, a SparkleBurst masks
+    // the seam. Loop re-runs the swap (morph at frames 8-20, then holds).
+    loopFrames: 44,
     render: () => (
       <AssetMorph
-        atFrame={28}
+        atFrame={8}
         centerX={0}
         centerY={0}
         direction="bundle"
@@ -831,8 +859,9 @@ export const demoProps: Record<string, GalleryDemo> = {
     tall: true,
   },
   "pop-in": {
-    // PopIn is frame-driven; at the still frame each motion variant sits at a
-    // different point on its spring (delays stagger so snap/bouncy/settle differ).
+    // PopIn is frame-driven; the spring entrance fires off `delay`. The loop
+    // re-pops the three variants every cycle so the spring physics read live.
+    loopFrames: 34,
     render: () => (
       <Strip
         gap={170}
@@ -845,6 +874,8 @@ export const demoProps: Record<string, GalleryDemo> = {
     ),
   },
   "pulse-circle": {
+    // The ring pulses out from the star; loop re-emits the pulse train.
+    loopFrames: 30,
     render: () => (
       <g>
         <CountableObject variant="star" size={70} />
@@ -853,11 +884,12 @@ export const demoProps: Record<string, GalleryDemo> = {
     ),
   },
   smear: {
-    // Smear is visible only inside [startFrame, endFrame]; the gallery still
-    // frame sits inside this window. A moving object is painted on top.
+    // Smear is visible only inside [startFrame, endFrame]; loop re-runs the
+    // sweep + the moving object painted on top.
+    loopFrames: 34,
     render: () => (
       <g>
-        <Smear startX={-120} startY={0} endX={120} endY={0} startFrame={0} endFrame={48} color={colors.sky} thickness={40} />
+        <Smear startX={-120} startY={0} endX={120} endY={0} startFrame={0} endFrame={28} color={colors.sky} thickness={40} />
         <g transform="translate(40 0)">
           <CountableObject variant="fish" size={64} />
         </g>
@@ -865,18 +897,23 @@ export const demoProps: Record<string, GalleryDemo> = {
     ),
   },
   "sparkle-burst": {
+    // The burst fires from the star then fades; loop re-detonates it.
+    loopFrames: 40,
     render: () => (
       <g>
         <CountableObject variant="star" size={64} />
-        <SparkleBurst x={0} y={0} count={12} radius={90} startFrame={0} durationInFrames={60} />
+        <SparkleBurst x={0} y={0} count={12} radius={90} startFrame={0} durationInFrames={32} />
       </g>
     ),
   },
 
   // ----------------------------------------------------------------------- fx
   breathe: {
+    // Breathe is a continuous scale oscillation; a 40-frame loop holds one full
+    // inhale/exhale so the swell is unmistakable across the clip.
+    loopFrames: 40,
     render: () => (
-      <Breathe originX={0} originY={0} amplitudeScale={0.06}>
+      <Breathe originX={0} originY={0} amplitudeScale={0.09}>
         <CountableObject variant="fruit" size={88} />
       </Breathe>
     ),
@@ -899,30 +936,38 @@ export const demoProps: Record<string, GalleryDemo> = {
     ),
   },
   "glint-flash": {
+    // A quick specular spark on the ✓ card; loop re-flashes it ~3× per clip.
+    loopFrames: 28,
     render: () => (
       <g>
         <NumberCard value={5} correct />
-        <GlintFlash x={40} y={-40} startFrame={0} durationInFrames={60} size={28} />
+        <GlintFlash x={40} y={-40} startFrame={0} durationInFrames={24} size={28} />
       </g>
     ),
   },
   "glow-pulse": {
+    // One glow pulse swells the star then fades; loop re-pulses it each cycle.
+    loopFrames: 40,
     render: () => (
-      <GlowPulse startFrame={0} durationInFrames={48} pulses={1}>
+      <GlowPulse startFrame={0} durationInFrames={32} pulses={1}>
         <CountableObject variant="star" size={84} />
       </GlowPulse>
     ),
   },
   "shine-sweep": {
+    // The highlight band sweeps across the card; loop re-sweeps it.
+    loopFrames: 44,
     render: () => (
       <g transform="translate(-110 -55)">
         <HanziCard char="光" pinyin="guāng" word="shine" x={110} y={55} />
-        <ShineSweep x={26} y={-48} width={168} height={206} startFrame={0} durationInFrames={60} />
+        <ShineSweep x={26} y={-48} width={168} height={206} startFrame={0} durationInFrames={36} />
       </g>
     ),
     tall: true,
   },
   sparkle: {
+    // Twinkles emit around the star; loop keeps the twinkle field re-seeding.
+    loopFrames: 32,
     render: () => (
       <g>
         <RewardProgressToken variant="star" collected size={70} />
@@ -942,7 +987,7 @@ export const demoProps: Record<string, GalleryDemo> = {
     // A greeting Q&A, held in turn 1's hold so BOTH bubbles read together (the
     // question + its emphasis-flagged answer). step = 48+6 = 54; local ≈ 90.
     render: () => (
-      <g transform="translate(0 24) scale(0.5)">
+      <g>
         <DialogueExchange
           atFrame={22 - 90}
           figureRadius={104}
@@ -965,7 +1010,7 @@ export const demoProps: Record<string, GalleryDemo> = {
     // A stationery flashcard settled past its reveal: picture + label + phonetic +
     // listen cue + the pronunciation pulse all up. local ≈ 40 (t = 1, faceUp).
     render: () => (
-      <g transform="scale(0.82)">
+      <g>
         <VocabFlashcard
           atFrame={22 - 40}
           highlightLabel
@@ -982,14 +1027,17 @@ export const demoProps: Record<string, GalleryDemo> = {
     tall: true,
   },
   "match-pairs-board": {
-    // A 连一连 with 3 object↔汉字 pairs, held after all three link + the
-    // all-matched celebration. step = 46+8 = 54; 3 pairs done by local 162.
+    // A 连一连 with 3 object↔汉字 pairs. Loop re-runs the BUILD: the three pairs
+    // link one by one, then the all-matched celebration. Tightened to fit the
+    // clip: 3 pairs × (20+6) ≈ 78f build + celebrate, replayed every cycle.
+    loopFrames: 90,
     render: () => (
-      <g transform="translate(0 18) scale(0.42)">
+      <g>
         <MatchPairsBoard
-          atFrame={22 - 200}
+          atFrame={4}
           celebrateLabel={utterance("真棒！")}
           columnGap={600}
+          interPairGapFrames={6}
           itemGap={180}
           itemRadius={78}
           left={[matchPic("star"), matchPic("leaf-water-drop"), matchPic("owl-reading")]}
@@ -998,7 +1046,7 @@ export const demoProps: Record<string, GalleryDemo> = {
             { left: 1, right: 2 },
             { left: 2, right: 0 },
           ]}
-          perPairDurationFrames={46}
+          perPairDurationFrames={20}
           right={[
             <NumberCard key="niao" value="鸟" width={128} />,
             <NumberCard key="xing" value="星" width={128} />,
@@ -1015,7 +1063,7 @@ export const demoProps: Record<string, GalleryDemo> = {
     // A 对韵歌 sweep (云对雨 / 雪对风) held mid-sweep so an item glows + swells and
     // the underline cursor sits on it. beats sum 8 × perBeat 22 = 176 total.
     render: () => (
-      <g transform="scale(0.74)">
+      <g>
         <ReadAlongHighlight
           atFrame={22 - 96}
           beats={[1, 2, 1, 1, 2, 1]}
@@ -1038,7 +1086,7 @@ export const demoProps: Record<string, GalleryDemo> = {
     // objects sit in two clean clusters with the synced 分合式 above. step =
     // 24+8 = 32; last step (index 3) settles at local 3*32+24 = 120.
     render: () => (
-      <g transform="translate(0 10) scale(0.42)">
+      <g>
         <PartWholeComposer
           atFrame={22 - 120}
           clusterGap={140}
@@ -1083,14 +1131,15 @@ export const demoProps: Record<string, GalleryDemo> = {
   "ordered-row-spotlight": {
     // A 5-item ordered row with the cardinal bracket ('一共5') over the whole heap
     // AND the ordinal spotlight ring + '第3' token on position 3 — the
-    // cardinal-vs-ordinal contrast in one settled frame. Mirrors the demo's
-    // bracket + spotlight props; both reveal off atFrame, so park past their
-    // settle: atFrame = 22 − 60. Scaled to fit (the brace + below-row token make
-    // it tall).
+    // cardinal-vs-ordinal contrast. Loop re-runs the BUILD each cycle: the five
+    // stars reveal 1→5, the bracket draws, then the spotlight finger lands on
+    // 第3 (the spoken-enumeration sweep the user calls out). atFrame=4 starts the
+    // build at loop head; 5 steps × 12f ≈ 60f build, settled + held inside 90.
+    loopFrames: 90,
     render: () => (
-      <g transform="translate(0 6) scale(0.6)">
+      <g>
         <OrderedRowSpotlight
-          atFrame={22 - 60}
+          atFrame={4}
           cardinalLabel="一共5"
           direction="ltr"
           itemRadius={56}
@@ -1102,7 +1151,7 @@ export const demoProps: Record<string, GalleryDemo> = {
           showCardinalBracket
           showDirectionArrow
           spotlightOrdinal={3}
-          stepDurationFrames={18}
+          stepDurationFrames={12}
           x={0}
           y={0}
         />
@@ -1115,7 +1164,7 @@ export const demoProps: Record<string, GalleryDemo> = {
     // settles with the silhouette-overlap payoff (the modern 日 over the ghosted
     // sun). step = 48+16 = 64; last transition done at 128, ghost up by ~169.
     render: () => (
-      <g transform="translate(0 -8) scale(0.7)">
+      <g>
         <PictographEvolution
           atFrame={22 - 180}
           centerX={0}

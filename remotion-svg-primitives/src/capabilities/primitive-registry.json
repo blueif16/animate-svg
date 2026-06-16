@@ -5,6 +5,7 @@
   "generatedSections": [
     "primitives",
     "motionComponents",
+    "specialComponents",
     "fxComponents",
     "lessonComponents",
     "motionVocabulary"
@@ -21,13 +22,9 @@
       "id": "answer-tile",
       "component": "AnswerTile",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "answer",
-        "choice",
-        "card"
-      ],
-      "useWhen": "A tappable answer or choice card holding a number, text, or icon child, with correct/wrong/selected/focused states and a state badge.",
-      "avoidWhen": "Showing a bare digit with no answer-choice framing — use NumberCard.",
+      "intent": "Reach for this to offer a choice the child taps to answer, showing correct/wrong/selected/focused state on a number, word, or icon.",
+      "useWhen": "A tappable answer card holding a number, text, or icon child plus an optional small label, with correct/wrong/selected/focused states and a state badge.",
+      "avoidWhen": "Not for a bare digit shown for reading with no answer-choice framing; use `number-card`.",
       "variants": {},
       "status": "stable"
     },
@@ -63,13 +60,9 @@
       "id": "comparison-symbol",
       "component": "ComparisonSymbol",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "compare",
-        "operator",
-        "reveal"
-      ],
-      "useWhen": "Placing a >, <, or = between two quantities, optionally as a hungry-mouth glyph or hidden behind a ? until revealed.",
-      "avoidWhen": "Using = inside a built-out equation — use EquationStrip's operator tile.",
+      "intent": "Show >, <, or = between two quantities to compare them, optionally as a hungry-mouth glyph or hidden behind a ? until revealed.",
+      "useWhen": "Places a comparison glyph between two sets with formal or mouth style; revealed=false hides it behind a dashed ? card until the reveal beat.",
+      "avoidWhen": "Not for the = inside a built-out number sentence; use `equation-strip`'s operator tile.",
       "variants": {
         "symbol": [
           "<",
@@ -88,13 +81,9 @@
       "id": "conservation-bundle",
       "component": "ConservationBundle",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "conservation",
-        "x-ray",
-        "regroup"
-      ],
-      "useWhen": "Proving a bundled ten still contains ten ones: xrayProgress fades the wrap to a ghost outline and reveals the count inner sticks inside, defusing the 'a ten is just one thing now' misconception.",
-      "avoidWhen": "Showing ten ones BECOMING one ten (the wrap drawing on) rather than the ten still being ten ones — use BundleWrap with wrapProgress.",
+      "intent": "Prove a bundled ten still holds ten ones — fade the wrap to a ghost and reveal the inner sticks — to defuse the 'a ten is just one thing now' misconception.",
+      "useWhen": "xrayProgress fades the wrap band to a faint outline and reveals the count inner sticks living inside, with optional highlight on the ones.",
+      "avoidWhen": "Not for ten ones BECOMING one ten (the wrap drawing on); use `bundle-wrap`, or `asset-morph` for the cleaner FX-masked swap.",
       "status": "experimental"
     },
     {
@@ -102,13 +91,9 @@
       "id": "countable-object",
       "component": "CountableObject",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "countable",
-        "object",
-        "set"
-      ],
-      "useWhen": "A single cute countable thing (fish, star, fruit, etc.) to populate a counting or comparison set, with selected/dimmed/label states.",
-      "avoidWhen": "Abstract place-value units or sticks — use UnitBlock or SmallStick.",
+      "intent": "Show one cute countable thing (fish, star, fruit) to populate a counting or comparison set, with selected/dimmed states.",
+      "useWhen": "A single themed countable in one of six variants with an optional name label; size scales it and selected/dimmed mark its state in a set.",
+      "avoidWhen": "Not for abstract place-value units or sticks; use `unit-block` or `small-stick`.",
       "variants": {
         "variant": [
           "animal",
@@ -126,15 +111,9 @@
       "id": "counting-bead-device",
       "component": "CountingBeadDevice",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "number-sequence",
-        "plus-one",
-        "counter",
-        "bead",
-        "one-more"
-      ],
-      "useWhen": "Making 'each next number is the previous plus one' physically visible on a single-rod bead counter (计数器): the displayed number is driven by count (0..capacity), and pulling one more bead onto the rod grows it by exactly one — 1→2→3→4→5. The newest bead (index count-1) slides into its seat via revealProgress (eased) and, when activeIndex points at it, swells a 'just-moved' ring via activePulse, while the value readout flips to the new count — so one more bead and a bigger number are one synchronized beat. Reach for it in any 1~N number-sequence / 接着数 / +1 lesson; horizontal grows left→right, vertical stacks bottom→top; beadColor/rodColor/capacity/beadRadius all vary by prop.",
-      "avoidWhen": "Showing a fixed-form decorative abacus with no count/progress (use the abacus IconAsset), or counting loose scattered objects with no ordered next-one (use StickGroup/CountStepIndicator). Not for place-value tens/ones (use PlaceValueMat) or a ten-fill grid (use TenFrameRod).",
+      "intent": "Show 'each next number is one more' on a single-rod bead counter (计数器) where pulling one more bead grows the count by exactly one for a 1→N count-up.",
+      "useWhen": "count (0..capacity) drives the value readout; the newest bead slides into its seat via revealProgress and swells a ring via activePulse so one more bead and a bigger number are one beat. Horizontal or vertical.",
+      "avoidWhen": "Not for place-value tens/ones (use `place-value-mat`), a ten-fill grid (use `ten-frame-rod`), or a fixed decorative abacus (use the abacus `icon-asset`).",
       "variants": {
         "orientation": [
           "horizontal",
@@ -148,13 +127,9 @@
       "id": "count-step-indicator",
       "component": "CountStepIndicator",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "count",
-        "step",
-        "badge"
-      ],
-      "useWhen": "A small circular badge that pops and fades in via progress to mark the running count at each step of a counting sequence.",
-      "avoidWhen": "Showing a total with an optional unit label — use StepTally; tracking position on a line — use NumberLineTrack.",
+      "intent": "Mark the running count at each step of a counting sequence with a small circular badge that pops and fades in via progress.",
+      "useWhen": "A small circular badge carrying the current count value; progress pops and fades it in to punctuate one step of the walk.",
+      "avoidWhen": "Not for a running total with a unit label (use `step-tally`) or tracking a position on a line (use `number-line-track`).",
       "variants": {},
       "status": "stable"
     },
@@ -163,13 +138,9 @@
       "id": "equation-strip",
       "component": "EquationStrip",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "equation",
-        "blank",
-        "operator"
-      ],
-      "useWhen": "Laying out a horizontal number sentence (left op right = result) with an optional active or blank tile to spotlight a missing term.",
-      "avoidWhen": "Showing a part-whole split rather than an arithmetic sentence — use FenHeDiagram or PartWholeBrace.",
+      "intent": "Lay out a horizontal number sentence (left op right = result) with an optional active or blank tile to spotlight a missing term.",
+      "useWhen": "Renders a row of term/operator tiles on a card; activeIndex highlights one tile and blankIndex empties one to pose the missing-term question.",
+      "avoidWhen": "Not for a part-whole split rather than an arithmetic sentence; use `fen-he-diagram` or `part-whole-brace`.",
       "variants": {},
       "status": "stable"
     },
@@ -178,11 +149,9 @@
       "id": "fen-he-diagram",
       "component": "FenHeDiagram",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "part-whole decomposition"
-      ],
-      "useWhen": "Showing a whole splitting into two parts (分合式) or composing two parts into a whole; identity-preserving via getFenHeDiagramAnchors.",
-      "avoidWhen": "Plain counting or comparison with no part-whole relationship.",
+      "intent": "Reach for this to show a whole splitting into two parts — or two parts composing into a whole — when the part-whole RELATIONSHIP is the point (分合式).",
+      "useWhen": "Renders the 分合式 bracket with identity-preserving anchors so the same objects flow between whole and parts. Pass the whole and each part as children.",
+      "avoidWhen": "Not for plain counting or for comparing two quantities — use a CountableObject set or a paired-column compare.",
       "status": "stable"
     },
     {
@@ -190,13 +159,9 @@
       "id": "label-callout",
       "component": "LabelCallout",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "label",
-        "callout",
-        "text"
-      ],
-      "useWhen": "Dropping a centered word or phrase with an optional draw-on underline that fades in via progress to name what is on screen.",
-      "avoidWhen": "Hand-drawn teacher annotation pointing at a target — use TeacherMark.",
+      "intent": "Name what is on screen with a centered word or phrase that fades in via progress, with an optional draw-on underline.",
+      "useWhen": "Drops a centered text label with fade or write-on appearance and an optional underline; progress reveals it to caption the current beat.",
+      "avoidWhen": "Not for a hand-drawn teacher annotation pointing at a target; use `teacher-mark`.",
       "variants": {
         "appearStyle": [
           "fade",
@@ -210,13 +175,9 @@
       "id": "number-card",
       "component": "NumberCard",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "number",
-        "card",
-        "digit"
-      ],
-      "useWhen": "Showing a single digit or short value on a rounded card with optional blank line and correct/wrong/selected states, auto-sized so the glyph always insets cleanly.",
-      "avoidWhen": "The value is an answer choice with an icon or label — use AnswerTile.",
+      "intent": "Show a single digit or short value on a rounded card with correct/wrong/selected states for reading or building a number.",
+      "useWhen": "Renders a value (or a blank line) on a rounded card, auto-sizing the glyph from the card's short side so the digit always insets cleanly at any width.",
+      "avoidWhen": "Not when the value is an answer choice carrying an icon or label; use `answer-tile`.",
       "variants": {},
       "status": "stable"
     },
@@ -225,13 +186,9 @@
       "id": "number-line-track",
       "component": "NumberLineTrack",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "number-line",
-        "position",
-        "jump"
-      ],
-      "useWhen": "Showing position, ticks, highlights, and animated arc jumps along a min-to-max number line with a current-value badge.",
-      "avoidWhen": "Counting discrete objects with no linear scale — use a CountableObject set or StickGroup.",
+      "intent": "Show position, ticks, and animated arc jumps along a min-to-max number line with a current-value badge.",
+      "useWhen": "Draws a labeled number line with tick marks, point highlights, and animated jump arcs between values; current marks the live position.",
+      "avoidWhen": "Not for counting discrete objects with no linear scale; use a `countable-object` set or `stick-group`.",
       "variants": {},
       "status": "stable"
     },
@@ -240,13 +197,9 @@
       "id": "ordinal-label-token",
       "component": "OrdinalLabelToken",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "ordinal",
-        "position-label",
-        "prefixed-numeral"
-      ],
-      "useWhen": "Marking a POSITION (序数) rather than a quantity (基数) with a two-part label whose PREFIX is visually distinct from the digit — a NumberCard surface carrying a caller-supplied prefix glyph (第 or any locale prefix, default none) in a separate prefixColor/prefixWeight beside the value digit. Reach for it whenever the teaching point is 'same number, only the prefix tells position from count': stand a 第N token beside a bare same-height NumberCard so the digit reads identical and ONLY the 第 differs, label members of an ordered queue (第1..第N) above the row, or tag any labeled-sequence position. Prop-driven and lesson-agnostic — value:number|string, prefix:ReactNode, prefixColor/prefixWeight emphasis, color for the digit, selected/focused/correct/wrong states, width/height + x/y/transform placement; bakes no Chinese, value, or topic. Entrance is the caller's PopIn at a cue offset; state is prop-driven (no own animation).",
-      "avoidWhen": "The label is a bare cardinal with one fill/weight — use NumberCard (no distinguished prefix). The whole ordered-counting beat (walk the row 1→N, spotlight the Nth, contrast 一共N vs 第N, renumber on a direction flip) is the demand — use OrderedRowSpotlight, which composes its own inline ordinal token. The label is an answer choice with an icon — use AnswerTile.",
+      "intent": "Mark a POSITION (序数) not a quantity with a label whose colored prefix (第 or any locale prefix) is visually distinct from the digit beside it.",
+      "useWhen": "A NumberCard surface carrying a caller-supplied prefix glyph in a separate prefixColor/prefixWeight beside the value digit, with selected/focused/correct/wrong states.",
+      "avoidWhen": "Not for a bare cardinal with one fill (use `number-card`); the whole walk-the-row, spotlight-the-Nth ordinal beat is `ordered-row-spotlight`; an icon answer choice is `answer-tile`.",
       "variants": {},
       "status": "stable"
     },
@@ -255,13 +208,9 @@
       "id": "part-whole-brace",
       "component": "PartWholeBrace",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "brace",
-        "part-whole",
-        "group"
-      ],
-      "useWhen": "Drawing a curly brace that reveals via progress to bracket a span as one whole or one part, in any of four directions with an optional label.",
-      "avoidWhen": "Showing the numeric whole/parts relationship itself — use FenHeDiagram.",
+      "intent": "Bracket a span as one whole or one part with a curly brace that reveals via progress, in any of four directions with an optional label.",
+      "useWhen": "Draws a curly brace spanning a width in the up/down/left/right direction; progress reveals it and an optional label names the bracketed span.",
+      "avoidWhen": "Not for the numeric whole/parts relationship itself; use `fen-he-diagram`.",
       "variants": {
         "direction": [
           "down",
@@ -277,13 +226,9 @@
       "id": "place-value-mat",
       "component": "PlaceValueMat",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "place-value",
-        "columns",
-        "digits"
-      ],
-      "useWhen": "Seating place-value contents in labeled tens/ones (optionally hundreds) columns under headers with a divider and optional written digit per column, to bridge a ten-bundle plus loose ones to the digits of a numeral; pass a child per column or perColumnCount placeholders, highlightColumn to focus one.",
-      "avoidWhen": "Showing bare countables or a ten-structure with no column/digit framing — use a CountableObject set or TenFrameRod.",
+      "intent": "Reach for this to bridge a ten-bundle-plus-loose-ones to the DIGITS of a numeral, by seating contents in labeled tens/ones (and optional hundreds) columns.",
+      "useWhen": "Lays out columns under headers with a divider and an optional written digit per column; pass a child or perColumnCount per column and highlightColumn to focus one.",
+      "avoidWhen": "Not for bare countables or a plain ten-structure with no column/digit framing — use a CountableObject set or TenFrameRod.",
       "status": "experimental"
     },
     {
@@ -291,13 +236,9 @@
       "id": "region-split",
       "component": "RegionSplit",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "fraction",
-        "area-partition",
-        "equal-share"
-      ],
-      "useWhen": "Splitting ONE filled round region (a cookie/disk) into N equal-area parts to teach halves/thirds/quarters: cutProgress draws the cuts on, highlightPart shades one part, separation pulls the parts out to hand each to someone.",
-      "avoidWhen": "Decomposing a NUMBER into addends (use FenHeDiagram) or bracketing a linear span (use PartWholeBrace) — RegionSplit is about dividing a continuous area, not a count.",
+      "intent": "Split one filled round region (a cookie/disk) into N equal parts to teach halves/thirds/quarters, shading one part or pulling parts out to share.",
+      "useWhen": "cutProgress draws the cuts on, highlightPart shades one part, and separation pulls the parts apart to hand each out; optional 1/N labels.",
+      "avoidWhen": "Not for decomposing a NUMBER into addends (use `fen-he-diagram`) or bracketing a linear span (use `part-whole-brace`) — this divides a continuous area, not a count.",
       "status": "experimental"
     },
     {
@@ -305,13 +246,9 @@
       "id": "small-stick",
       "component": "SmallStick",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "stick",
-        "unit",
-        "count"
-      ],
-      "useWhen": "A single counting stick with idle/active/counted highlight, rotation, and scale — the unit primitive for stick counting and bundling.",
-      "avoidWhen": "Placing many sticks at once — use StickGroup, which lays out and highlights them for you.",
+      "intent": "Show one counting stick with idle/active/counted highlight, rotation, and scale — the unit for stick counting and bundling.",
+      "useWhen": "A single stick whose highlight state (idle/active/counted) recolors it as it is counted; length, thickness, rotation, and scale shape it.",
+      "avoidWhen": "Not for placing many sticks at once; use `stick-group`, which lays out and highlights them for you.",
       "variants": {
         "highlight": [
           "idle",
@@ -326,13 +263,9 @@
       "id": "step-tally",
       "component": "StepTally",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "tally",
-        "total",
-        "count"
-      ],
-      "useWhen": "Showing the running total as a numeric pill or a row of dots, with an optional unit label, that pops in via progress.",
-      "avoidWhen": "Marking just the current step with no total — use CountStepIndicator.",
+      "intent": "Show the running total as a numeric pill or a row of dots, with an optional unit label, popping in via progress.",
+      "useWhen": "Renders the total as a numeric pill or a dot row; progress pops it in and an optional unit label (e.g. 个) sits beside the number.",
+      "avoidWhen": "Not for marking just the current step with no total; use `count-step-indicator`.",
       "variants": {
         "variant": [
           "dots",
@@ -346,13 +279,9 @@
       "id": "stick-group",
       "component": "StickGroup",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "sticks",
-        "count",
-        "bundle"
-      ],
-      "useWhen": "Laying out N counting sticks in a scatter, row, or bundle with per-index active highlight, reveal-up-to, and seeded scatter placement.",
-      "avoidWhen": "A single stick or a non-stick countable — use SmallStick or CountableObject.",
+      "intent": "Lay out N counting sticks in a scatter, row, or bundle with per-index active highlight and reveal-up-to for counting and bundling.",
+      "useWhen": "Places count sticks in scatter/row/bundle layout; activeIndex highlights the one being counted and revealUpTo reveals them progressively.",
+      "avoidWhen": "Not for a single stick or a non-stick countable; use `small-stick` or `countable-object`.",
       "variants": {
         "layout": [
           "scatter",
@@ -367,13 +296,9 @@
       "id": "ten-frame-rod",
       "component": "TenFrameRod",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "ten-frame",
-        "place-value",
-        "fill"
-      ],
-      "useWhen": "Filling a 10-cell two-row ten-frame or one-row rod by count or colored segments to show how many make ten and the ones inside.",
-      "avoidWhen": "Counting loose objects with no ten-structure — use a CountableObject set; physical stick bundling — use StickGroup plus BundleWrap.",
+      "intent": "Fill a 10-cell ten-frame or one-row rod by count to show how many make ten and the ones inside.",
+      "useWhen": "Fills a two-row ten-frame or one-row rod by count or by colored segments; ones marks the loose units beyond a filled ten.",
+      "avoidWhen": "Not for counting loose objects with no ten-structure (use a `countable-object` set) or physical stick bundling (use `stick-group` plus `bundle-wrap`).",
       "variants": {
         "variant": [
           "frame",
@@ -387,13 +312,9 @@
       "id": "unit-block",
       "component": "UnitBlock",
       "source": "src/shape-primitives/counting.tsx",
-      "intent": [
-        "unit",
-        "block",
-        "place-value"
-      ],
-      "useWhen": "Showing 1-10 place-value units as cubes, dots, chips, or a segmented rod, optionally stacked, with a value label.",
-      "avoidWhen": "Cute themed countables for early counting — use CountableObject; a structured ten-frame — use TenFrameRod.",
+      "intent": "Show 1-10 place-value units as cubes, dots, chips, or a segmented rod, optionally stacked, with a value label.",
+      "useWhen": "Renders count units in cube/dot/chip/rod form, optionally stacked, with an optional numeric value label beneath the group.",
+      "avoidWhen": "Not for cute themed countables (use `countable-object`) or a structured ten-frame (use `ten-frame-rod`).",
       "variants": {
         "variant": [
           "chip",
@@ -782,87 +703,6 @@
   ],
   "motionComponents": [
     {
-      "id": "abstraction-ladder",
-      "component": "AbstractionLadder",
-      "source": "src/motion-primitives/AbstractionLadder.tsx",
-      "intent": [
-        "abstraction",
-        "cardinality",
-        "conservation",
-        "representation-ladder"
-      ],
-      "useWhen": "Revealing ONE quantity surviving across an ordered ladder of representations — 实物 → 小棒(1:1) → 圆点 → 数字 — in one continuous left→right (or top→down) reveal, so the SAME count is seen conserved at every step of abstraction and the child stops splitting 'counting objects' from 'the number symbol'. Faint 1:1 connectors tie like-index units between adjacent rungs, and every unit converges on the single numeral card — the 'N个XX用N表示' cardinality payoff. Prop-driven: count:number; stages (caller picks/orders the rungs, defaults the full ladder); objectVariant for the objects rung; atFrame+perStageDurationFrames (cue-relative, the component derives each rung's local progress); orientation row|column; tint; revealLabel per-stage caption nodes (caller passes the localized 'N个XX用N表示' string). A 6~10 lesson, or a same-count-across-different-kinds beat (label 2 geese AND 2 chairs with the same numeral), reuses it unchanged.",
-      "avoidWhen": "A single static representation (no abstraction step to show) — use the bare primitive (CountableObject / NumberCard); or a ten-ones→one-ten bundling where the units physically GATHER into one object — use AssetMorph; or counts so large the per-rung units fall below the kids-eye min size (keep count <= ~6 for the full 4-rung ladder at 1280-wide). It conserves a count across abstraction levels; it does NOT compose/decompose a whole into parts (use FenHeDiagram) or compare two different quantities (use a paired-column compare).",
-      "variants": {
-        "orientation": [
-          "row",
-          "column"
-        ],
-        "stages": [
-          "objects",
-          "sticks",
-          "dots",
-          "numeral"
-        ]
-      },
-      "status": "experimental"
-    },
-    {
-      "id": "asset-morph",
-      "component": "AssetMorph",
-      "source": "src/motion-primitives/AssetMorph.tsx",
-      "intent": [
-        "morph",
-        "transition",
-        "parametric-to-asset"
-      ],
-      "useWhen": "Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a SparkleBurst over the swap while the arriving element settles, so ten sticks BECOME one roped bundle (direction=bundle) or a bundle un-bundles into fanning sticks (direction=unbundle). Caller supplies from/to and a shared centerX/centerY (bbox-matched so identity is preserved); atFrame is cues[id].startFrame+offset.",
-      "avoidWhen": "Swapping two things that are NOT the same object (no identity to preserve) — use a plain cut or PopIn; or morphing at multiplicity where each unit needs its own highlight — keep those parametric. The teaching mechanics (the sticks gathering/counting) stay on the parametric from; AssetMorph only owns the masked swap.",
-      "variants": {
-        "direction": [
-          "bundle",
-          "unbundle"
-        ]
-      },
-      "status": "experimental"
-    },
-    {
-      "id": "conservation-morph-bundle",
-      "component": "ConservationMorphBundle",
-      "source": "src/motion-primitives/ConservationMorphBundle.tsx",
-      "intent": [
-        "morph",
-        "conservation",
-        "regrouping"
-      ],
-      "useWhen": "The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. Composes AssetMorph (the gathered parametric from BECOMES the held asset, FX-masked) + the held IconAsset + ConservationBundle (the x-ray peek): drive peekProgress 0..1 from the conservation cue and the held bundle crossfades down while the wrap ghosts to reveal the count ones living inside, then re-solidifies. Caller supplies from/asset/centerX/centerY (bbox-matched, like AssetMorph) and the count/colors of the inner ones; morphAtFrame + peekProgress are cue-relative.",
-      "avoidWhen": "Bundling with NO conservation peek (use AssetMorph alone), or a peek with no preceding morph (use ConservationBundle alone). Multiplicity where each inner one needs its own live highlight during the held phase — assets can't per-index highlight; keep that parametric. The gather-before / fan-after motion stays on the caller's parametric from — this owns only the masked swap + the asset↔x-ray crossfade.",
-      "status": "experimental"
-    },
-    {
-      "id": "dialogue-exchange",
-      "component": "DialogueExchange",
-      "source": "src/motion-primitives/DialogueExchange.tsx",
-      "intent": [
-        "dialogue",
-        "turn-taking",
-        "speech-bubble",
-        "greeting",
-        "conversation"
-      ],
-      "useWhen": "A turn-taking spoken exchange between TWO caller-supplied speakers: each speaks in order, turn k's speech bubble pops in ONLY after turn k-1 (+ gap) with its tail pointing at the speaker who said it, the speaking figure leans/bobs toward the other, and at most the two most-recent bubbles stay up (older ones dim) so a question and its answer read together without crowding. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, face, or English/Chinese string: left/right are { figure:ReactNode (the caller's face, e.g. <IconAsset name='boy-face'/>), nameCard?:ReactNode }; turns[] is { speaker:'left'|'right', line:ReactNode (the localized utterance — never baked), emphasis?, gesture?:'wave'|'point-self'|'point-other'|'none' }; atFrame is cues[id].startFrame+offset (the component derives every turn's local progress BY INDEX — ZERO frame literals); perTurnDurationFrames + interTurnGapFrames set pacing; maxVisibleBubbles/speakerGap/figureRadius/bubbleFill/bubbleStroke/inkColor/emphasisColor style it. The SAME component drives English greetings (Hello!/Hi!), farewells (Goodbye!/Bye-Bye! with gesture:'wave'), name Q&A (What's your name?/My name is ___, the answer turn emphasis-flagged for the I'm [aɪm]/[em] pronunciation beat), AND Chinese 你/我/他 person reference (gesture:'point-other' for 你/他, 'point-self' for 我) — the caller only varies props. COMPOSES PopIn(motion='bouncy') for bubble entrance + PulseCircle for the emphasis/pronunciation flag + a hand-drawn rounded bubble-with-tail, with named EASE.* motion for the lean/bob.",
-      "avoidWhen": "A monologue / single narrator (no second speaker, no turn-taking) — just place a bubble or LabelCallout. More than two speakers in one frame (it is strictly two-sided; a third party is a different composition). A chat-log where ALL lines must stay readable at once (this keeps only the two newest — raise maxVisibleBubbles and you own legibility, but a transcript panel is the wrong tool). Teaching the WRITTEN form of the words (stroke order, spelling) — use GlyphStrokeWriter / HanziCard. The speakers' faces and every line are caller scene content; this owns only the turn-taking choreography, the tail-pointing bubbles, and the lean/wave/point gestures.",
-      "variants": {
-        "gesture": [
-          "none",
-          "wave",
-          "point-self",
-          "point-other"
-        ]
-      },
-      "status": "experimental"
-    },
-    {
       "id": "drag",
       "component": "Drag",
       "source": "src/motion-primitives/Drag.tsx",
@@ -898,112 +738,6 @@
       "avoidWhen": "Drawing the path's ink rather than moving along it — use DrawPath.",
       "variants": {},
       "status": "stable"
-    },
-    {
-      "id": "glyph-stroke-writer",
-      "component": "GlyphStrokeWriter",
-      "source": "src/motion-primitives/GlyphStrokeWriter.tsx",
-      "intent": [
-        "stroke-order",
-        "handwriting",
-        "glyph-tracing",
-        "笔顺"
-      ],
-      "useWhen": "Teaching a child to WRITE a single glyph in the correct stroke order (笔顺) inside a writing cell — a numeral (1/2/3/4/5, or any digit) or a comparison symbol (= > <), or any future glyph. It traces the glyph stroke by stroke IN ORDER: stroke k starts only after stroke k-1 finishes (+ gap), each with a faint ghost-under guide, a moving pen cursor, and a 起笔/收笔 dot whose start marker pulses just before its stroke begins, so direction and order are unmistakable — the fix for the 2的弧线/3的两个半圆 写反/弧度变形 and the 把符号画成图/笔画不匀 misconceptions. Prop-driven and LESSON-AGNOSTIC: it bakes NO glyph — the caller passes the ordered `strokes` (looked up from the shared GLYPH_STROKES data keyed by the glyph char, via `glyphStrokesFor(char)`). `atFrame` is cues[id].startFrame+offset (the writer derives every stroke's local progress by index — ZERO frame literals); `perStrokeDurationFrames` + optional `interStrokeGapFrames` set the pace; `size` scales the normalized 0..100 stroke data to the cell; `grid`/`focusZone` pass through to StrokeGuideCell; `stroke`/`strokeWidth`/`cursor`/`showStartDots` style the pen. COMPOSES StrokeGuideCell (田字格/米字格 backdrop) + one AnimatedStrokePath per stroke (ghost + cursor + progress) + 起笔/收笔 dot markers. Drives 1–5 AND =,>,< AND any glyph with stroke data unchanged.",
-      "avoidWhen": "Showing a glyph that is already WRITTEN (no stroke-order teaching) — use NumberCard / ComparisonSymbol / a plain text glyph. Tracing a full hanzi character (the GLYPH_STROKES data ships digits 0-9 + comparison symbols; add the character's ordered paths to that shared data first — don't bake them into a scene). Animating a non-writing path reveal (a number-line arc, a teacher underline) — use DrawPath / AnimatedStrokePath / TeacherMark directly. The writer owns ORDERED multi-stroke glyph formation inside a cell; a single decorative draw-on is one AnimatedStrokePath.",
-      "status": "stable"
-    },
-    {
-      "id": "match-pairs-board",
-      "component": "MatchPairsBoard",
-      "source": "src/motion-primitives/MatchPairsBoard.tsx",
-      "intent": [
-        "matching",
-        "连一连",
-        "pairing",
-        "word-picture",
-        "self-check"
-      ],
-      "useWhen": "The 连一连 / 'match the pairs' beat: TWO caller-supplied columns (pictures one side, words/characters the other) with a line drawn from each item to the one it belongs with, IN ORDER, every correct link snapping its right endpoint dot GREEN on completion, and an optional all-matched celebration. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, value, or English/Chinese string: left:ReactNode[] / right:ReactNode[] are the two columns (IconAssets, VocabFlashcards, hanzi/NumberCards, any node — the component only places them in evenly-spaced columns and derives each item's center for the connector ports); pairs[] is the CORRECT matches as { left:index, right:index, wrongRight?:index } into those arrays (one connector per entry, drawn in array order); mode is 'demonstrate' (default, auto-draw the correct connectors one by one — teacher models the match) or 'quiz' (a pair carrying wrongRight first grows a connector to the WRONG target, snaps RED, retracts, THEN draws the correct line — the learner self-corrects; minimal & opt-in); atFrame is cues[id].startFrame+offset (every pair's progress derived BY INDEX from atFrame + perPairDurationFrames + interPairGapFrames — ZERO frame literals); showPointer traces the active link with a PointerHandArrow; celebrateOnComplete (+ celebrateLabel node) fires a SparkleBurst + collected RewardProgressToken once all pairs link; connectorStyle/connectorColor/wrongColor/connectorStrokeWidth/columnGap/itemGap/itemRadius/x/y style + place it. The SAME component drives a 统编版 Chinese 连一连 (object-picture IconAsset ↔ 汉字 card), a 人教版PEP English word↔picture match, and any future item↔target pairing — the caller only varies props. COMPOSES the registered PairConnector for EVERY link (its grow + snap-green completion is exactly this beat) + PopIn(settle) column entrance + opt-in PointerHandArrow + SparkleBurst + RewardProgressToken, with named EASE.* motion.",
-      "avoidWhen": "A one-to-one quantity COMPARISON by matching (5 > 3, counting surplus) — use getPairedColumnPlacement + PairConnector + UnmatchedSlot, which own the ragged-overhang 'who has no partner' beat; this board is for CORRECT semantic pairings (picture↔word), not surplus counting. A single connector between two known points — just use PairConnector directly; this is the multi-pair, ordered, celebrated composite. Drag-and-drop sorting into bins — use SortingBin. A turn-taking spoken exchange — use DialogueExchange. Teaching the WRITTEN form of a word/character (stroke order) — use GlyphStrokeWriter. Keep pairs <= ~5 and columns short so lines stay legible and crossings unambiguous at 1280-wide. The column nodes and every label are caller scene content; this owns only the two-column layout, the ordered connector draw + green-snap, the opt-in wrong-attempt self-correction, and the all-matched celebration.",
-      "variants": {
-        "mode": [
-          "demonstrate",
-          "quiz"
-        ],
-        "connectorStyle": [
-          "dotted",
-          "solid"
-        ]
-      },
-      "status": "experimental"
-    },
-    {
-      "id": "ordered-row-spotlight",
-      "component": "OrderedRowSpotlight",
-      "source": "src/motion-primitives/OrderedRowSpotlight.tsx",
-      "intent": [
-        "ordinal",
-        "cardinal-vs-ordinal",
-        "序数",
-        "relativity",
-        "参照点变化",
-        "count-walk"
-      ],
-      "useWhen": "Teaching the ordinal cluster on ONE ordered row of caller-supplied items (countables, faces, sticks): count the row 1→N with a moving finger (the 摆—数—说—写 count step), mark ONLY the Nth position as 第N (an ordinal spotlight ring + the 第N token), contrast circle-ALL ('一共5', a PartWholeBrace heap) vs spotlight-ONE ('第5'), and RENUMBER the row from the chosen end when a direction arrow flips — the same item gets its mirror position (第2 ↔ 第4) live, teaching relativity / 参照点变化 / turn-around. Prop-driven & LESSON-AGNOSTIC, bakes NO figure or string: items:ReactNode[] (the row members — identity is caller scene content); direction:'ltr'|'rtl' (which END is position 1 — the SINGLE place direction enters; flipping it re-derives every position via posOf=ltr?i+1:n-i); spotlightOrdinal (a 1-based POSITION, so it tracks a flip automatically); showCardinalBracket + cardinalLabel (the '一共N' heap half of the contrast); ordinalLabel:(pos)=>node (caller localizes '第'+pos — never baked); countWalk / pointerIndex (opt-in 1→N finger + running tally; a static panel shows neither); atFrame + stepDurationFrames (cue-relative — the component derives the pointer walk, spotlight pop, and arrow draw-on by index, ZERO frame literals); rowGap/itemRadius/arrowColor/spotlightColor. COMPOSES PointerHandArrow(hand) + StepTally + CountStepIndicator (per-item position numbers) + PartWholeBrace(up) + TeacherMark(label-arrow) + an inline 第N token, with named EASE.* motion. Any N (2..~8), any item kind, either direction, cardinal OR ordinal mode — one component drives 摆数说写, ordinal spotlight, cardinal/ordinal contrast, relativity, and turn-around.",
-      "avoidWhen": "An UNORDERED set where position is meaningless (pure 'how many' / cardinality across kinds) — use CountableObject rows + AbstractionLadder; comparing TWO different quantities by matching — use getPairedColumnPlacement + PairConnector / UnmatchedSlot; composing/decomposing a whole into parts — use FenHeDiagram; counting a row WITHOUT any ordinal/position claim — a bare CountStepIndicator walk is lighter. Keep N <= ~8 so items + position numbers stay above the kids-eye min size at 1280-wide. It owns the SAME-row ordinal/cardinal/relativity beat; it does NOT teach the digits' stroke order (GlyphStrokeWriter) or a parametric→asset morph (AssetMorph).",
-      "variants": {
-        "direction": [
-          "ltr",
-          "rtl"
-        ]
-      },
-      "status": "experimental"
-    },
-    {
-      "id": "part-whole-composer",
-      "component": "PartWholeComposer",
-      "source": "src/motion-primitives/PartWholeComposer.tsx",
-      "intent": [
-        "part-whole",
-        "分与合",
-        "decompose",
-        "compose",
-        "addition",
-        "enumeration"
-      ],
-      "useWhen": "The concrete-object 分与合 beat: N caller-rendered countables laid out as a whole and SPLIT into two parts, MERGED back together (addition 合并), or walked through EVERY ordered decomposition. Drives 人教版 G1 §1.4 分与合 (the 不重不漏 ordered enumeration that fixes 列举分法遗漏中间项 / 交换顺序后认为是同一种分法 / 操作跳跃无序) AND §1.5 加法的含义 (合并 — physically move two groups together into one total). Prop-driven & LESSON-AGNOSTIC — bakes NO topic, value, or Chinese string: count is N; renderItem(i, part) lets the caller render ONE object given its index + which part ('left'|'right'|'whole') it currently belongs to (so the caller owns the object KIND and the two-color split, e.g. a CountableObject tinted by part); mode is 'split' (one whole group separates into left(k)+right(N-k) clusters moving apart), 'merge' (two clusters left(k)+right(N-k) slide together into one whole, cueing the total N), or 'enumerate' (walk ALL ordered decompositions 1&(N-1), 2&(N-2), …, (N-1)&1 — one item MIGRATES from the right cluster to the left per step, the left cluster growing from the array's right end inward so no index is visited twice, showing 不重不漏 and that swapped pairs like 2&3 vs 3&2 are DISTINCT); partition:{left:k} sets k for split/merge (derived per step for enumerate); atFrame is cues[id].startFrame+offset (every step's progress derived BY INDEX from atFrame + perStepDurationFrames + interStepGapFrames — ZERO frame literals); showDiagram overlays a FenHeDiagram (分合式) whose part numbers UPDATE with the concrete move; showBrace/wholeLabel bracket the whole row; showTally surfaces a StepTally of the enumerate walk; diagramWidth/itemRadius/clusterGap/inkColor/x/y style + place it. The SAME component drives a 分 demo, a 合 (addition) demo, and the full ordered-decomposition enumeration — the caller only varies props. COMPOSES the caller's renderItem objects + FenHeDiagram (the abstract bond, its part numbers driven by the live (k, count-k) via getFenHeDiagramAnchors — no hand-drawn numerals) + PartWholeBrace (optional whole/part brackets) + StepTally (optional walk progress) + PopIn(settle) entrance, with named EASE.* motion (the migrating item glides along an eased lerp).",
-      "avoidWhen": "A single isolated split with NO walk and NO numeric bond — just place two StickGroup/CountableObject clusters and a FenHeDiagram directly; this composite earns its keep on the ORDERED enumeration (不重不漏) and the synced 分合式. A place-value regroup (ten ones become one ten) — use ConservationMorphBundle / BundleWrap, which own the conservation x-ray; this is part-whole over a SMALL count, not base-ten grouping. A turn-taking spoken exchange or a match-pairs board — different composites. The whole 1→N ordinal count-walk (第N spotlight, cardinal-vs-ordinal) — use OrderedRowSpotlight; this composer is about PARTITIONING a quantity, not numbering positions. Keep count <= ~9 so two clusters + the in-flight migrant + the diagram stay legible at 1280-wide. The object kind, the colors, the partition, and every label are caller scene content; this owns only the cluster layout, the split/merge move, the ordered migration walk, and the live diagram/brace/tally sync.",
-      "variants": {
-        "mode": [
-          "split",
-          "merge",
-          "enumerate"
-        ]
-      },
-      "status": "experimental"
-    },
-    {
-      "id": "pictograph-evolution",
-      "component": "PictographEvolution",
-      "source": "src/motion-primitives/PictographEvolution.tsx",
-      "intent": [
-        "字理演变",
-        "象形字",
-        "pictograph",
-        "morph",
-        "evolution",
-        "silhouette-overlap"
-      ],
-      "useWhen": "Reveal that a Chinese character's SHAPE grew from the thing it pictures: walk an ordered list of representation stages — 实物(real object) → 古代象形字(ancient pictograph) → 现代汉字(modern char) — drawn on ONE shared center, morphing the SAME form from each stage into the next, then (the payoff) ghost the original object behind the final character so the child SEES 字形与事物形状相似 — the 字理演变 / 象形字识字 teaching beat (统编版 G1 §1.3 口耳目手足, §1.4 日月水火山石田禾). Prop-driven & LESSON-AGNOSTIC — bakes NO character, object, or Chinese string: stages:ReactNode[] (min 2, typically [objectPicture, ancientGlyph, modernChar] — the caller passes an <IconAsset> object, an ancient-glyph node, a <HanziCard>; the component places each on the shared center and NEVER bakes one); mode 'morph' (default — each consecutive transition is an <AssetMorph> FX-masked sparkle crossfade sharing the center, so the object BECOMES the glyph BECOMES the char with no visible cut) or 'crossfade' (a plain opacity dissolve, calmer, no sparkle mask); silhouetteOverlap (true ⇒ after the last stage settles, ghost stage 0 behind it at the SAME center so the modern char's shape echoes the object — the 字形与事物相似 payoff, faded in via EASE.enter); stageLabels:ReactNode[] (optional caller-localized caption UNDER each stage, 实物/古文字/今字 — never baked, index-aligned, sparse OK, only the current stage's shows); atFrame is cues[id].startFrame+offset (the component derives WHICH transition is active by stage INDEX and its local progress from perStageDurationFrames + interStageGapFrames — ZERO frame literals); centerX/centerY (the shared bbox center every stage + each morph's FX burst sits on — the caller MUST author each stage so its visual center coincides here, exactly AssetMorph's identity-preserving contract), stageSize/silhouetteOpacity/fxColor/inkColor/x/y/transform style + place it. The SAME component drives 日(sun), 山(mountain), 水(water), 口/耳/目/手/足, or any pictograph — only the props change. COMPOSES <AssetMorph> for every consecutive stage transition (its SparkleBurst-masked, bbox-centered swap is exactly this beat) + <PopIn motion='settle'> for the first stage entrance + named EASE.* motion for the silhouette ghost fade + caption reveals.",
-      "avoidWhen": "Teaching the child to WRITE the character (stroke order, 笔顺) — use GlyphStrokeWriter, which traces strokes IN ORDER; this morphs WHOLE forms and does not draw stroke-by-stroke. Binding a word to a picture with no shape-morph (vocab) — use VocabFlashcard. A side-by-side contrasting SET of finished characters (e.g. a tone minimal pair) — compose several HanziCards. Mapping a quantity across abstraction rungs (实物→小棒→圆点→数字 for a NUMBER) — use AbstractionLadder (that conserves a COUNT; this reshapes ONE form). The stages MUST be bbox-centered on the shared center or the morph reads as a cut, not a reshape — that center match is the caller's responsibility (same fence as AssetMorph). The object pictures, the ancient glyphs, and every label are caller scene content; this owns only the staged morph chain, the silhouette-overlap payoff, and the per-stage caption reveal.",
-      "variants": {
-        "mode": [
-          "morph",
-          "crossfade"
-        ]
-      },
-      "status": "experimental"
     },
     {
       "id": "pop-in",
@@ -1081,28 +815,6 @@
       "avoidWhen": "A sustained attention pulse — use PulseCircle; a persistent reward token — use RewardProgressToken.",
       "variants": {},
       "status": "stable"
-    },
-    {
-      "id": "vocab-flashcard",
-      "component": "VocabFlashcard",
-      "source": "src/motion-primitives/VocabFlashcard.tsx",
-      "intent": [
-        "vocabulary",
-        "picture-word",
-        "flashcard",
-        "图文对照",
-        "label-reveal"
-      ],
-      "useWhen": "Bind a vocabulary WORD to the PICTURE of the thing it names, revealed as ONE beat (and optionally flipped picture↔word). The single reusable card the whole picture-word library is built from: MAP SEVERAL IN A ROW (stagger each card's atFrame) to teach a vocab SET, or pass one with phonetic + listenCue + highlightLabel for the hardest 'say this tricky word' beat. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, NO English/Chinese string: picture:ReactNode (the object illustration — <IconAsset name='...'/> or any node), label:ReactNode (the localized word/character — never baked), phonetic?:ReactNode (pinyin / phonemic hint under the label). mode:'reveal'|'flip'|'label-after' — reveal = picture+label settle in together on one face; flip = the card rotates on its Y-axis from the picture face to the word face (a shine sweeps the edge as it turns); label-after = the picture lands first, then the word writes/fades in below it. atFrame is cues[id].startFrame+offset (every sub-phase — picture settle, flip rotation, label write-in — derived BY FRACTION of revealDurationFrames; ZERO frame literals); listenCue shows a <ListenIcon> speaker affordance that swells to 'playing' (the word is sayable, for the audio beat); highlightLabel + emphasisColor pulse a <PulseCircle> ring at the settled word (the 'hard to pronounce' / multi-syllable 不易读准 flag); fill/stroke/cornerRadius/width/height/inkColor/phoneticColor/x/y/transform style + place it. The SAME card drives 人教版PEP English stationery vocab (crayon/pencil/eraser, the multi-syllable words highlight-flagged) AND 统编版 Chinese 图文对照 (object illustration + 生字 + 拼音, e.g. 木/mù) — the caller only varies props. COMPOSES <PopIn motion='bouncy'> for the card entrance + <ListenIcon> for the audio affordance + <ShineSweep> across the card on flip/reveal + <PulseCircle> for the pronunciation flag, with named EASE.* motion for the flip rotation + label settle.",
-      "avoidWhen": "Teaching the child to WRITE the word's strokes / spelling (stroke order, 笔顺) — use GlyphStrokeWriter / HanziCard, which own the written form; this card only NAMES a picture, it does not trace it. A bare on-screen label with no picture binding — use LabelCallout. A character SET shown for contrast (a tone minimal pair 妈/麻/马/骂) where the point is the characters themselves, not picture↔word — use HanziCard side by side. A two-sided spoken exchange (greetings, Q&A) — use DialogueExchange. The picture, the word, and the phonetic are ALL caller scene content; this owns only the card surface, the reveal/flip choreography, and the audio/pronunciation affordances. A whole vocab SET is the caller mapping several of THESE in a staggered row — don't bake the set into one card.",
-      "variants": {
-        "mode": [
-          "reveal",
-          "flip",
-          "label-after"
-        ]
-      },
-      "status": "experimental"
     }
   ],
   "fxComponents": [
@@ -1288,6 +1000,217 @@
       "useWhen": "Wrap the scene root (OUTSIDE SceneFrame) to apply an aesthetic overlay; set style to a style id from the styles[] section (e.g. 'ink-wash'). It injects shared <defs> and publishes the filter ids + palette via context for the scene to read. 'default'/omitted is a zero-cost passthrough.",
       "avoidWhen": "Do not pass a style id that is not registered in styles[] (the wrapper throws on unknown styles). It carries no aesthetic of its own — the per-lesson choice is only the style prop. Do not place it inside SceneFrame.",
       "status": "stable"
+    }
+  ],
+  "specialComponents": [
+    {
+      "id": "abstraction-ladder",
+      "component": "AbstractionLadder",
+      "source": "src/motion-primitives/AbstractionLadder.tsx",
+      "intent": [
+        "abstraction",
+        "cardinality",
+        "conservation",
+        "representation-ladder"
+      ],
+      "useWhen": "Revealing ONE quantity surviving across an ordered ladder of representations — 实物 → 小棒(1:1) → 圆点 → 数字 — in one continuous left→right (or top→down) reveal, so the SAME count is seen conserved at every step of abstraction and the child stops splitting 'counting objects' from 'the number symbol'. Faint 1:1 connectors tie like-index units between adjacent rungs, and every unit converges on the single numeral card — the 'N个XX用N表示' cardinality payoff. Prop-driven: count:number; stages (caller picks/orders the rungs, defaults the full ladder); objectVariant for the objects rung; atFrame+perStageDurationFrames (cue-relative, the component derives each rung's local progress); orientation row|column; tint; revealLabel per-stage caption nodes (caller passes the localized 'N个XX用N表示' string). A 6~10 lesson, or a same-count-across-different-kinds beat (label 2 geese AND 2 chairs with the same numeral), reuses it unchanged.",
+      "avoidWhen": "A single static representation (no abstraction step to show) — use the bare primitive (CountableObject / NumberCard); or a ten-ones→one-ten bundling where the units physically GATHER into one object — use AssetMorph; or counts so large the per-rung units fall below the kids-eye min size (keep count <= ~6 for the full 4-rung ladder at 1280-wide). It conserves a count across abstraction levels; it does NOT compose/decompose a whole into parts (use FenHeDiagram) or compare two different quantities (use a paired-column compare).",
+      "variants": {
+        "orientation": [
+          "row",
+          "column"
+        ],
+        "stages": [
+          "objects",
+          "sticks",
+          "dots",
+          "numeral"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "asset-morph",
+      "component": "AssetMorph",
+      "source": "src/motion-primitives/AssetMorph.tsx",
+      "intent": [
+        "morph",
+        "transition",
+        "parametric-to-asset"
+      ],
+      "useWhen": "Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a SparkleBurst over the swap while the arriving element settles, so ten sticks BECOME one roped bundle (direction=bundle) or a bundle un-bundles into fanning sticks (direction=unbundle). Caller supplies from/to and a shared centerX/centerY (bbox-matched so identity is preserved); atFrame is cues[id].startFrame+offset.",
+      "avoidWhen": "Swapping two things that are NOT the same object (no identity to preserve) — use a plain cut or PopIn; or morphing at multiplicity where each unit needs its own highlight — keep those parametric. The teaching mechanics (the sticks gathering/counting) stay on the parametric from; AssetMorph only owns the masked swap.",
+      "variants": {
+        "direction": [
+          "bundle",
+          "unbundle"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "conservation-morph-bundle",
+      "component": "ConservationMorphBundle",
+      "source": "src/motion-primitives/ConservationMorphBundle.tsx",
+      "intent": [
+        "morph",
+        "conservation",
+        "regrouping"
+      ],
+      "useWhen": "The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. Composes AssetMorph (the gathered parametric from BECOMES the held asset, FX-masked) + the held IconAsset + ConservationBundle (the x-ray peek): drive peekProgress 0..1 from the conservation cue and the held bundle crossfades down while the wrap ghosts to reveal the count ones living inside, then re-solidifies. Caller supplies from/asset/centerX/centerY (bbox-matched, like AssetMorph) and the count/colors of the inner ones; morphAtFrame + peekProgress are cue-relative.",
+      "avoidWhen": "Bundling with NO conservation peek (use AssetMorph alone), or a peek with no preceding morph (use ConservationBundle alone). Multiplicity where each inner one needs its own live highlight during the held phase — assets can't per-index highlight; keep that parametric. The gather-before / fan-after motion stays on the caller's parametric from — this owns only the masked swap + the asset↔x-ray crossfade.",
+      "status": "experimental"
+    },
+    {
+      "id": "dialogue-exchange",
+      "component": "DialogueExchange",
+      "source": "src/motion-primitives/DialogueExchange.tsx",
+      "intent": [
+        "dialogue",
+        "turn-taking",
+        "speech-bubble",
+        "greeting",
+        "conversation"
+      ],
+      "useWhen": "A turn-taking spoken exchange between TWO caller-supplied speakers: each speaks in order, turn k's speech bubble pops in ONLY after turn k-1 (+ gap) with its tail pointing at the speaker who said it, the speaking figure leans/bobs toward the other, and at most the two most-recent bubbles stay up (older ones dim) so a question and its answer read together without crowding. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, face, or English/Chinese string: left/right are { figure:ReactNode (the caller's face, e.g. <IconAsset name='boy-face'/>), nameCard?:ReactNode }; turns[] is { speaker:'left'|'right', line:ReactNode (the localized utterance — never baked), emphasis?, gesture?:'wave'|'point-self'|'point-other'|'none' }; atFrame is cues[id].startFrame+offset (the component derives every turn's local progress BY INDEX — ZERO frame literals); perTurnDurationFrames + interTurnGapFrames set pacing; maxVisibleBubbles/speakerGap/figureRadius/bubbleFill/bubbleStroke/inkColor/emphasisColor style it. The SAME component drives English greetings (Hello!/Hi!), farewells (Goodbye!/Bye-Bye! with gesture:'wave'), name Q&A (What's your name?/My name is ___, the answer turn emphasis-flagged for the I'm [aɪm]/[em] pronunciation beat), AND Chinese 你/我/他 person reference (gesture:'point-other' for 你/他, 'point-self' for 我) — the caller only varies props. COMPOSES PopIn(motion='bouncy') for bubble entrance + PulseCircle for the emphasis/pronunciation flag + a hand-drawn rounded bubble-with-tail, with named EASE.* motion for the lean/bob.",
+      "avoidWhen": "A monologue / single narrator (no second speaker, no turn-taking) — just place a bubble or LabelCallout. More than two speakers in one frame (it is strictly two-sided; a third party is a different composition). A chat-log where ALL lines must stay readable at once (this keeps only the two newest — raise maxVisibleBubbles and you own legibility, but a transcript panel is the wrong tool). Teaching the WRITTEN form of the words (stroke order, spelling) — use GlyphStrokeWriter / HanziCard. The speakers' faces and every line are caller scene content; this owns only the turn-taking choreography, the tail-pointing bubbles, and the lean/wave/point gestures.",
+      "variants": {
+        "gesture": [
+          "none",
+          "wave",
+          "point-self",
+          "point-other"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "glyph-stroke-writer",
+      "component": "GlyphStrokeWriter",
+      "source": "src/motion-primitives/GlyphStrokeWriter.tsx",
+      "intent": [
+        "stroke-order",
+        "handwriting",
+        "glyph-tracing",
+        "笔顺"
+      ],
+      "useWhen": "Teaching a child to WRITE a single glyph in the correct stroke order (笔顺) inside a writing cell — a numeral (1/2/3/4/5, or any digit) or a comparison symbol (= > <), or any future glyph. It traces the glyph stroke by stroke IN ORDER: stroke k starts only after stroke k-1 finishes (+ gap), each with a faint ghost-under guide, a moving pen cursor, and a 起笔/收笔 dot whose start marker pulses just before its stroke begins, so direction and order are unmistakable — the fix for the 2的弧线/3的两个半圆 写反/弧度变形 and the 把符号画成图/笔画不匀 misconceptions. Prop-driven and LESSON-AGNOSTIC: it bakes NO glyph — the caller passes the ordered `strokes` (looked up from the shared GLYPH_STROKES data keyed by the glyph char, via `glyphStrokesFor(char)`). `atFrame` is cues[id].startFrame+offset (the writer derives every stroke's local progress by index — ZERO frame literals); `perStrokeDurationFrames` + optional `interStrokeGapFrames` set the pace; `size` scales the normalized 0..100 stroke data to the cell; `grid`/`focusZone` pass through to StrokeGuideCell; `stroke`/`strokeWidth`/`cursor`/`showStartDots` style the pen. COMPOSES StrokeGuideCell (田字格/米字格 backdrop) + one AnimatedStrokePath per stroke (ghost + cursor + progress) + 起笔/收笔 dot markers. Drives 1–5 AND =,>,< AND any glyph with stroke data unchanged.",
+      "avoidWhen": "Showing a glyph that is already WRITTEN (no stroke-order teaching) — use NumberCard / ComparisonSymbol / a plain text glyph. Tracing a full hanzi character (the GLYPH_STROKES data ships digits 0-9 + comparison symbols; add the character's ordered paths to that shared data first — don't bake them into a scene). Animating a non-writing path reveal (a number-line arc, a teacher underline) — use DrawPath / AnimatedStrokePath / TeacherMark directly. The writer owns ORDERED multi-stroke glyph formation inside a cell; a single decorative draw-on is one AnimatedStrokePath.",
+      "status": "stable"
+    },
+    {
+      "id": "match-pairs-board",
+      "component": "MatchPairsBoard",
+      "source": "src/motion-primitives/MatchPairsBoard.tsx",
+      "intent": [
+        "matching",
+        "连一连",
+        "pairing",
+        "word-picture",
+        "self-check"
+      ],
+      "useWhen": "The 连一连 / 'match the pairs' beat: TWO caller-supplied columns (pictures one side, words/characters the other) with a line drawn from each item to the one it belongs with, IN ORDER, every correct link snapping its right endpoint dot GREEN on completion, and an optional all-matched celebration. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, value, or English/Chinese string: left:ReactNode[] / right:ReactNode[] are the two columns (IconAssets, VocabFlashcards, hanzi/NumberCards, any node — the component only places them in evenly-spaced columns and derives each item's center for the connector ports); pairs[] is the CORRECT matches as { left:index, right:index, wrongRight?:index } into those arrays (one connector per entry, drawn in array order); mode is 'demonstrate' (default, auto-draw the correct connectors one by one — teacher models the match) or 'quiz' (a pair carrying wrongRight first grows a connector to the WRONG target, snaps RED, retracts, THEN draws the correct line — the learner self-corrects; minimal & opt-in); atFrame is cues[id].startFrame+offset (every pair's progress derived BY INDEX from atFrame + perPairDurationFrames + interPairGapFrames — ZERO frame literals); showPointer traces the active link with a PointerHandArrow; celebrateOnComplete (+ celebrateLabel node) fires a SparkleBurst + collected RewardProgressToken once all pairs link; connectorStyle/connectorColor/wrongColor/connectorStrokeWidth/columnGap/itemGap/itemRadius/x/y style + place it. The SAME component drives a 统编版 Chinese 连一连 (object-picture IconAsset ↔ 汉字 card), a 人教版PEP English word↔picture match, and any future item↔target pairing — the caller only varies props. COMPOSES the registered PairConnector for EVERY link (its grow + snap-green completion is exactly this beat) + PopIn(settle) column entrance + opt-in PointerHandArrow + SparkleBurst + RewardProgressToken, with named EASE.* motion.",
+      "avoidWhen": "A one-to-one quantity COMPARISON by matching (5 > 3, counting surplus) — use getPairedColumnPlacement + PairConnector + UnmatchedSlot, which own the ragged-overhang 'who has no partner' beat; this board is for CORRECT semantic pairings (picture↔word), not surplus counting. A single connector between two known points — just use PairConnector directly; this is the multi-pair, ordered, celebrated composite. Drag-and-drop sorting into bins — use SortingBin. A turn-taking spoken exchange — use DialogueExchange. Teaching the WRITTEN form of a word/character (stroke order) — use GlyphStrokeWriter. Keep pairs <= ~5 and columns short so lines stay legible and crossings unambiguous at 1280-wide. The column nodes and every label are caller scene content; this owns only the two-column layout, the ordered connector draw + green-snap, the opt-in wrong-attempt self-correction, and the all-matched celebration.",
+      "variants": {
+        "mode": [
+          "demonstrate",
+          "quiz"
+        ],
+        "connectorStyle": [
+          "dotted",
+          "solid"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "ordered-row-spotlight",
+      "component": "OrderedRowSpotlight",
+      "source": "src/motion-primitives/OrderedRowSpotlight.tsx",
+      "intent": [
+        "ordinal",
+        "cardinal-vs-ordinal",
+        "序数",
+        "relativity",
+        "参照点变化",
+        "count-walk"
+      ],
+      "useWhen": "Teaching the ordinal cluster on ONE ordered row of caller-supplied items (countables, faces, sticks): count the row 1→N with a moving finger (the 摆—数—说—写 count step), mark ONLY the Nth position as 第N (an ordinal spotlight ring + the 第N token), contrast circle-ALL ('一共5', a PartWholeBrace heap) vs spotlight-ONE ('第5'), and RENUMBER the row from the chosen end when a direction arrow flips — the same item gets its mirror position (第2 ↔ 第4) live, teaching relativity / 参照点变化 / turn-around. Prop-driven & LESSON-AGNOSTIC, bakes NO figure or string: items:ReactNode[] (the row members — identity is caller scene content); direction:'ltr'|'rtl' (which END is position 1 — the SINGLE place direction enters; flipping it re-derives every position via posOf=ltr?i+1:n-i); spotlightOrdinal (a 1-based POSITION, so it tracks a flip automatically); showCardinalBracket + cardinalLabel (the '一共N' heap half of the contrast); ordinalLabel:(pos)=>node (caller localizes '第'+pos — never baked); countWalk / pointerIndex (opt-in 1→N finger + running tally; a static panel shows neither); atFrame + stepDurationFrames (cue-relative — the component derives the pointer walk, spotlight pop, and arrow draw-on by index, ZERO frame literals); rowGap/itemRadius/arrowColor/spotlightColor. COMPOSES PointerHandArrow(hand) + StepTally + CountStepIndicator (per-item position numbers) + PartWholeBrace(up) + TeacherMark(label-arrow) + an inline 第N token, with named EASE.* motion. Any N (2..~8), any item kind, either direction, cardinal OR ordinal mode — one component drives 摆数说写, ordinal spotlight, cardinal/ordinal contrast, relativity, and turn-around.",
+      "avoidWhen": "An UNORDERED set where position is meaningless (pure 'how many' / cardinality across kinds) — use CountableObject rows + AbstractionLadder; comparing TWO different quantities by matching — use getPairedColumnPlacement + PairConnector / UnmatchedSlot; composing/decomposing a whole into parts — use FenHeDiagram; counting a row WITHOUT any ordinal/position claim — a bare CountStepIndicator walk is lighter. Keep N <= ~8 so items + position numbers stay above the kids-eye min size at 1280-wide. It owns the SAME-row ordinal/cardinal/relativity beat; it does NOT teach the digits' stroke order (GlyphStrokeWriter) or a parametric→asset morph (AssetMorph).",
+      "variants": {
+        "direction": [
+          "ltr",
+          "rtl"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "part-whole-composer",
+      "component": "PartWholeComposer",
+      "source": "src/motion-primitives/PartWholeComposer.tsx",
+      "intent": [
+        "part-whole",
+        "分与合",
+        "decompose",
+        "compose",
+        "addition",
+        "enumeration"
+      ],
+      "useWhen": "The concrete-object 分与合 beat: N caller-rendered countables laid out as a whole and SPLIT into two parts, MERGED back together (addition 合并), or walked through EVERY ordered decomposition. Drives 人教版 G1 §1.4 分与合 (the 不重不漏 ordered enumeration that fixes 列举分法遗漏中间项 / 交换顺序后认为是同一种分法 / 操作跳跃无序) AND §1.5 加法的含义 (合并 — physically move two groups together into one total). Prop-driven & LESSON-AGNOSTIC — bakes NO topic, value, or Chinese string: count is N; renderItem(i, part) lets the caller render ONE object given its index + which part ('left'|'right'|'whole') it currently belongs to (so the caller owns the object KIND and the two-color split, e.g. a CountableObject tinted by part); mode is 'split' (one whole group separates into left(k)+right(N-k) clusters moving apart), 'merge' (two clusters left(k)+right(N-k) slide together into one whole, cueing the total N), or 'enumerate' (walk ALL ordered decompositions 1&(N-1), 2&(N-2), …, (N-1)&1 — one item MIGRATES from the right cluster to the left per step, the left cluster growing from the array's right end inward so no index is visited twice, showing 不重不漏 and that swapped pairs like 2&3 vs 3&2 are DISTINCT); partition:{left:k} sets k for split/merge (derived per step for enumerate); atFrame is cues[id].startFrame+offset (every step's progress derived BY INDEX from atFrame + perStepDurationFrames + interStepGapFrames — ZERO frame literals); showDiagram overlays a FenHeDiagram (分合式) whose part numbers UPDATE with the concrete move; showBrace/wholeLabel bracket the whole row; showTally surfaces a StepTally of the enumerate walk; diagramWidth/itemRadius/clusterGap/inkColor/x/y style + place it. The SAME component drives a 分 demo, a 合 (addition) demo, and the full ordered-decomposition enumeration — the caller only varies props. COMPOSES the caller's renderItem objects + FenHeDiagram (the abstract bond, its part numbers driven by the live (k, count-k) via getFenHeDiagramAnchors — no hand-drawn numerals) + PartWholeBrace (optional whole/part brackets) + StepTally (optional walk progress) + PopIn(settle) entrance, with named EASE.* motion (the migrating item glides along an eased lerp).",
+      "avoidWhen": "A single isolated split with NO walk and NO numeric bond — just place two StickGroup/CountableObject clusters and a FenHeDiagram directly; this composite earns its keep on the ORDERED enumeration (不重不漏) and the synced 分合式. A place-value regroup (ten ones become one ten) — use ConservationMorphBundle / BundleWrap, which own the conservation x-ray; this is part-whole over a SMALL count, not base-ten grouping. A turn-taking spoken exchange or a match-pairs board — different composites. The whole 1→N ordinal count-walk (第N spotlight, cardinal-vs-ordinal) — use OrderedRowSpotlight; this composer is about PARTITIONING a quantity, not numbering positions. Keep count <= ~9 so two clusters + the in-flight migrant + the diagram stay legible at 1280-wide. The object kind, the colors, the partition, and every label are caller scene content; this owns only the cluster layout, the split/merge move, the ordered migration walk, and the live diagram/brace/tally sync.",
+      "variants": {
+        "mode": [
+          "split",
+          "merge",
+          "enumerate"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "pictograph-evolution",
+      "component": "PictographEvolution",
+      "source": "src/motion-primitives/PictographEvolution.tsx",
+      "intent": [
+        "字理演变",
+        "象形字",
+        "pictograph",
+        "morph",
+        "evolution",
+        "silhouette-overlap"
+      ],
+      "useWhen": "Reveal that a Chinese character's SHAPE grew from the thing it pictures: walk an ordered list of representation stages — 实物(real object) → 古代象形字(ancient pictograph) → 现代汉字(modern char) — drawn on ONE shared center, morphing the SAME form from each stage into the next, then (the payoff) ghost the original object behind the final character so the child SEES 字形与事物形状相似 — the 字理演变 / 象形字识字 teaching beat (统编版 G1 §1.3 口耳目手足, §1.4 日月水火山石田禾). Prop-driven & LESSON-AGNOSTIC — bakes NO character, object, or Chinese string: stages:ReactNode[] (min 2, typically [objectPicture, ancientGlyph, modernChar] — the caller passes an <IconAsset> object, an ancient-glyph node, a <HanziCard>; the component places each on the shared center and NEVER bakes one); mode 'morph' (default — each consecutive transition is an <AssetMorph> FX-masked sparkle crossfade sharing the center, so the object BECOMES the glyph BECOMES the char with no visible cut) or 'crossfade' (a plain opacity dissolve, calmer, no sparkle mask); silhouetteOverlap (true ⇒ after the last stage settles, ghost stage 0 behind it at the SAME center so the modern char's shape echoes the object — the 字形与事物相似 payoff, faded in via EASE.enter); stageLabels:ReactNode[] (optional caller-localized caption UNDER each stage, 实物/古文字/今字 — never baked, index-aligned, sparse OK, only the current stage's shows); atFrame is cues[id].startFrame+offset (the component derives WHICH transition is active by stage INDEX and its local progress from perStageDurationFrames + interStageGapFrames — ZERO frame literals); centerX/centerY (the shared bbox center every stage + each morph's FX burst sits on — the caller MUST author each stage so its visual center coincides here, exactly AssetMorph's identity-preserving contract), stageSize/silhouetteOpacity/fxColor/inkColor/x/y/transform style + place it. The SAME component drives 日(sun), 山(mountain), 水(water), 口/耳/目/手/足, or any pictograph — only the props change. COMPOSES <AssetMorph> for every consecutive stage transition (its SparkleBurst-masked, bbox-centered swap is exactly this beat) + <PopIn motion='settle'> for the first stage entrance + named EASE.* motion for the silhouette ghost fade + caption reveals.",
+      "avoidWhen": "Teaching the child to WRITE the character (stroke order, 笔顺) — use GlyphStrokeWriter, which traces strokes IN ORDER; this morphs WHOLE forms and does not draw stroke-by-stroke. Binding a word to a picture with no shape-morph (vocab) — use VocabFlashcard. A side-by-side contrasting SET of finished characters (e.g. a tone minimal pair) — compose several HanziCards. Mapping a quantity across abstraction rungs (实物→小棒→圆点→数字 for a NUMBER) — use AbstractionLadder (that conserves a COUNT; this reshapes ONE form). The stages MUST be bbox-centered on the shared center or the morph reads as a cut, not a reshape — that center match is the caller's responsibility (same fence as AssetMorph). The object pictures, the ancient glyphs, and every label are caller scene content; this owns only the staged morph chain, the silhouette-overlap payoff, and the per-stage caption reveal.",
+      "variants": {
+        "mode": [
+          "morph",
+          "crossfade"
+        ]
+      },
+      "status": "experimental"
+    },
+    {
+      "id": "vocab-flashcard",
+      "component": "VocabFlashcard",
+      "source": "src/motion-primitives/VocabFlashcard.tsx",
+      "intent": [
+        "vocabulary",
+        "picture-word",
+        "flashcard",
+        "图文对照",
+        "label-reveal"
+      ],
+      "useWhen": "Bind a vocabulary WORD to the PICTURE of the thing it names, revealed as ONE beat (and optionally flipped picture↔word). The single reusable card the whole picture-word library is built from: MAP SEVERAL IN A ROW (stagger each card's atFrame) to teach a vocab SET, or pass one with phonetic + listenCue + highlightLabel for the hardest 'say this tricky word' beat. Prop-driven & LESSON-AGNOSTIC — bakes NO topic, NO English/Chinese string: picture:ReactNode (the object illustration — <IconAsset name='...'/> or any node), label:ReactNode (the localized word/character — never baked), phonetic?:ReactNode (pinyin / phonemic hint under the label). mode:'reveal'|'flip'|'label-after' — reveal = picture+label settle in together on one face; flip = the card rotates on its Y-axis from the picture face to the word face (a shine sweeps the edge as it turns); label-after = the picture lands first, then the word writes/fades in below it. atFrame is cues[id].startFrame+offset (every sub-phase — picture settle, flip rotation, label write-in — derived BY FRACTION of revealDurationFrames; ZERO frame literals); listenCue shows a <ListenIcon> speaker affordance that swells to 'playing' (the word is sayable, for the audio beat); highlightLabel + emphasisColor pulse a <PulseCircle> ring at the settled word (the 'hard to pronounce' / multi-syllable 不易读准 flag); fill/stroke/cornerRadius/width/height/inkColor/phoneticColor/x/y/transform style + place it. The SAME card drives 人教版PEP English stationery vocab (crayon/pencil/eraser, the multi-syllable words highlight-flagged) AND 统编版 Chinese 图文对照 (object illustration + 生字 + 拼音, e.g. 木/mù) — the caller only varies props. COMPOSES <PopIn motion='bouncy'> for the card entrance + <ListenIcon> for the audio affordance + <ShineSweep> across the card on flip/reveal + <PulseCircle> for the pronunciation flag, with named EASE.* motion for the flip rotation + label settle.",
+      "avoidWhen": "Teaching the child to WRITE the word's strokes / spelling (stroke order, 笔顺) — use GlyphStrokeWriter / HanziCard, which own the written form; this card only NAMES a picture, it does not trace it. A bare on-screen label with no picture binding — use LabelCallout. A character SET shown for contrast (a tone minimal pair 妈/麻/马/骂) where the point is the characters themselves, not picture↔word — use HanziCard side by side. A two-sided spoken exchange (greetings, Q&A) — use DialogueExchange. The picture, the word, and the phonetic are ALL caller scene content; this owns only the card surface, the reveal/flip choreography, and the audio/pronunciation affordances. A whole vocab SET is the caller mapping several of THESE in a staggered row — don't bake the set into one card.",
+      "variants": {
+        "mode": [
+          "reveal",
+          "flip",
+          "label-after"
+        ]
+      },
+      "status": "experimental"
     }
   ]
 }

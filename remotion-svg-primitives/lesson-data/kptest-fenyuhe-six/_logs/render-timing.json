@@ -1,35 +1,39 @@
 {
   "lessonId": "kptest-fenyuhe-six",
-  "generatedAt": "2026-06-11T01:00:44.014Z",
-  "totalMs": 28843,
+  "generatedAt": "2026-06-12T19:18:35.088Z",
+  "totalMs": 34405,
   "steps": [
     {
       "step": "Audio gate",
-      "ms": 63
+      "ms": 82
     },
     {
       "step": "Lesson registry",
-      "ms": 49
-    },
-    {
-      "step": "Typecheck + lint",
-      "ms": 4743
+      "ms": 59
     },
     {
       "step": "Bundle",
-      "ms": 1723
+      "ms": 2778
     },
     {
       "step": "Render MP4",
-      "ms": 16632
+      "ms": 21984
     },
     {
-      "step": "Loudnorm (-16 LUFS / -1 dBTP)",
-      "ms": 1906
+      "step": "Loudnorm pass 1 (measure)",
+      "ms": 1874
+    },
+    {
+      "step": "Loudnorm pass 2 (-16 LUFS / -1 dBTP, linear)",
+      "ms": 2165
+    },
+    {
+      "step": "Loudnorm verify (re-measure)",
+      "ms": 1852
     },
     {
       "step": "Contact sheet",
-      "ms": 3727
+      "ms": 3611
     }
   ]
 }

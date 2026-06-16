@@ -36,10 +36,48 @@ A REUSE is valid ONLY if the component is a real id in the registry / catalog-di
 
 The visual-source order is fixed: **reuse an existing primitive → compose existing primitives → hand-code a parametric primitive → generate a decorative asset.** Stop at the first hit. Most lessons stop at compose. Composing two catalog primitives into a beat is NOT a gap and ships no new code. A new primitive is the exception, justified by a named demand no catalog entry satisfies.
 
-## Building a named gap
+## Building a named gap — the two-step law
 
-Only after a gap is explicitly named: build the primitive prop-driven, reusable, and **lesson-agnostic** — never hardcode this lesson's topic, count, value, or strings (those are props). Zero frame literals in component code — the public API takes `atFrame` / `progress` / count props, never bakes a master-timeline frame.
+A new component is authorized ONLY after the scan names a gap no catalog entry satisfies. When that happens, **what the component is supposed to TEACH defines the component** — its one teaching intention is its whole reason to exist, and every visual element inside it must serve that one intention. Build in TWO steps, in order. Do not skip to drawing.
 
+A concept-specific component is LEGITIMATE and expected: a gap is real precisely because no existing component could teach this concept, so a component built for one concept is correct. "Single-purpose for a concept" is the goal, not a smell. What is forbidden is the opposite — a component that bundles *unrelated* jobs, or that gets "drawn out based on whatever," merging other components and stray lines into a grab-bag. Single concept = good. Multiple unrelated jobs in one component = the bug.
+
+### Step 1 — Ground in the craft AND the concept (load before drawing)
+
+Before you design or draw anything, LOAD and internalize two things:
+
+1. **The best way to build a component in THIS system.** Read the craft skills named in your SKILLS input and follow them literally:
+   - `kids-eye/SKILL.md` — viewer-first legibility: the §1 measurement block (the smallest mark meets its minimum at real render size), §2 "one element, one unique signal," §3 the finger-cover test, §4 identity-preserved-across-transformation.
+   - `visual-discipline/SKILL.md` — "container earns its existence," "semantic groups dominate visual groups," "color is a semantic channel, not decoration," "text earns its existence," and the anti-pattern catalogue (decoration "for emphasis," two pictures stapled together).
+   - `early-childhood-visual-taste/SKILL.md` — palette (bounded set of meaningful colors), typography minimums, motion vocabulary.
+   - The catalog-digest is the inventory of what already exists to compose; `CAPABILITIES.md` is the craft-technique reach-guide for named motion / fx / entrance helpers.
+2. **The best way to TEACH this specific concept with a component.** Read this lesson's `pedagogy.md` (what the child discovers at the beat this gap serves) and the teaching MOVE(s) in `TEACHING-ACTIONS.md` whose `requires` named this gap. The concept's pedagogy — not a visual you already have in mind — is what the component must deliver.
+
+Output of Step 1 (in your log / structured return, NOT baked into the component): one sentence — *"This component's ONE teaching intention is `<X>`: the single thing the child must see/understand that no existing component delivers."* If you cannot write that sentence in one clause, you do not yet understand the concept — re-read, do not start drawing. If the sentence contains an "and" joining two unrelated jobs, you are about to build a grab-bag — split it into the one intention this gap actually needs (the other job is a separate component, or is composed by the lesson).
+
+### Step 2 — Design around the ONE teaching intention, then draw
+
+Decide the component's single teaching intention (the Step-1 sentence), design the component to deliver EXACTLY that, and only THEN implement it.
+
+**The single-intention test — apply to EVERY visual element before it goes in.** For each shape, line, ring, label, arrow, pointer, tally, bracket, glow, pop you are about to add, complete the sentence:
+
+> *"This element is REQUIRED to deliver `<the one teaching intention>`, because without it the child would not see `<the specific thing>`."*
+
+If you cannot complete it, the element does not belong in this component. It is either decoration (cut it) or a *different* job (a separate component, or composed by the lesson scene at cue-relative frames — never baked in here). This is the finger-cover test applied at the COMPONENT-AUTHORING boundary, not just the scene: cover any element — if the component still teaches its one intention, that element was decoration or an unrelated job; remove it.
+
+**Forbidden when authoring a component (refuse on sight):**
+
+- **Bolting on an uncorrelated overlay.** Any extra mark — an arrow, a celebration sparkle/burst, a ring, a pop, a glow, a running tally, a bracket — that does not serve THIS component's one intention must NOT be baked in. If a lesson wants a flourish, the LESSON composes it at cue-relative frames; the component does not carry it.
+- **A default-on flourish the caller never requested.** A flourish/overlay may exist as an OPT-IN prop, but it defaults OFF, and it never auto-enables itself by inferring from some other prop or context. The caller opts in explicitly; a component that decides on its own to add an extra mark is the canonical instance of this bug — it draws decoration nobody asked for, uncorrelated with the component's teaching job.
+- **"Drawing it out based on whatever."** Merging available components + stray lines into a grab-bag because they were on hand is not design. Every piece is included because the single-intention test passed for it, or it is not included.
+- **Multiple unrelated jobs in one component.** If the thing would teach several unrelated concepts at once, those are several intentions. Build the ONE this gap named; let the others be separate components the lesson composes. A component is single-purpose for a concept; it is never multi-purpose across unrelated concepts.
+
+**Then draw, preserving every existing non-negotiable (all still binding):**
+
+- **Lesson-agnostic + prop-driven.** Never hardcode this lesson's topic, count, value, or strings — those are props. Prove a second imagined caller could use the component with different props; if it only fits one lesson, it is scene composition mis-scoped as a capability.
+- **ZERO frame literals.** The public API takes `atFrame` / `progress` / `startFrame` + cue-relative offsets; the component never bakes a master-timeline frame. Spoken-enumeration stepping binds to measured ASR onsets via the onset prop, never a fixed grid baked as the only path.
+- **ZERO raw motion literals.** Every easing curve / spring reaches for a named export (`EASE.*` / `SPRING.*`); entrance physics and opt-in liveliness via the named motion primitives.
+- **REUSE > compose > build-primitive > make-asset.** You are here only because the scan proved compose-existing could not deliver the intention. Inside the component, still compose registered primitives where they serve the one intention — do not re-draw what a primitive already draws.
 - **Add it to the appropriate FAMILY file** under `src/shape-primitives/` (`counting` / `literacy` / `interaction` / `sketch`.tsx). The registry catalogues primitives BY FAMILY, so a brand-new standalone file is NOT discovered and FAILS the registry check as a stranded export. Prefer an existing family; introduce a new family only when genuinely needed (registering the family is extra work — see the capability protocol).
 - A pure positioning/placement HELPER (a lowercase export like `getStickPlacement`) is not a catalog component and carries no registry entry — but it still lives in a family file and is exported from the barrel.
 
@@ -50,7 +88,7 @@ The registry is drift-gated: an exported-but-unregistered primitive FAILS the re
 1. **Export** the new primitive + its public types from the shape-primitives barrel (`index.ts`), with inline JSDoc.
 2. **Build the registry** (`registry:build`) — it discovers the component and writes its structural catalog entry (`component` / `kind` / `source`) + the agent digest. Never hand-edit those fields.
 3. **Author the entry's prose** in `primitive-registry.json` — `intent` / `useWhen` / `avoidWhen` / `variants`, and flip `status` off `"undocumented"`. Re-run `registry:build` (prose is carried forward by component id).
-4. **Add a gallery demo** — a `demoProps` entry (a centered render at the gallery still frame + a short strip of its key variants). A registered component with no demo fails the gallery gate, so every component is auto-included in the Component Gallery.
+4. **Add a gallery demo** — a `demoProps` entry: a centered `render()` (the demo + short key-variant strip) AND, for a primitive used in GROUPS, a `unit` (ONE instance at the component's DEFAULT size, no size override). The grid thumbnail scales the demo to FILL its cell (browse); the **true-size view** renders `unit` (one + the typical group) — or a composite's `render()` — at 1:1 inside the 1280×720 frame, so the real on-canvas size is verifiable (`kids-eye` §1.6). VERIFY size there: if the default reads too small, **raise the component's default size and re-render** — don't ship a speck, don't fake it with a `footprint` number. A registered component with no demo fails the gallery gate, so every component is auto-included in the Component Gallery.
 5. **Confirm the registry check is GREEN** before finishing.
 
 A `CAPABILITIES.md` markdown entry is OPTIONAL for a barrel component — add one only when it needs a richer reach-guide / anti-pattern table than the catalog's one-line prose. A technique / prop / JSON key with no barrel home gets a markdown entry INSTEAD (the protocol's path B).
@@ -60,7 +98,7 @@ A `CAPABILITIES.md` markdown entry is OPTIONAL for a barrel component — add on
 Primitive aesthetic quality is owned HERE, not by the composer. Does this thing **look like what it claims to be**, at real render size AND in the worst-case multiplicity? A bad-looking primitive surfaced at Wave 4 is a Wave 3 bug — kick it back, do not patch it in the scene.
 
 - For every gap built, render test stills at REAL render size for **the single hardest frame AND the worst-case multiplicity** (e.g. the densest count, the most-crowded comparison row), and write them under the lesson's `primitive-checks/`.
-- VERIFY the stills yourself before the composer consumes them. Apply the `kids-eye` finger-cover test: is the primitive still recognizable / legible at lesson scale and at multiplicity? If not, redesign the primitive — do not ship it and hope the composer compensates.
+- VERIFY the stills yourself before the composer consumes them. Apply the `kids-eye` finger-cover test: is the primitive still recognizable / legible at lesson scale and at multiplicity — AND does every element on screen still pass the single-intention test from "Building a named gap"? If a still shows a mark that serves no part of the one intention, that mark leaked in — cut it and re-render. If the primitive is not recognizable, redesign it — do not ship it and hope the composer compensates.
 - This gate is the contract between W3b and W4a: the composer trusts the stills. If you didn't look, the gate didn't run.
 
 ## Topic-intro card ownership
@@ -98,3 +136,4 @@ Two different outputs, do not conflate them:
 - Hand-edit the generated registry files (`catalog-digest.md`, the structural fields of `primitive-registry.json`) — they are written by `registry:build`.
 - Ship a new primitive without test stills, or declare aesthetic quality from code inspection alone.
 - Build a primitive for a demand that composing existing primitives already satisfies.
+- Bake in any element that does not serve the component's one teaching intention — an uncorrelated overlay/arrow/sparkle/ring/pop/glow/tally/bracket, a grab-bag of merged components + stray lines, or a flourish that defaults ON (or auto-enables from context) instead of being an explicit opt-in the caller requests.

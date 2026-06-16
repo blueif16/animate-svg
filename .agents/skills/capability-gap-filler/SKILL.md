@@ -82,6 +82,8 @@ To extract VISUAL DEMANDS from a KP: read its `content` + the matching `common_d
 
 ## Authoring + registration (per layer) — REUSE the registry loop
 
+**Before authoring any build, follow the two-step component-creation law in `primitive-builder/SKILL.md` §"Building a named gap":** (1) load the craft + concept skills, (2) design around the component's ONE teaching intention and draw only elements that serve it. A component is single-purpose for a concept — never a grab-bag of unrelated jobs, never a baked-in uncorrelated overlay/arrow/celebration/ring/tally, never a flourish that defaults on instead of being an explicit opt-in the caller requests. A special component COMBINES pieces, but it still has ONE teaching intention and composes only the pieces that serve it — combining is not licence to merge whatever is on hand. The decision rule above names WHICH layer; that law names HOW to build it.
+
 The registry is **code-as-truth and drift-gated**: an exported-but-unregistered capability FAILS `npm run registry:check` and cannot be committed. Follow `capability-registry-harness` + the lesson-build **W3b** protocol exactly.
 
 **Primitive** (`src/shape-primitives/`):
@@ -89,7 +91,7 @@ The registry is **code-as-truth and drift-gated**: an exported-but-unregistered 
 2. Export the component + public types from `src/shape-primitives/index.ts`.
 3. `npm run registry:build` → writes the catalog entry's structure + digest.
 4. Author prose (`intent`/`useWhen`/`avoidWhen`/`variants`, flip `status` off `undocumented`) in `src/capabilities/primitive-registry.json`; re-run `registry:build`.
-5. Add a `demoProps` entry for the component in `src/component-gallery/demoProps.tsx` (a centered render at the gallery still frame, with a short strip of its key variants) — a registered component with no demo FAILS `registry:check` via the gallery gate (`check-gallery.mjs`), so the Component Gallery is always complete.
+5. Add a `demoProps` entry for the component in `src/component-gallery/demoProps.tsx` (a centered `render()` + short key-variant strip; PLUS a `unit` = one instance at the component's DEFAULT size for a group-primitive). The gallery's **true-size view** renders it at 1:1 inside the 1280×720 frame (one unit + the typical group, or a composite's focal render) — VERIFY the default reads at a focal size there; if too small, **raise the component's default size and re-render** (don't ship a speck, don't fake it with a `footprint` number — `kids-eye` §1.6). A registered component with no demo FAILS `registry:check` via the gallery gate (`check-gallery.mjs`), so the Component Gallery is always complete.
 6. `npm run registry:check` GREEN.
 
 **Special component** (`src/special-components/<Name>.tsx`): same loop (incl. the step-5 `demoProps` entry), exported from `src/special-components/index.ts` and registered in the `specialComponents[]` tier. It COMPOSES registered primitives/assets/fx + named `EASE.*`/`SPRING.*` motion — ZERO raw motion literals, ZERO frame literals (its public API takes `atFrame`/`startFrame`/`progress` + cue-relative offsets from the caller; it never reads a master-timeline literal). Until the `specialComponents` tier exists, a composite MAY register through the `motion-primitives` barrel (the AssetMorph precedent) — name it in the spec.

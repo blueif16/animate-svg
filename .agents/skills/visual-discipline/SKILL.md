@@ -24,6 +24,7 @@ decoration-budget:  <max 2 stacked surfaces, max N meaningful colors>
 text-budget:     <for each on-screen string: is it already implied by geometry / sequence / color / adjacency? if yes, drop NOW>
 occupancy:       <which axis is binding; SHOW the arithmetic at the fullest cue — content ÷ its OWN axis length (a horizontal row is ÷ the 1920 width, NEVER ÷ the 1080 short-side); teaching content occupies ≥ ~50% of the non-binding axis; if the binding axis is itself < ~50%, the object floats in an empty frame — grow it or widen the metaphor>
 identity-invariant: <what stays the same primitive across the transformation>
+object-count:    <per cue: the number of teaching units present in each zone (e.g. dots: 6, cards: 2). The composer feeds (this count + the kids-eye §1.5 zone) to fitUnitsToZone to COMPUTE unit size + positions — so sizes are never hand-picked. State it per cue wherever a count changes; "0" for a cue with no countable. See CAPABILITIES.md#auto-size-to-zone.>
 motion-budget:   <per cue: visualMotionSeconds — the MINIMUM time the cue's motion needs to land for a 6yo. e.g.
                   intro: 2.0s     (title write-on + mini-preview cycle)
                   fen-show: 2.0s  (cluster split eased to a stop)
@@ -49,6 +50,7 @@ decoration-budget:  1 cream background + 1 caption ribbon = 2 surfaces total. St
 text-budget:     "一个十" (load-bearing — names the new unit), "10 步" / "1 步" (load-bearing — the contrast), takeaway "十个一 = 一个十" (load-bearing — the moral), captions (load-bearing — accessibility). No chrome labels.
 occupancy:       horizontal axis is binding (sticks → bundle moves horizontally); teaching unit (one stick) at 130 px = 12% of 1080 short-side, hits target. Bundle uses ~720 px width, ~67% of horizontal axis at the climax.
 identity-invariant: every stick is a SmallStick at the same orange tone for the entire video, whether scattered, in a row, in a bundle, or dimmed in the comparison. No color changes across the transformation.
+object-count:    zone-objects holds 10 sticks every cue (scatter → row → bundle is a relayout, not a recount); 1 bundle after the tie. The composer sizes them via fitUnitsToZone(zone-objects, 10).
 ```
 
 ## 2. The One-Metaphor Rule

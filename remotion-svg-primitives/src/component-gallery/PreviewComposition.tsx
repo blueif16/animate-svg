@@ -1,51 +1,108 @@
-import { useEffect, useRef, useState } from "react";
-import { AbsoluteFill, cancelRender, continueRender, delayRender } from "remotion";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  AbsoluteFill,
+  cancelRender,
+  continueRender,
+  delayRender,
+  Internals,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { FXDefs } from "../fx";
-import { colors, typography } from "../theme";
+import { colors, typography, video } from "../theme";
 import { demoProps } from "./demoProps";
 
 // =========================================================================
 // PreviewComposition — renders ONE registered component, by id, for the static
-// gallery's per-component poster + animated loop.
+// gallery's previews. TWO modes (the `mode` inputProp):
 //
-// It REUSES the exact same `demoProps[id].render()` the studio ComponentGallery
-// uses (the registry-enforced demo map). `render()` returns SVG content centered
-// on (0,0); demo variant strips vary widely in size (a single NumberCard vs the
-// 1720-wide LessonIntroCard strip). So instead of a fixed viewBox that would
-// clip the wide ones, we MEASURE the rendered content's getBBox() once and apply
-// a uniform fit transform — every demo is framed to the same small canvas with a
-// consistent margin. Frame-driven motion/fx animate naturally across the clip;
-// progress-pinned primitives show their meaningfully-complete state. NO new data
-// model — the id and its demo are the only inputs.
+//   "fit"  (default) — the demo fitted to fill the 760×440 cell. The grid
+//          thumbnail: shows the craft + variants. Size is NOT the point here.
+//   "size" — the component at its DETERMINED DEFAULT size, placed 1:1 inside a
+//          to-scale 1280×720 frame so you read its REAL on-canvas size. For a
+//          primitive used in groups it shows ONE unit AND the typical group
+//          (the unit repeated) — because one unit alone is misleadingly tiny;
+//          the group is how it actually appears. A composite (no `unit`) shows
+//          its single focal render.
 //
-// Registered ONLY in PreviewRoot (the dedicated bundler entry for
-// `npm run gallery:previews`), never in the app Root.
+// HONEST SIZE, no parallel number: "size" reads the component's REAL default
+// (the demo renders at default props at 1:1) — there is NO hand-typed
+// `footprint` value to drift, and NO chrome: just the frame outline. No
+// safe-area dashes, no squeeze/"stress" view, no legibility warning tags. If a
+// default renders too small in the frame, the FIX is to bump the component's
+// default size — not to flag it in the gallery.
+//
+// LOOPING (fit only): a one-shot effect fires early then sits idle, so its gif
+// reads dead. A demo can declare `loopFrames`; its subtree renders inside
+// <LoopedFrame>, a pure TimelineContext override (SVG-safe) that resets
+// useCurrentFrame() each cycle so the effect VISIBLY re-fires. "size" is a still.
+//
+// Registered ONLY in PreviewRoot (the gallery:previews bundler entry).
 // =========================================================================
 
 const FONT = typography.fontFamily;
 
+const LoopedFrame: React.FC<{ loopFrames: number; children: ReactNode }> = ({
+  loopFrames,
+  children,
+}) => {
+  const frame = useCurrentFrame();
+  const { id } = useVideoConfig();
+  const timeline = useContext(Internals.TimelineContext);
+  const looped = ((frame % loopFrames) + loopFrames) % loopFrames;
+  const value = useMemo(
+    () =>
+      timeline
+        ? { ...timeline, frame: { ...timeline.frame, [id]: looped } }
+        : null,
+    [timeline, id, looped],
+  );
+  if (!value) return <>{children}</>;
+  return (
+    <Internals.TimelineContext.Provider value={value}>
+      {children}
+    </Internals.TimelineContext.Provider>
+  );
+};
+
 export const PREVIEW_WIDTH = 760;
 export const PREVIEW_HEIGHT = 440;
-export const PREVIEW_DURATION = 64; // ~2.1s loop @ 30fps — small + enough motion
+export const PREVIEW_DURATION = 90;
 export const PREVIEW_FPS = 30;
-export const PREVIEW_POSTER_FRAME = 22; // matches the studio still frame intent
-const MARGIN = 40; // padding around the measured content, in canvas units
+export const PREVIEW_POSTER_FRAME = 16;
+const MARGIN = 36; // fit-mode padding around the measured content, in cell units
 
-export type PreviewInput = { id: string };
+// Real lesson canvas (src/theme.ts). "size" mode draws it 1:1 so a component's
+// default reads at its true relative size.
+const CANVAS_W = video.width; // 1280
+const CANVAS_H = video.height; // 720
+const GROUP_COUNT = 6; // typical multiplicity for the "group" row
+const UNIT_Y = CANVAS_H * 0.31; // single-unit row
+const GROUP_Y = CANVAS_H * 0.64; // group row
 
-export const PreviewComposition: React.FC<PreviewInput> = ({ id }) => {
+export type PreviewMode = "fit" | "size";
+export type PreviewInput = {
+  id: string;
+  mode?: PreviewMode;
+};
+
+export const PreviewComposition: React.FC<PreviewInput> = ({
+  id,
+  mode = "fit",
+}) => {
   const demo = demoProps[id];
-  const contentRef = useRef<SVGGElement>(null);
-  // transform that fits the measured content into the canvas with a margin.
-  const [fit, setFit] = useState<string | null>(null);
-  // hold the render until the fit transform is measured (so stills/gifs capture
-  // the framed layout, not the pre-measure unscaled flash).
+  const measureRef = useRef<SVGGElement>(null);
+  // fit: the scale-to-fill transform. size: the measured unit box {w,h}.
+  const [fitTransform, setFitTransform] = useState<string | null>(null);
+  const [box, setBox] = useState<{ w: number; h: number; cx: number; cy: number } | null>(null);
   const [handle] = useState(() => delayRender("measure preview bbox"));
 
-  // Measure the content's natural bbox after mount, then scale+translate it so
-  // its center lands at the canvas center and it fits within MARGIN on all sides.
+  // FIT: measure the whole demo, scale it to FILL the cell (no upscale cap).
+  // SIZE: measure ONE unit (default size) so the group row can be spaced; the
+  // unit/group then render at 1:1 in the to-scale canvas.
   useEffect(() => {
-    const g = contentRef.current;
+    const g = measureRef.current;
     if (!g) {
       continueRender(handle);
       return;
@@ -53,23 +110,112 @@ export const PreviewComposition: React.FC<PreviewInput> = ({ id }) => {
     try {
       const bbox = g.getBBox();
       if (bbox && bbox.width > 0 && bbox.height > 0) {
-        const availW = PREVIEW_WIDTH - MARGIN * 2;
-        const availH = PREVIEW_HEIGHT - MARGIN * 2;
-        // never UP-scale past 1 (keeps small primitives at true render size);
-        // only shrink the oversize strips to fit.
-        const scale = Math.min(1, availW / bbox.width, availH / bbox.height);
-        const cx = bbox.x + bbox.width / 2;
-        const cy = bbox.y + bbox.height / 2;
-        setFit(`scale(${scale}) translate(${-cx} ${-cy})`);
+        if (mode === "fit") {
+          const cx = bbox.x + bbox.width / 2;
+          const cy = bbox.y + bbox.height / 2;
+          const availW = PREVIEW_WIDTH - MARGIN * 2;
+          const availH = PREVIEW_HEIGHT - MARGIN * 2;
+          const scale = Math.min(availW / bbox.width, availH / bbox.height);
+          setFitTransform(`scale(${scale}) translate(${-cx} ${-cy})`);
+        } else {
+          setBox({
+            w: bbox.width,
+            h: bbox.height,
+            cx: bbox.x + bbox.width / 2,
+            cy: bbox.y + bbox.height / 2,
+          });
+        }
       }
       continueRender(handle);
     } catch (err) {
       cancelRender(err);
     }
-    // measure once per id; the bbox is frame-stable for these strips.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, mode]);
 
+  if (!demo) {
+    const vb =
+      mode === "size"
+        ? `0 0 ${CANVAS_W} ${CANVAS_H}`
+        : `${-PREVIEW_WIDTH / 2} ${-PREVIEW_HEIGHT / 2} ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`;
+    return (
+      <AbsoluteFill style={{ backgroundColor: colors.white }}>
+        <svg height={PREVIEW_HEIGHT} viewBox={vb} width={PREVIEW_WIDTH}>
+          <text
+            dominantBaseline="middle"
+            fill={colors.coral}
+            fontFamily={FONT}
+            fontSize={26}
+            fontWeight={900}
+            textAnchor="middle"
+            x={mode === "size" ? CANVAS_W / 2 : 0}
+            y={mode === "size" ? CANVAS_H / 2 : 0}
+          >
+            {`UNMAPPED: ${id}`}
+          </text>
+        </svg>
+      </AbsoluteFill>
+    );
+  }
+
+  // ----------------------------- SIZE MODE -----------------------------
+  if (mode === "size") {
+    // A primitive used in groups declares `unit` (one instance at default size);
+    // we then show one unit + a row of GROUP_COUNT. A composite has no `unit` —
+    // its `render()` IS the focal element, shown once.
+    const hasUnit = typeof demo.unit === "function";
+    const unitNode = hasUnit ? demo.unit!() : demo.render();
+    const slot = box ? box.w * 1.18 : 0; // group spacing once measured
+    // composite: recenter on the measured centroid (composites aren't always
+    // origin-centered). unit demos render centered on (0,0) already.
+    const compositeXform = box
+      ? `translate(${CANVAS_W / 2 - box.cx} ${CANVAS_H / 2 - box.cy})`
+      : `translate(${CANVAS_W / 2} ${CANVAS_H / 2})`;
+
+    return (
+      <AbsoluteFill style={{ backgroundColor: colors.white }}>
+        <svg height={PREVIEW_HEIGHT} viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`} width={PREVIEW_WIDTH}>
+          <FXDefs />
+          {/* to-scale canvas bounds (clean outline only) */}
+          <rect
+            fill="none"
+            height={CANVAS_H - 4}
+            stroke={colors.softGrayBlue}
+            strokeWidth={4}
+            width={CANVAS_W - 4}
+            x={2}
+            y={2}
+          />
+          {hasUnit ? (
+            <>
+              {/* one unit at default size (also the measure target) */}
+              <g transform={`translate(${CANVAS_W / 2} ${UNIT_Y})`}>
+                <g ref={measureRef}>{unitNode}</g>
+              </g>
+              {/* the typical group: GROUP_COUNT copies of the unit at default size */}
+              {box
+                ? Array.from({ length: GROUP_COUNT }, (_, i) => (
+                    <g
+                      key={i}
+                      transform={`translate(${CANVAS_W / 2 + (i - (GROUP_COUNT - 1) / 2) * slot} ${GROUP_Y})`}
+                    >
+                      {demo.unit!()}
+                    </g>
+                  ))
+                : null}
+            </>
+          ) : (
+            // composite / single-use: the focal render once, at 1:1, recentered.
+            <g transform={compositeXform}>
+              <g ref={measureRef}>{unitNode}</g>
+            </g>
+          )}
+        </svg>
+      </AbsoluteFill>
+    );
+  }
+
+  // ------------------------------ FIT MODE ------------------------------
   return (
     <AbsoluteFill style={{ backgroundColor: colors.white }}>
       <svg
@@ -78,26 +224,17 @@ export const PreviewComposition: React.FC<PreviewInput> = ({ id }) => {
         width={PREVIEW_WIDTH}
       >
         <FXDefs />
-        {demo ? (
-          // Outer group applies the fit transform; inner ref group is what we
-          // measure (its untransformed natural bbox).
-          <g transform={fit ?? undefined}>
-            <g ref={contentRef}>{demo.render()}</g>
+        <g transform={fitTransform ?? undefined}>
+          <g ref={measureRef}>
+            {demo.loopFrames ? (
+              <LoopedFrame loopFrames={demo.loopFrames}>
+                {demo.render()}
+              </LoopedFrame>
+            ) : (
+              demo.render()
+            )}
           </g>
-        ) : (
-          <text
-            dominantBaseline="middle"
-            fill={colors.coral}
-            fontFamily={FONT}
-            fontSize={26}
-            fontWeight={900}
-            textAnchor="middle"
-            x={0}
-            y={0}
-          >
-            {`UNMAPPED: ${id}`}
-          </text>
-        )}
+        </g>
       </svg>
     </AbsoluteFill>
   );

@@ -125,9 +125,15 @@ console.log("\n=== capability-registry drift report (CUT 1, report-only — alwa
   const codeIds = parseBarrelValueExports(read(P.motionBarrel))
     .filter((e) => isComponentName(e.name))
     .map((e) => e.name);
-  const regIds = (registry.motionComponents ?? []).map((m) => m.component);
-  console.log("\nKIND 2 · motion components  (src/motion-primitives/index.ts barrel ↔ motionComponents[].component)");
-  reportDiff("motionComponents", codeIds, regIds);
+  // motionComponents (MODIFIER tier) + specialComponents (COMPOSITE tier) share
+  // the one motion barrel — union both registry sections so a composite routed
+  // out of motionComponents never reads as drift (the no-lying-mirror rule).
+  const regIds = [
+    ...(registry.motionComponents ?? []),
+    ...(registry.specialComponents ?? []),
+  ].map((m) => m.component);
+  console.log("\nKIND 2 · motion barrel  (src/motion-primitives/index.ts barrel ↔ motionComponents[] ∪ specialComponents[])");
+  reportDiff("motion barrel (modifiers + composites)", codeIds, regIds);
 }
 
 // KIND 3 — FX components (barrel value exports).

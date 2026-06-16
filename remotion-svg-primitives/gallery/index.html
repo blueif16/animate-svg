@@ -372,14 +372,6 @@
     color: var(--ink);
     letter-spacing: -0.01em;
   }
-  .card-id .kindtag {
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 9.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--ink-faint);
-  }
 
   /* ---------- rendered preview thumbnail (poster ↔ gif on hover) ---------- */
   .preview {
@@ -407,10 +399,12 @@
   }
   .preview .poster { opacity: 1; z-index: 2; }
   .preview .gif { opacity: 0; z-index: 1; }
-  /* on card hover, fade the poster out → the looping gif shows through */
-  .card:hover .preview .gif { opacity: 1; }
-  .card:hover .preview .poster { opacity: 0; }
-  /* a tiny "live" badge appears on hover when there's an animated loop */
+  /* ANIMATED cards: the looping gif plays ON ITS OWN — no hover required. The
+     poster is hidden under it (still fallback only). BUG-3a: motion is decoupled
+     from hover; hover is now reserved for the detail overlay. */
+  .preview.is-animated .gif { opacity: 1; }
+  .preview.is-animated .poster { opacity: 0; }
+  /* a tiny "live" badge marks any card with an animated loop (always visible) */
   .preview .livebadge {
     position: absolute;
     bottom: 7px; right: 7px;
@@ -423,7 +417,7 @@
     background: rgba(36, 50, 75, 0.78);
     padding: 2px 6px;
     border-radius: 5px;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.18s;
     display: flex; align-items: center; gap: 4px;
   }
@@ -431,7 +425,6 @@
     content: ""; width: 5px; height: 5px; border-radius: 50%;
     background: var(--mint); box-shadow: 0 0 0 2px rgba(102,221,170,0.4);
   }
-  .card:hover .preview .livebadge { opacity: 1; }
   /* placeholder when a component has no rendered preview */
   .preview.placeholder {
     background:
@@ -468,7 +461,9 @@
   body.mode-visuals .preview .gif { opacity: 1; }
   body.mode-visuals .preview .poster { opacity: 0; }
   body.mode-visuals .preview.placeholder { aspect-ratio: 380 / 220; }
-  body.mode-visuals .card:hover .preview .livebadge { opacity: 0; }
+  body.mode-visuals .preview .livebadge { opacity: 0; }
+  /* the detail overlay is a functionality-mode affordance; suppress in visuals */
+  body.mode-visuals .detail { display: none !important; }
   /* hide the metadata-heavy bits; show only a compact caption + name */
   body.mode-visuals .card-id { padding: 11px 14px 0; margin: 0; }
   body.mode-visuals .tags,
@@ -579,6 +574,222 @@
   .card-foot .super { color: #b54a3a; }
 
   .card.hidden { display: none; }
+
+  /* ===================== BUG-2: hover detail overlay =====================
+     On hover, a full expanded panel layers over the card and reveals the
+     COMPLETE, un-truncated content — Functionality + Intention + Variants +
+     Avoid + Source + Status. Empty fields are omitted at build time (never an
+     empty labelled row). The panel scrolls if the content is taller than the
+     card so nothing is ever clipped. */
+  .detail {
+    position: absolute;
+    inset: -1px;
+    z-index: 20;
+    background: var(--card);
+    border: 1.5px solid var(--accent, var(--coral));
+    border-radius: 16px;
+    box-shadow: 0 1px 0 rgba(36, 50, 75, 0.04), 0 30px 60px -24px rgba(36, 50, 75, 0.55);
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
+    overflow-y: auto;
+    max-height: min(560px, 78vh);
+  }
+  .card:hover .detail {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+  }
+  .detail-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: -16px;
+    background: var(--card);
+    margin: -16px -18px 0;
+    padding: 14px 18px 9px;
+  }
+  .detail-head .dname {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .dblock { display: flex; flex-direction: column; gap: 5px; }
+  .dlab {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--accent, var(--coral));
+    font-weight: 700;
+  }
+  .dlab.warn { color: var(--rose); }
+  .dtext {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.46;
+    color: var(--ink);
+  }
+  .dsrc {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+    word-break: break-all;
+  }
+  .dsrc .super { color: #b54a3a; }
+  .detail .dtags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .detail .variants { margin: 0; }
+  .dstatus {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .dstatus.experimental { color: #8a5a00; background: #fff1d6; border: 1px solid #f0d59a; }
+  .dstatus.deprecated { color: #b54a3a; background: #fbeae6; border: 1px solid #e7b9af; }
+
+  /* secondary functionality line under the lead intent sentence */
+  .func-sub {
+    font-family: var(--body);
+    font-size: 12.5px;
+    line-height: 1.42;
+    color: var(--ink-soft);
+    margin: -4px 0 14px;
+  }
+
+  /* ===================== PREVIEW LIGHTBOX =====================
+     Click a card → a full-screen overlay (breaks out of the card) showing the
+     component preview big, alongside its full description (intent, functionality,
+     avoid, variants, source). */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: rgba(36, 50, 75, 0.55);
+    backdrop-filter: blur(7px);
+  }
+  .lightbox.on { display: flex; }
+  .lb-panel {
+    background: var(--card);
+    border: 1.5px solid var(--accent, var(--coral));
+    border-radius: 18px;
+    box-shadow: 0 40px 90px -30px rgba(36, 50, 75, 0.7);
+    width: min(1120px, 94vw);
+    max-height: 92vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .lb-head {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 18px 18px 0 0;
+    z-index: 2;
+  }
+  .lb-name { font-family: var(--mono); font-weight: 700; font-size: 16px; color: var(--ink); }
+  .lb-id { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); }
+  .lb-close {
+    margin-left: auto;
+    border: 0;
+    background: var(--paper-deep);
+    color: var(--ink);
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .lb-close:hover { background: var(--coral); color: #fff; }
+  .lb-body {
+    display: grid;
+    grid-template-columns: 1.45fr 1fr;
+    gap: 24px;
+    padding: 22px;
+  }
+  @media (max-width: 860px) { .lb-body { grid-template-columns: 1fr; } }
+  .lb-visual { display: flex; flex-direction: column; gap: 16px; }
+  .lb-size img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--line-soft);
+    background: #fff;
+    display: block;
+  }
+  /* secondary fit-preview figure under the real-size view */
+  .lb-preview img {
+    width: 72%;
+    border-radius: 9px;
+    border: 1px solid var(--line-soft);
+    background: #fff;
+    display: block;
+  }
+  .lb-size figcaption, .lb-strip figcaption {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 7px;
+    line-height: 1.45;
+  }
+  .lb-size figcaption b, .lb-strip figcaption b { color: var(--ink); }
+  .lb-nosize {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    border: 1px dashed var(--card-edge);
+    border-radius: 10px;
+    padding: 20px;
+    line-height: 1.5;
+  }
+  .lb-nosize code { color: var(--coral); }
+  .lb-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; }
+  .lb-strip figure { margin: 0; }
+  .lb-strip img {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--line-soft);
+    background: #fff;
+    display: block;
+  }
+  .lb-text { display: flex; flex-direction: column; gap: 15px; }
+  .lb-row .lb-lab {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--accent, var(--coral));
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .lb-row .lb-lab.warn { color: var(--rose); }
+  .lb-row p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink); }
+  .lb-row p.mono { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); word-break: break-all; }
 
   /* ===================== motion vocabulary panel ===================== */
   .vocab {
@@ -779,6 +990,7 @@
     const ACCENTS = {
       "Teaching primitives": "var(--sunshine)",
       "Motion & FX": "var(--mint)",
+      "Composite": "var(--coral)",
       "Lesson infrastructure": "var(--sky)",
       "Styles": "var(--lavender)",
     };
@@ -790,6 +1002,7 @@
       "Generated-asset primitive": "var(--reward)",
       "Motion components": "var(--mint)",
       "FX components": "var(--reward)",
+      "Composite teaching beats": "var(--coral)",
       "Audio & caption layers": "var(--sky)",
       "Decorative 3D transitions": "var(--lavender)",
       "Style wrapper": "var(--mint)",
@@ -799,7 +1012,7 @@
     const CAT_ORDER = [
       "Counting & number", "Literacy & pinyin", "Interaction & sorting",
       "Sketch / teacher marks", "Generated-asset primitive",
-      "Motion components", "FX components",
+      "Motion components", "FX components", "Composite teaching beats",
       "Audio & caption layers", "Decorative 3D transitions", "Style wrapper",
       "Styles",
     ];
@@ -885,11 +1098,14 @@
     function buildPreview(card) {
       const base = "./previews/" + encodeURIComponent(card.id) + "/";
       if (card.hasPoster) {
+        // When the component has an animated loop, the gif plays ON ITS OWN
+        // (the `.is-animated` class drives the always-on gif via CSS) — no hover
+        // needed. The poster is only the still fallback for static components.
         const gif = card.hasGif
           ? '<img class="layer gif" loading="lazy" alt="" src="' + base + 'loop.gif" />' +
             '<span class="livebadge">live</span>'
           : "";
-        return '<div class="preview">' +
+        return '<div class="preview' + (card.hasGif ? ' is-animated' : '') + '">' +
           '<img class="layer poster" loading="lazy" alt="' + esc(card.component) + ' preview" src="' + base + 'poster.png" />' +
           gif +
         '</div>';
@@ -901,17 +1117,96 @@
       return '<div class="preview placeholder"><span class="ph-note">' + why + '</span></div>';
     }
 
+    // BUG-2 fix — the on-hover detail overlay. Shows the COMPLETE, un-truncated
+    // content for the card: Functionality (full useWhen) + Intention (the intent
+    // tags) + variants + Avoid + source + status. Every block is OMITTED entirely
+    // when its field is empty — never a padded/empty labelled row. Derives only
+    // from the existing card fields (no new data model).
+    function buildDetail(card) {
+      const blocks = [];
+
+      // Functionality — the full, un-truncated useWhen prose.
+      if (card.useWhen) {
+        blocks.push(
+          '<div class="dblock"><div class="dlab">Functionality</div>' +
+          '<p class="dtext">' + esc(card.useWhen) + '</p></div>'
+        );
+      }
+
+      // Intention — the intent[] keywords (clickable to filter, like inline chips).
+      if (card.intent && card.intent.length) {
+        blocks.push(
+          '<div class="dblock"><div class="dlab">Intention</div>' +
+          '<div class="dtags">' +
+            card.intent.map((t) => '<span class="tag" data-tag="' + esc(t.toLowerCase()) + '">' + esc(t) + '</span>').join("") +
+          '</div></div>'
+        );
+      }
+
+      // Variants — axis → values, only when present.
+      if (card.variants) {
+        const rows = Object.entries(card.variants).map(([k, vals]) =>
+          '<div class="vrow"><span class="vkey">' + esc(k) + '</span>' +
+          '<span class="vvals">' + vals.map((v) => '<span class="vval">' + esc(v) + '</span>').join("") + '</span></div>'
+        ).join("");
+        if (rows) {
+          blocks.push('<div class="dblock"><div class="dlab">Variants</div>' +
+            '<div class="variants">' + rows + '</div></div>');
+        }
+      }
+
+      // Avoid — only when there's an avoidWhen.
+      if (card.avoidWhen) {
+        blocks.push(
+          '<div class="dblock"><div class="dlab warn">Avoid</div>' +
+          '<p class="dtext">' + esc(card.avoidWhen) + '</p></div>'
+        );
+      }
+
+      // Source — the import path, always present and load-bearing.
+      if (card.source) {
+        const sup = card.supersededBy
+          ? ' <span class="super">→ superseded by ' + esc(card.supersededBy) + '</span>'
+          : "";
+        blocks.push(
+          '<div class="dblock"><div class="dlab">Source</div>' +
+          '<p class="dsrc">' + esc(card.source) + sup + '</p></div>'
+        );
+      }
+
+      // Status — only meaningfully shown when not the default "stable".
+      if (card.status && card.status !== "stable") {
+        blocks.push(
+          '<div class="dblock"><div class="dlab">Status</div>' +
+          '<p class="dtext"><span class="dstatus ' + esc(card.status) + '">' + esc(card.status) + '</span></p></div>'
+        );
+      }
+
+      return '<div class="detail">' +
+        '<div class="detail-head">' +
+          '<span class="status-dot ' + esc(card.status) + '"></span>' +
+          '<span class="dname">' + esc(card.component) + '</span>' +
+        '</div>' +
+        blocks.join("") +
+      '</div>';
+    }
+
     function renderCard(card, accent) {
       const el = document.createElement("article");
       el.className = "card" + (card.status === "deprecated" ? " is-deprecated" : "");
       el.style.setProperty("--accent", accent);
+      el.style.cursor = "zoom-in";
 
-      const hay = (card.id + " " + card.component + " " + card.useWhen + " " + (card.intent || []).join(" ")).toLowerCase();
+      // intent is now a SELECTION SENTENCE (string); legacy entries may still hold
+      // a keyword-tag array. Lead with the sentence; only render chips for arrays.
+      const intentIsTags = Array.isArray(card.intent);
+      const intentStr = intentIsTags ? card.intent.join(" ") : (card.intent || "");
+      const hay = (card.id + " " + card.component + " " + card.useWhen + " " + intentStr).toLowerCase();
       el.dataset.hay = hay;
-      el.dataset.tags = (card.intent || []).join(",").toLowerCase();
+      el.dataset.tags = (intentIsTags ? card.intent.join(",") : "").toLowerCase();
 
       let tagsHtml = "";
-      if (card.intent && card.intent.length) {
+      if (intentIsTags && card.intent.length) {
         tagsHtml = '<div class="tags">' +
           card.intent.map((t) => '<span class="tag" data-tag="' + esc(t.toLowerCase()) + '">' + esc(t) + '</span>').join("") +
           '</div>';
@@ -935,26 +1230,109 @@
         ? ' · <span class="super">→ ' + esc(card.supersededBy) + '</span>'
         : "";
 
-      const longFunc = (card.useWhen || "").length > 230;
+      // intent SENTENCE leads (the pick signal); useWhen drops to a secondary line.
+      const intentText = intentIsTags ? "" : (card.intent || "");
+      const leadText = intentText || card.useWhen || "—";
+      const subText = intentText ? (card.useWhen || "") : "";
+      const longLead = leadText.length > 230;
       const previewHtml = buildPreview(card);
 
       el.innerHTML =
         '<div class="card-id">' +
           '<span class="status-dot ' + esc(card.status) + '" title="' + esc(card.status) + '"></span>' +
           '<span class="name">' + esc(card.component) + '</span>' +
-          '<span class="kindtag">' + esc(card.id) + '</span>' +
         '</div>' +
         previewHtml +
-        '<p class="func' + (longFunc ? ' clamped' : '') + '" title="' + esc(card.useWhen) + '">' +
-          esc(card.useWhen || "—") + '</p>' +
+        '<p class="func' + (longLead ? ' clamped' : '') + '">' + esc(leadText) + '</p>' +
+        (subText ? '<p class="func-sub">' + esc(subText) + '</p>' : '') +
         tagsHtml + varsHtml + avoidHtml +
         '<div class="card-foot">' + esc(card.source || "") + superHtml + '</div>';
 
-      // tag click → filter
+      // tag click → filter (and never open the lightbox)
       el.querySelectorAll(".tag").forEach((t) => {
         t.addEventListener("click", (e) => { e.stopPropagation(); setTag(t.dataset.tag); });
       });
+      // click the card → the big true-size lightbox
+      el.addEventListener("click", (e) => {
+        if (e.target.closest(".tag")) return;
+        openLightbox(card, accent);
+      });
       return el;
+    }
+
+    // ---- preview lightbox — click a card to inspect its preview big, next to
+    // its full description. ----
+    let lightboxEl = null;
+    function ensureLightbox() {
+      if (lightboxEl) return lightboxEl;
+      lightboxEl = document.createElement("div");
+      lightboxEl.className = "lightbox";
+      lightboxEl.addEventListener("click", (e) => {
+        if (e.target === lightboxEl || e.target.closest(".lb-close")) closeLightbox();
+      });
+      document.body.appendChild(lightboxEl);
+      return lightboxEl;
+    }
+    function closeLightbox() {
+      if (lightboxEl) { lightboxEl.classList.remove("on"); document.body.style.overflow = ""; }
+    }
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+
+    function openLightbox(card, accent) {
+      const lb = ensureLightbox();
+      const base = "./previews/" + encodeURIComponent(card.id) + "/";
+      const intentText = (typeof card.intent === "string" && card.intent.trim()) ? card.intent : "";
+
+      // PRIMARY: the true-size view — the component at its DEFAULT size inside
+      // the to-scale 1280×720 frame (one unit + the typical group), so its real
+      // on-canvas size reads honestly.
+      const figs = [];
+      if (card.hasSize) {
+        figs.push(
+          '<figure class="lb-size"><img src="' + base + 'size.png" alt="' + esc(card.component) + ' at real size" />' +
+          '<figcaption><b>Real size</b> — at its default size inside the <b>1280×720</b> video frame ' +
+          '(single unit + typical group). This is how big it actually is on the canvas.</figcaption></figure>'
+        );
+      }
+      // SECONDARY: the fit preview (poster ↔ gif) — what it looks like, scaled to fill.
+      if (card.hasPoster) {
+        const src = card.hasGif ? "loop.gif" : "poster.png";
+        figs.push(
+          '<figure class="lb-preview"><img src="' + base + src + '" alt="' + esc(card.component) + ' preview" />' +
+          '<figcaption>' + (card.hasGif ? "Preview (animated)" : "Preview") +
+          ' — from <b>demoProps</b>, scaled to fill.</figcaption></figure>'
+        );
+      }
+      const visualHtml = figs.length
+        ? figs.join("")
+        : '<div class="lb-nosize">No rendered preview yet — add a <code>demoProps</code> entry and ' +
+          'run <code>npm run gallery:previews</code>.</div>';
+
+      const rows = [];
+      if (intentText) rows.push('<div class="lb-row"><span class="lb-lab">Intent — pick on this</span><p>' + esc(intentText) + '</p></div>');
+      if (card.useWhen) rows.push('<div class="lb-row"><span class="lb-lab">Functionality</span><p>' + esc(card.useWhen) + '</p></div>');
+      if (card.avoidWhen) rows.push('<div class="lb-row"><span class="lb-lab warn">Avoid → use instead</span><p>' + esc(card.avoidWhen) + '</p></div>');
+      if (card.variants) {
+        const vr = Object.entries(card.variants).map(([k, vals]) => '<b>' + esc(k) + '</b>: ' + vals.map(esc).join(" · ")).join("<br>");
+        rows.push('<div class="lb-row"><span class="lb-lab">Variants</span><p>' + vr + '</p></div>');
+      }
+      rows.push('<div class="lb-row"><span class="lb-lab">Source</span><p class="mono">' + esc(card.source || "") + (card.supersededBy ? " → superseded by " + esc(card.supersededBy) : "") + '</p></div>');
+
+      lb.innerHTML =
+        '<div class="lb-panel" style="--accent:' + accent + '">' +
+          '<div class="lb-head">' +
+            '<span class="status-dot ' + esc(card.status) + '"></span>' +
+            '<span class="lb-name">' + esc(card.component) + '</span>' +
+            '<span class="lb-id">' + esc(card.id) + '</span>' +
+            '<button class="lb-close" title="close (Esc)">✕</button>' +
+          '</div>' +
+          '<div class="lb-body">' +
+            '<div class="lb-visual">' + visualHtml + '</div>' +
+            '<div class="lb-text">' + rows.join("") + '</div>' +
+          '</div>' +
+        '</div>';
+      lb.classList.add("on");
+      document.body.style.overflow = "hidden";
     }
 
     function renderVocab(mv) {
@@ -1133,9 +1511,9 @@
       'Generated <code>' + esc(data.generatedAt) + '</code> from <code>src/capabilities/primitive-registry.json</code> v' + esc(data.registryVersion) +
       ' (' + data.counts.cards + ' components) + <code>public/icons/*.svg</code> (' + data.counts.icons + ' assets).<br>' +
       'Functionality = <code>useWhen</code> · tags = <code>intent</code> · variants/avoid/source/status read verbatim — no new data model. ' +
-      'Previews reuse <code>src/component-gallery/demoProps.tsx</code> — ' + rendered + ' components rendered to <code>gallery/previews/</code> (poster + loop gif). ' +
+      'Previews reuse <code>src/component-gallery/demoProps.tsx</code> — ' + rendered + ' components rendered to <code>gallery/previews/</code> (poster + loop gif), each scaled to fill its cell. ' +
       'Rebuild: <code>npm run gallery:data</code> · re-render previews: <code>npm run gallery:previews</code>. ' +
-      'Hover a card for the animated loop, or switch to <b>Visuals</b> mode for a visuals-first grid.';
+      'Animated previews loop on their own; static components show a still (no fake “live” badge). Click a card for its <b>real size</b> — the component at its default size inside the 1280×720 video frame (single unit + typical group) — alongside its full description. Switch to <b>Visuals</b> mode for a visuals-first grid.';
   })();
   </script>
 </body>

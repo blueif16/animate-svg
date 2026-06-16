@@ -48,10 +48,17 @@
                 "type": "string"
               },
               "intent": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
               },
               "useWhen": {
                 "type": "string"
@@ -107,10 +114,17 @@
                 "type": "string"
               },
               "intent": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
               },
               "useWhen": {
                 "type": "string"
@@ -166,10 +180,17 @@
                 "type": "string"
               },
               "intent": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
               },
               "useWhen": {
                 "type": "string"
@@ -225,10 +246,17 @@
                 "type": "string"
               },
               "intent": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
               },
               "useWhen": {
                 "type": "string"
@@ -284,10 +312,17 @@
                 "type": "string"
               },
               "intent": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
               },
               "useWhen": {
                 "type": "string"
@@ -343,6 +378,19 @@
           "source": {
             "type": "string"
           },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
           "useWhen": {
             "type": "string"
           },
@@ -392,6 +440,82 @@
           },
           "source": {
             "type": "string"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "useWhen": {
+            "type": "string"
+          },
+          "avoidWhen": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "supersededBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "component",
+          "source",
+          "useWhen",
+          "avoidWhen",
+          "status"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "specialComponents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
           },
           "useWhen": {
             "type": "string"
@@ -447,10 +571,17 @@
             "type": "string"
           },
           "intent": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
           },
           "useWhen": {
             "type": "string"
@@ -577,6 +708,7 @@
     "primitives",
     "motionComponents",
     "fxComponents",
+    "specialComponents",
     "lessonComponents",
     "motionVocabulary",
     "styles",

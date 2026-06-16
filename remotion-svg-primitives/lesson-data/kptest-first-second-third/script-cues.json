@@ -1,0 +1,91 @@
+{
+  "lessonId": "kptest-first-second-third",
+  "cues": [
+    {
+      "id": "intro",
+      "narration": "队里，每个位置都有名字。",
+      "phrase": "队里每个位置都有名字",
+      "caption": "队里，每个位置都有名字。"
+    },
+    {
+      "id": "arrive-first",
+      "narration": "看，第一个小动物来了，站在最前面。",
+      "phrase": "看第一个小动物来了站在最前面",
+      "caption": "看，第一个小动物来了，站在最前面。"
+    },
+    {
+      "id": "name-first",
+      "narration": "站在最前面——排第一。",
+      "phrase": "站在最前面排第一",
+      "caption": "站在最前面——排第一。",
+      "emphasis": true
+    },
+    {
+      "id": "arrive-second",
+      "narration": "第二个小动物来了，站在后面。",
+      "phrase": "第二个小动物来了站在后面",
+      "caption": "第二个小动物来了，站在后面。"
+    },
+    {
+      "id": "count-second",
+      "narration": "从前面数——第一，第二。这只小动物排第二。",
+      "phrase": "从前面数第一第二这只小动物排第二",
+      "caption": "从前面数——第一，第二。这只小动物排第二。",
+      "emphasis": true
+    },
+    {
+      "id": "arrive-third",
+      "narration": "第三个小动物来了，排到后面去了。",
+      "phrase": "第三个小动物来了排到后面去了",
+      "caption": "第三个小动物来了，排到后面去了。"
+    },
+    {
+      "id": "count-third",
+      "narration": "从前面数——第一，第二，第三。这只小动物排第三。",
+      "phrase": "从前面数第一第二第三这只小动物排第三",
+      "caption": "从前面数——第一，第二，第三。这只小动物排第三。",
+      "emphasis": true
+    },
+    {
+      "id": "ask-second",
+      "narration": "谁排第二？",
+      "phrase": "谁排第二",
+      "caption": "谁排第二？",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "reveal-second",
+      "narration": "是这只！它排第二。",
+      "phrase": "是这只它排第二",
+      "caption": "是这只！它排第二。",
+      "emphasis": true
+    },
+    {
+      "id": "ask-third",
+      "narration": "谁排第三？",
+      "phrase": "谁排第三",
+      "caption": "谁排第三？",
+      "gap": { "seconds": 4, "reason": "learner-response" }
+    },
+    {
+      "id": "reveal-third",
+      "narration": "是这只！它排第三。",
+      "phrase": "是这只它排第三",
+      "caption": "是这只！它排第三。",
+      "emphasis": true
+    },
+    {
+      "id": "recap-invite",
+      "narration": "跟我一起，从前面数！",
+      "phrase": "跟我一起从前面数",
+      "caption": "跟我一起，从前面数！"
+    },
+    {
+      "id": "recap-count",
+      "narration": "第一。第二。第三。",
+      "phrase": "第一第二第三",
+      "caption": "第一。第二。第三。",
+      "emphasis": true
+    }
+  ]
+}

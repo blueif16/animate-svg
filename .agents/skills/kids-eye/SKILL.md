@@ -18,21 +18,22 @@ The root failure is not implementation. It is that the subagent never put itself
 Your **first** output for any new or redesigned scene must be this block, in plain text, before the Visual Contract, before any per-cue choreography. The numbers must be measurements, not adjectives.
 
 ```
-composition:             1920×1080 @ 30fps   (fixed; non-negotiable)
-short-side:              1080 px
+composition:             1280×720 @ 30fps   (fixed; non-negotiable — src/theme.ts `video`)
+short-side:              720 px
 
 teaching-unit:           <name of the smallest mark that carries a signal — e.g. "single 小棒">
-teaching-unit-min:       ≥ 8% of short-side = 86 px   →  <px figure if larger>
-teaching-unit-target:    12–15% of short-side = 130–160 px
+teaching-unit-min:       ≥ 8% of short-side = 58 px   →  <px figure if larger>
+teaching-unit-target:    12–15% of short-side = 86–108 px
 
-primary-label-min:       48 px rendered  (signal labels: "一个十", "10 步", takeaway lines)
-body-label-min:          36 px rendered  (counts, badges)
-caption-line-min:        56 px rendered
-separation-gap-min:      ≥ 6% of short-side = 65 px  (readable gap between two co-present clusters when the object SPLITS — below this they read as one blob)
+child-readable-text-min: 36 px rendered  = 5% of frame height — the legibility FLOOR, codified in src/theme.ts `sizing.minFontPx` (single source of truth)
+primary-label-min:       48 px rendered  (signal labels: "一个十", "10 步", takeaway lines; src/theme.ts `sizing.captionFontPx`)
+body-label-min:          36 px rendered  (counts, badges — never below the floor)
+caption-line-min:        48 px rendered
+separation-gap-min:      ≥ 6% of short-side = 43 px  (readable gap between two co-present clusters when the object SPLITS — below this they read as one blob)
 chrome-label:            FORBIDDEN — if a label is decoration, delete it
 ```
 
-If the teaching unit + primary labels cannot fit at these minimums inside the 1920×1080 frame *with the declared zones below*, your scene density is wrong. Drop elements or simplify the metaphor. Do not ship at sub-minimum sizes and rationalize it ("readable enough" is a rationalization, not a defense).
+If the teaching unit + primary labels cannot fit at these minimums inside the 1280×720 frame *with the declared zones below*, your scene density is wrong. Drop elements or simplify the metaphor. Do not ship at sub-minimum sizes and rationalize it ("readable enough" is a rationalization, not a defense).
 
 Run this fit-check on the **densest** cue — the worst split / multiplicity, not just the whole row — and at the **delivery resolution**: the co-present clusters PLUS `separation-gap-min` between them must fit the binding axis at the minimum unit size. A split that does not clear the gap floor at delivery size is a sub-minimum render (the two groups read as one blob) — redesign, do not rationalize.
 
@@ -57,6 +58,16 @@ What this enforces:
 **Disjoint is COMPUTED, not asserted.** Before you write "disjoint", compute the pairwise bounding-box intersection of every pair of zones that can be CO-PRESENT in the same cue — each such intersection MUST be empty (show the px arithmetic, at the delivery frame). A zone whose box sits inside or overlaps a co-present zone's box is an automatic FAIL — move the coordinates apart; do not stamp "disjoint" on overlapping numbers. Overlap is permitted ONLY between zones that are never on screen together (time-disjoint); when you allow one, name the cue each zone is active in so the time-disjointness is auditable. A question / prompt / label zone that intersects the teaching-object zone while both are on screen is the canonical occlusion bug (the prompt text landing on the dots).
 
 Overlap of a label and its referent (`一个十` rendered ON the bundle) is not a layout bug; it is a missing zone declaration.
+
+## 1.6. A component reads at a focal size — verify it at true size
+
+The §1 floor is enforced in the SCENE, but it starts at the component. Each component has a **DETERMINED DEFAULT size** (the defaults of its `size`/`width`/`height` props); a lesson usually uses that default and only overrides to fit a tight zone. So "good size in mind" is a property you build INTO the default — author it so the component reads as a **focal element at its typical multiplicity** and clears the §1 floors, NOT a tiny per-instance unit. No lesson or viewer tool can add good size later.
+
+The gallery has TWO preview surfaces; you verify size on the second:
+- the **grid thumbnail** scales the demo to FILL its cell — for browsing what a component *looks like* (size is deliberately NOT readable here);
+- the **true-size view** (click a card) renders the component at its DEFAULT size **1:1 inside the to-scale 1280×720 frame** — one unit + the typical group for an atom (the demo's `unit`), the focal render for a composite. THIS is where you read its real on-canvas size.
+
+If a component reads too small at true size, the fix is to **raise its default size in the component and re-render** — never flag it in the gallery, and never fake the size with a parallel `footprint` number (that drifted from the real default and was removed). Size comes from the component's real default, so the view cannot lie.
 
 **Z-order legibility — the general law (runs in BOTH directions, for ALL readable content).** Not just labels-over-objects: **nothing readable is ever occluded by anything drawn on top of it — text most of all.** A decorative element (a cast character, a prop, a sticker, a 3D card) may never sit over a title, a caption, a label, a read-along phrase, or the teaching glyph. When two zones would overlap, the one carrying readable content wins z-order — the other moves to its own zone, or the two are **sequenced in time** so the readable one reads first/alone (the intro title reads *before* the cast enters — the `announce-topic` move's `requires` in `.agents/TEACHING-ACTIONS.md`). Note: the linear collision manifest can MISS this when the occluder fades in over the text (it samples a low-opacity keyframe and sees no overlap), so this is a **design-time discipline**, not something to leave to the gate.
 
@@ -129,4 +140,4 @@ If neither is possible, the metaphor is wrong. Replace it.
 
 ## 8. Final rule
 
-The scene is what the kid sees, not what the props describe. If a kid cannot see the teaching unit clearly at 1920×1080, the scene does not exist — no matter how many primitives are composed or how clean the JSX reads. Design the picture for the eye that will actually look at it. Then write the JSX that draws it.
+The scene is what the kid sees, not what the props describe. If a kid cannot see the teaching unit clearly at 1280×720, the scene does not exist — no matter how many primitives are composed or how clean the JSX reads. Design the picture for the eye that will actually look at it. Then write the JSX that draws it.

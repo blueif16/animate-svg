@@ -4,8 +4,10 @@
 import type { LessonComposition } from "./lessonRegistryTypes";
 import { lessonComposition as completeKptestCompareMoreFewerLessonComposition } from "./CompleteKptestCompareMoreFewerLesson";
 import { lessonComposition as completeKptestFenyuheSixLessonComposition } from "./CompleteKptestFenyuheSixLesson";
+import { lessonComposition as completeKptestFirstSecondThirdLessonComposition } from "./CompleteKptestFirstSecondThirdLesson";
 
 export const AUTO_LESSON_COMPOSITIONS: LessonComposition[] = [
   completeKptestCompareMoreFewerLessonComposition,
   completeKptestFenyuheSixLessonComposition,
+  completeKptestFirstSecondThirdLessonComposition,
 ];

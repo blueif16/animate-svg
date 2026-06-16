@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-first-second-third",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestFirstSecondThirdLesson",
+  "cuePlan": "lesson-data/kptest-first-second-third/script-cues.json",
+  "output": "out/kptest-first-second-third/kptest-first-second-third.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-first-second-third-voice.wav",
+    "metaOut": "out/kptest-first-second-third/gemini-voice.json",
+    "alignOutJson": "out/kptest-first-second-third/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestFirstSecondThirdTiming.ts",
+    "constPrefix": "kptestFirstSecondThird"
+  }
+}

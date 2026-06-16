@@ -8,135 +8,150 @@
 
 **Coverage:** 70/70 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
 
-## SVG teaching primitives
+## ATOM — teaching primitives
+
+_The prop-driven shapes the child reasons about (count/progress/state drive them). Grouped by subject._
 
 ### Counting & number (`counting`)
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `answer-tile` | `AnswerTile` | — | A tappable answer or choice card holding a number, text, or icon child, with correct/wrong/selected/focused states and a state badge. |
-| `comparison-symbol` | `ComparisonSymbol` | symbol: < \| = \| >; style: formal \| mouth | Placing a >, <, or = between two quantities, optionally as a hungry-mouth glyph or hidden behind a ? until revealed. |
-| `conservation-bundle` | `ConservationBundle` | — | Proving a bundled ten still contains ten ones: xrayProgress fades the wrap to a ghost outline and reveals the count inner sticks inside, defusing the 'a ten is just one thing now'… |
-| `countable-object` | `CountableObject` | variant: animal \| banana \| block \| fish \| fruit \| star | A single cute countable thing (fish, star, fruit, etc.) to populate a counting or comparison set, with selected/dimmed/label states. |
-| `counting-bead-device` | `CountingBeadDevice` | orientation: horizontal \| vertical | Making 'each next number is the previous plus one' physically visible on a single-rod bead counter (计数器): the displayed number is driven by count (0..capacity), and pulling one mo… |
-| `count-step-indicator` | `CountStepIndicator` | — | A small circular badge that pops and fades in via progress to mark the running count at each step of a counting sequence. |
-| `equation-strip` | `EquationStrip` | — | Laying out a horizontal number sentence (left op right = result) with an optional active or blank tile to spotlight a missing term. |
-| `fen-he-diagram` | `FenHeDiagram` | — | Showing a whole splitting into two parts (分合式) or composing two parts into a whole; |
-| `label-callout` | `LabelCallout` | appearStyle: fade \| write-on | Dropping a centered word or phrase with an optional draw-on underline that fades in via progress to name what is on screen. |
-| `number-card` | `NumberCard` | — | Showing a single digit or short value on a rounded card with optional blank line and correct/wrong/selected states, auto-sized so the glyph always insets cleanly. |
-| `number-line-track` | `NumberLineTrack` | — | Showing position, ticks, highlights, and animated arc jumps along a min-to-max number line with a current-value badge. |
-| `ordinal-label-token` | `OrdinalLabelToken` | — | Marking a POSITION (序数) rather than a quantity (基数) with a two-part label whose PREFIX is visually distinct from the digit — a NumberCard surface carrying a caller-supplied prefix… |
-| `part-whole-brace` | `PartWholeBrace` | direction: down \| left \| right \| up | Drawing a curly brace that reveals via progress to bracket a span as one whole or one part, in any of four directions with an optional label. |
-| `place-value-mat` | `PlaceValueMat` | — | Seating place-value contents in labeled tens/ones (optionally hundreds) columns under headers with a divider and optional written digit per column, to bridge a ten-bundle plus loo… |
-| `region-split` | `RegionSplit` | — | Splitting ONE filled round region (a cookie/disk) into N equal-area parts to teach halves/thirds/quarters: cutProgress draws the cuts on, highlightPart shades one part, separation… |
-| `small-stick` | `SmallStick` | highlight: idle \| active \| counted | A single counting stick with idle/active/counted highlight, rotation, and scale — the unit primitive for stick counting and bundling. |
-| `step-tally` | `StepTally` | variant: dots \| numeric | Showing the running total as a numeric pill or a row of dots, with an optional unit label, that pops in via progress. |
-| `stick-group` | `StickGroup` | layout: scatter \| row \| bundle | Laying out N counting sticks in a scatter, row, or bundle with per-index active highlight, reveal-up-to, and seeded scatter placement. |
-| `ten-frame-rod` | `TenFrameRod` | variant: frame \| rod | Filling a 10-cell two-row ten-frame or one-row rod by count or colored segments to show how many make ten and the ones inside. |
-| `unit-block` | `UnitBlock` | variant: chip \| cube \| dot \| rod | Showing 1-10 place-value units as cubes, dots, chips, or a segmented rod, optionally stacked, with a value label. |
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `answer-tile` | `AnswerTile` | Reach for this to offer a choice the child taps to answer, showing correct/wrong/selected/focused state on a number, word, or icon. | — | A tappable answer card holding a number, text, or icon child plus an optional small label, with correct/wrong/selected/focused states and a state badge. | Not for a bare digit shown for reading with no answer-choice framing; use `number-card`. |
+| `comparison-symbol` | `ComparisonSymbol` | Show >, <, or = between two quantities to compare them, optionally as a hungry-mouth glyph or hidden behind a ? until revealed. | symbol: < \| = \| >; style: formal \| mouth | Places a comparison glyph between two sets with formal or mouth style; revealed=false hides it behind a dashed ? card until the reveal beat. | Not for the = inside a built-out number sentence; use `equation-strip`'s operator tile. |
+| `conservation-bundle` | `ConservationBundle` | Prove a bundled ten still holds ten ones — fade the wrap to a ghost and reveal the inner sticks — to defuse the 'a ten is just one thing now' misconception. | — | xrayProgress fades the wrap band to a faint outline and reveals the count inner sticks living inside, with optional highlight on the ones. | Not for ten ones BECOMING one ten (the wrap drawing on); use `bundle-wrap`, or `asset-morph` for the cleaner FX-masked swap. |
+| `countable-object` | `CountableObject` | Show one cute countable thing (fish, star, fruit) to populate a counting or comparison set, with selected/dimmed states. | variant: animal \| banana \| block \| fish \| fruit \| star | A single themed countable in one of six variants with an optional name label; size scales it and selected/dimmed mark its state in a set. | Not for abstract place-value units or sticks; use `unit-block` or `small-stick`. |
+| `counting-bead-device` | `CountingBeadDevice` | Show 'each next number is one more' on a single-rod bead counter (计数器) where pulling one more bead grows the count by exactly one for a 1→N count-up. | orientation: horizontal \| vertical | count (0..capacity) drives the value readout; the newest bead slides into its seat via revealProgress and swells a ring via activePulse so one more bead and a bigger number are one beat. | Not for place-value tens/ones (use `place-value-mat`), a ten-fill grid (use `ten-frame-rod`), or a fixed decorative abacus (use the abacus `icon-asset`). |
+| `count-step-indicator` | `CountStepIndicator` | Mark the running count at each step of a counting sequence with a small circular badge that pops and fades in via progress. | — | A small circular badge carrying the current count value; progress pops and fades it in to punctuate one step of the walk. | Not for a running total with a unit label (use `step-tally`) or tracking a position on a line (use `number-line-track`). |
+| `equation-strip` | `EquationStrip` | Lay out a horizontal number sentence (left op right = result) with an optional active or blank tile to spotlight a missing term. | — | Renders a row of term/operator tiles on a card; activeIndex highlights one tile and blankIndex empties one to pose the missing-term question. | Not for a part-whole split rather than an arithmetic sentence; use `fen-he-diagram` or `part-whole-brace`. |
+| `fen-he-diagram` | `FenHeDiagram` | Reach for this to show a whole splitting into two parts — or two parts composing into a whole — when the part-whole RELATIONSHIP is the point (分合式). | — | Renders the 分合式 bracket with identity-preserving anchors so the same objects flow between whole and parts. | Not for plain counting or for comparing two quantities — use a CountableObject set or a paired-column compare. |
+| `label-callout` | `LabelCallout` | Name what is on screen with a centered word or phrase that fades in via progress, with an optional draw-on underline. | appearStyle: fade \| write-on | Drops a centered text label with fade or write-on appearance and an optional underline; progress reveals it to caption the current beat. | Not for a hand-drawn teacher annotation pointing at a target; use `teacher-mark`. |
+| `number-card` | `NumberCard` | Show a single digit or short value on a rounded card with correct/wrong/selected states for reading or building a number. | — | Renders a value (or a blank line) on a rounded card, auto-sizing the glyph from the card's short side so the digit always insets cleanly at any width. | Not when the value is an answer choice carrying an icon or label; use `answer-tile`. |
+| `number-line-track` | `NumberLineTrack` | Show position, ticks, and animated arc jumps along a min-to-max number line with a current-value badge. | — | Draws a labeled number line with tick marks, point highlights, and animated jump arcs between values; current marks the live position. | Not for counting discrete objects with no linear scale; use a `countable-object` set or `stick-group`. |
+| `ordinal-label-token` | `OrdinalLabelToken` | Mark a POSITION (序数) not a quantity with a label whose colored prefix (第 or any locale prefix) is visually distinct from the digit beside it. | — | A NumberCard surface carrying a caller-supplied prefix glyph in a separate prefixColor/prefixWeight beside the value digit, with selected/focused/correct/wrong states. | Not for a bare cardinal with one fill (use `number-card`); the whole walk-the-row, spotlight-the-Nth ordinal beat is `ordered-row-spotlight`; an icon answer choice is `answer-tile… |
+| `part-whole-brace` | `PartWholeBrace` | Bracket a span as one whole or one part with a curly brace that reveals via progress, in any of four directions with an optional label. | direction: down \| left \| right \| up | Draws a curly brace spanning a width in the up/down/left/right direction; progress reveals it and an optional label names the bracketed span. | Not for the numeric whole/parts relationship itself; use `fen-he-diagram`. |
+| `place-value-mat` | `PlaceValueMat` | Reach for this to bridge a ten-bundle-plus-loose-ones to the DIGITS of a numeral, by seating contents in labeled tens/ones (and optional hundreds) columns. | — | Lays out columns under headers with a divider and an optional written digit per column; pass a child or perColumnCount per column and highlightColumn to focus one. | Not for bare countables or a plain ten-structure with no column/digit framing — use a CountableObject set or TenFrameRod. |
+| `region-split` | `RegionSplit` | Split one filled round region (a cookie/disk) into N equal parts to teach halves/thirds/quarters, shading one part or pulling parts out to share. | — | cutProgress draws the cuts on, highlightPart shades one part, and separation pulls the parts apart to hand each out; optional 1/N labels. | Not for decomposing a NUMBER into addends (use `fen-he-diagram`) or bracketing a linear span (use `part-whole-brace`) — this divides a continuous area, not a count. |
+| `small-stick` | `SmallStick` | Show one counting stick with idle/active/counted highlight, rotation, and scale — the unit for stick counting and bundling. | highlight: idle \| active \| counted | A single stick whose highlight state (idle/active/counted) recolors it as it is counted; length, thickness, rotation, and scale shape it. | Not for placing many sticks at once; use `stick-group`, which lays out and highlights them for you. |
+| `step-tally` | `StepTally` | Show the running total as a numeric pill or a row of dots, with an optional unit label, popping in via progress. | variant: dots \| numeric | Renders the total as a numeric pill or a dot row; progress pops it in and an optional unit label (e.g. | Not for marking just the current step with no total; use `count-step-indicator`. |
+| `stick-group` | `StickGroup` | Lay out N counting sticks in a scatter, row, or bundle with per-index active highlight and reveal-up-to for counting and bundling. | layout: scatter \| row \| bundle | Places count sticks in scatter/row/bundle layout; activeIndex highlights the one being counted and revealUpTo reveals them progressively. | Not for a single stick or a non-stick countable; use `small-stick` or `countable-object`. |
+| `ten-frame-rod` | `TenFrameRod` | Fill a 10-cell ten-frame or one-row rod by count to show how many make ten and the ones inside. | variant: frame \| rod | Fills a two-row ten-frame or one-row rod by count or by colored segments; ones marks the loose units beyond a filled ten. | Not for counting loose objects with no ten-structure (use a `countable-object` set) or physical stick bundling (use `stick-group` plus `bundle-wrap`). |
+| `unit-block` | `UnitBlock` | Show 1-10 place-value units as cubes, dots, chips, or a segmented rod, optionally stacked, with a value label. | variant: chip \| cube \| dot \| rod | Renders count units in cube/dot/chip/rod form, optionally stacked, with an optional numeric value label beneath the group. | Not for cute themed countables (use `countable-object`) or a structured ten-frame (use `ten-frame-rod`). |
 
 ### Literacy & pinyin (`literacy`)
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `animated-stroke-path` | `AnimatedStrokePath` | — | Drawing a single hanzi stroke on via durationInFrames or progress, with a faint ghost guide underneath and an optional pen-tip cursor. |
-| `hanzi-card` | `HanziCard` | picture: book \| heart \| moon \| person \| sun \| tree \| water | Presenting a Chinese character (one per card; |
-| `lesson-intro-card` | `LessonIntroCard` | — | Opening a lesson with the normalized topic-intro card CLAUDE.md mandates (title + section/unit eyebrow + one-line KP teaser): lays out an optional SECTION eyebrow, the TITLE (larg… |
-| `listen-icon` | `ListenIcon` | state: idle \| playing | Marking that a sound or syllable can be played — a small speaker icon whose sound arcs swell in state=playing (driven by progress) to signal audio is available here. |
-| `mouth-shape-icon` | `MouthShapeIcon` | state: open \| round \| smile \| teeth | A face icon whose mouth shows the articulation (open, round, smile, teeth) for teaching a pinyin sound's lip position. |
-| `pinyin-syllable-card` | `PinyinSyllableCard` | highlight: final \| initial \| none \| tone | Showing a pinyin syllable split into initial and final tiles plus a tone mark, with the initial, final, or tone segment highlightable. |
-| `pitch-playhead` | `PitchPlayhead` | tone: 0 \| 1 \| 2 \| 3 \| 4 | Riding a moving dot along a Mandarin tone contour by progress (0..1) to show where the pitch is right now, layered over a ToneMarkGlyph of the same tone and size. |
-| `radical-tile` | `RadicalTile` | — | A tile holding a single radical or character component with an optional label and correct/wrong/selected answer states. |
-| `stroke-guide-cell` | `StrokeGuideCell` | grid: half \| mi \| tian; focusZone: bottom \| center \| left \| right \| top | A Chinese-writing practice cell (田/米/half grid) with dashed guides and an optional highlighted focus zone for where a stroke goes. |
-| `tone-mark-glyph` | `ToneMarkGlyph` | tone: 0 \| 1 \| 2 \| 3 \| 4 | Drawing one of the four Mandarin tone contours (or the neutral dot) that strokes on via progress to teach pitch shape. |
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `animated-stroke-path` | `AnimatedStrokePath` | Drawing a single hanzi stroke on via durationInFrames or progress, with a faint ghost guide underneath and an optional pen-tip cursor. _(needs intent sentence)_ | — | Drawing a single hanzi stroke on via durationInFrames or progress, with a faint ghost guide underneath and an optional pen-tip cursor. | A generic non-stroke path reveal — use DrawPath; teacher annotation marks — use TeacherMark. |
+| `hanzi-card` | `HanziCard` | Presenting a Chinese character (one per card; compose several side by side for a contrasting SET — e.g. _(needs intent sentence)_ | picture: book \| heart \| moon \| person \| sun \| tree \| water | Presenting a Chinese character (one per card; compose several side by side for a contrasting SET — e.g. | Showing pinyin spelling structure (initial/final/tone) rather than the character — use PinyinSyllableCard. |
+| `lesson-intro-card` | `LessonIntroCard` | Opening a lesson with the normalized topic-intro card CLAUDE.md mandates (title + section/unit eyebrow + one-line KP teaser): lays out an optional SECTION eyebrow, the TITLE (largest line), and an op… _(needs intent sentence)_ | — | Opening a lesson with the normalized topic-intro card CLAUDE.md mandates (title + section/unit eyebrow + one-line KP teaser): lays out an optional SECTION eyebrow, the TITLE (largest line), and an optional TEASER centered top-to-bottom with a write-on accent underline under the… | Naming a single on-screen object mid-lesson (one centered word + underline) — use LabelCallout. A decorative 3D ceramic title moment with no readable text-prop surface — use the 3… |
+| `listen-icon` | `ListenIcon` | Marking that a sound or syllable can be played — a small speaker icon whose sound arcs swell in state=playing (driven by progress) to signal audio is available here. _(needs intent sentence)_ | state: idle \| playing | Marking that a sound or syllable can be played — a small speaker icon whose sound arcs swell in state=playing (driven by progress) to signal audio is available here. | Teaching how a sound is articulated (lip position) — use MouthShapeIcon; ListenIcon is an audio affordance, not an articulation teaching icon. |
+| `mouth-shape-icon` | `MouthShapeIcon` | A face icon whose mouth shows the articulation (open, round, smile, teeth) for teaching a pinyin sound's lip position. _(needs intent sentence)_ | state: open \| round \| smile \| teeth | A face icon whose mouth shows the articulation (open, round, smile, teeth) for teaching a pinyin sound's lip position. | Showing the written syllable or tone — use PinyinSyllableCard or ToneMarkGlyph. |
+| `pinyin-syllable-card` | `PinyinSyllableCard` | Showing a pinyin syllable split into initial and final tiles plus a tone mark, with the initial, final, or tone segment highlightable. _(needs intent sentence)_ | highlight: final \| initial \| none \| tone | Showing a pinyin syllable split into initial and final tiles plus a tone mark, with the initial, final, or tone segment highlightable. | Showing the Chinese character itself — use HanziCard; just the tone curve — use ToneMarkGlyph. |
+| `pitch-playhead` | `PitchPlayhead` | Riding a moving dot along a Mandarin tone contour by progress (0..1) to show where the pitch is right now, layered over a ToneMarkGlyph of the same tone and size. _(needs intent sentence)_ | tone: 0 \| 1 \| 2 \| 3 \| 4 | Riding a moving dot along a Mandarin tone contour by progress (0..1) to show where the pitch is right now, layered over a ToneMarkGlyph of the same tone and size. | Drawing the tone contour shape itself — use ToneMarkGlyph, which draws the stroke this playhead travels along. |
+| `radical-tile` | `RadicalTile` | A tile holding a single radical or character component with an optional label and correct/wrong/selected answer states. _(needs intent sentence)_ | — | A tile holding a single radical or character component with an optional label and correct/wrong/selected answer states. | Presenting a full character with pinyin and word — use HanziCard. |
+| `stroke-guide-cell` | `StrokeGuideCell` | A Chinese-writing practice cell (田/米/half grid) with dashed guides and an optional highlighted focus zone for where a stroke goes. _(needs intent sentence)_ | grid: half \| mi \| tian; focusZone: bottom \| center \| left \| right \| top | A Chinese-writing practice cell (田/米/half grid) with dashed guides and an optional highlighted focus zone for where a stroke goes. | Animating the stroke itself — use AnimatedStrokePath inside the cell. |
+| `tone-mark-glyph` | `ToneMarkGlyph` | Drawing one of the four Mandarin tone contours (or the neutral dot) that strokes on via progress to teach pitch shape. _(needs intent sentence)_ | tone: 0 \| 1 \| 2 \| 3 \| 4 | Drawing one of the four Mandarin tone contours (or the neutral dot) that strokes on via progress to teach pitch shape. | Showing the full syllable structure around the tone — use PinyinSyllableCard. |
 
 ### Interaction & sorting (`interaction`)
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `pair-connector` | `PairConnector` | — | Drawing a line that grows via progress between two points to pair or match items, optionally dotted with snap endpoint dots that turn green on completion. |
-| `pointer-hand-arrow` | `PointerHandArrow` | variant: arrow \| hand \| sparkle; direction: down \| left \| right \| up | Pointing the child's attention at a target with an arrow, pointing hand, or sparkle that nudges and scales in via progress, in any of four directions. |
-| `recap-spotlight` | `RecapSpotlight` | — | A spaced-recall RECAP STACK with ONE live, moving highlight: walk back through a sequence of already-taught sub-beats keeping each earlier one visible-but-quiet while the current… |
-| `reward-progress-token` | `RewardProgressToken` | variant: badge \| coin \| node \| star | A star, coin, badge, or node token with a circular progress ring filled by progress, showing a percent or OK once collected. |
-| `sorting-bin` | `SortingBin` | state: accept \| idle \| reject; variant: basket \| tray | A labeled basket or tray drop-target whose state (idle/accept/reject) recolors to show whether a sorted item belongs there. |
-| `unmatched-slot` | `UnmatchedSlot` | state: empty \| ghost | Marking the absence of a pairing partner under a surplus item in a compare-by-matching layout, so 'more than' reads as 'these have nobody' — a dashed ghost of the missing partner… |
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `pair-connector` | `PairConnector` | Drawing a line that grows via progress between two points to pair or match items, optionally dotted with snap endpoint dots that turn green on completion. _(needs intent sentence)_ | — | Drawing a line that grows via progress between two points to pair or match items, optionally dotted with snap endpoint dots that turn green on completion. | An annotated teacher arrow or label line — use TeacherMark or PointerHandArrow. |
+| `pointer-hand-arrow` | `PointerHandArrow` | Pointing the child's attention at a target with an arrow, pointing hand, or sparkle that nudges and scales in via progress, in any of four directions. _(needs intent sentence)_ | variant: arrow \| hand \| sparkle; direction: down \| left \| right \| up | Pointing the child's attention at a target with an arrow, pointing hand, or sparkle that nudges and scales in via progress, in any of four directions. | A hand-drawn annotation stroke or a connecting match line — use TeacherMark or PairConnector. |
+| `recap-spotlight` | `RecapSpotlight` | A spaced-recall RECAP STACK with ONE live, moving highlight: walk back through a sequence of already-taught sub-beats keeping each earlier one visible-but-quiet while the current one lights up. _(needs intent sentence)_ | — | A spaced-recall RECAP STACK with ONE live, moving highlight: walk back through a sequence of already-taught sub-beats keeping each earlier one visible-but-quiet while the current one lights up. | There is no spaced-recall stack to walk — a single static emphasis on one element is a TeacherMark spotlight ring or a PulseCircle, not a multi-sub-beat dim/highlight. You need a… |
+| `reward-progress-token` | `RewardProgressToken` | A star, coin, badge, or node token with a circular progress ring filled by progress, showing a percent or OK once collected. _(needs intent sentence)_ | variant: badge \| coin \| node \| star | A star, coin, badge, or node token with a circular progress ring filled by progress, showing a percent or OK once collected. | Tracking the count of a teaching set rather than session reward progress — use StepTally. |
+| `sorting-bin` | `SortingBin` | A labeled basket or tray drop-target whose state (idle/accept/reject) recolors to show whether a sorted item belongs there. _(needs intent sentence)_ | state: accept \| idle \| reject; variant: basket \| tray | A labeled basket or tray drop-target whose state (idle/accept/reject) recolors to show whether a sorted item belongs there. | Just collecting reward progress, or matching pairs — use RewardProgressToken or PairConnector. |
+| `unmatched-slot` | `UnmatchedSlot` | Marking the absence of a pairing partner under a surplus item in a compare-by-matching layout, so 'more than' reads as 'these have nobody' — a dashed ghost of the missing partner or a struck empty sl… _(needs intent sentence)_ | state: empty \| ghost | Marking the absence of a pairing partner under a surplus item in a compare-by-matching layout, so 'more than' reads as 'these have nobody' — a dashed ghost of the missing partner or a struck empty slot. | The partner EXISTS and you are drawing the match line between two present items — use PairConnector (UnmatchedSlot is for the item that is MISSING a partner). |
 
 ### Sketch / teacher marks (`sketch`)
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `teacher-mark` | `TeacherMark` | kind: underline \| wrap-arc \| label-arrow \| vs-mark | Hand-drawn teacher ink (underline, wrap-arc, label-arrow, vs-mark) that draws on via drawProgress with optional boil wobble and pen-settle. |
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `teacher-mark` | `TeacherMark` | Hand-drawn teacher ink (underline, wrap-arc, label-arrow, vs-mark) that draws on via drawProgress with optional boil wobble and pen-settle. _(needs intent sentence)_ | kind: underline \| wrap-arc \| label-arrow \| vs-mark | Hand-drawn teacher ink (underline, wrap-arc, label-arrow, vs-mark) that draws on via drawProgress with optional boil wobble and pen-settle. | A clean typeset label or directional pointer — use LabelCallout or PointerHandArrow. |
 
 ### Generated assets (traced flat SVG) (`asset`)
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `icon-asset` | `IconAsset` | variant: color \| mono | Render a generated+traced flat SVG asset for a fixed-form representational object — a bundle, mascot, prop — that's too complex to hand-code; |
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `icon-asset` | `IconAsset` | Render a generated+traced flat SVG asset for a fixed-form representational object — a bundle, mascot, prop — that's too complex to hand-code; pass the asset name, placement, scale/size, and (color va… _(needs intent sentence)_ | variant: color \| mono | Render a generated+traced flat SVG asset for a fixed-form representational object — a bundle, mascot, prop — that's too complex to hand-code; pass the asset name, placement, scale/size, and (color variant) on-palette theme fills, or variant=mono tinted via a theme token. | A PARAMETRIC teaching primitive that must count/morph/preserve identity — hand-code those; IconAsset is fixed-form decorative and cannot vary its count or split into parts. |
 
-## Motion components
+## MODIFIER — motion & fx
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `abstraction-ladder` | `AbstractionLadder` | orientation: row \| column; stages: objects \| sticks \| dots \| numeral | Revealing ONE quantity surviving across an ordered ladder of representations — 实物 → 小棒(1:1) → 圆点 → 数字 — in one continuous left→right (or top→down) reveal, so the SAME count is see… |
-| `asset-morph` | `AssetMorph` | direction: bundle \| unbundle | Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a Sparkl… |
-| `conservation-morph-bundle` | `ConservationMorphBundle` | — | The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. |
-| `dialogue-exchange` | `DialogueExchange` | gesture: none \| wave \| point-self \| point-other | A turn-taking spoken exchange between TWO caller-supplied speakers: each speaks in order, turn k's speech bubble pops in ONLY after turn k-1 (+ gap) with its tail pointing at the… |
-| `drag` | `Drag` | — | Stagger an appendage/child chain with trailing lag. |
-| `draw-path` | `DrawPath` | — | Revealing any SVG path stroke-by-stroke via durationInFrames or an external progress, using a pathLength dash trick. |
-| `follow-path` | `FollowPath` | — | Moving a child element along a path spec via progress, optionally rotating it to the path tangent, to animate something tracing a route. |
-| `glyph-stroke-writer` | `GlyphStrokeWriter` | — | Teaching a child to WRITE a single glyph in the correct stroke order (笔顺) inside a writing cell — a numeral (1/2/3/4/5, or any digit) or a comparison symbol (= > <), or any future… |
-| `match-pairs-board` | `MatchPairsBoard` | mode: demonstrate \| quiz; connectorStyle: dotted \| solid | The 连一连 / 'match the pairs' beat: TWO caller-supplied columns (pictures one side, words/characters the other) with a line drawn from each item to the one it belongs with, IN ORDER… |
-| `ordered-row-spotlight` | `OrderedRowSpotlight` | direction: ltr \| rtl | Teaching the ordinal cluster on ONE ordered row of caller-supplied items (countables, faces, sticks): count the row 1→N with a moving finger (the 摆—数—说—写 count step), mark ONLY th… |
-| `part-whole-composer` | `PartWholeComposer` | mode: split \| merge \| enumerate | The concrete-object 分与合 beat: N caller-rendered countables laid out as a whole and SPLIT into two parts, MERGED back together (addition 合并), or walked through EVERY ordered decomp… |
-| `pictograph-evolution` | `PictographEvolution` | mode: morph \| crossfade | Reveal that a Chinese character's SHAPE grew from the thing it pictures: walk an ordered list of representation stages — 实物(real object) → 古代象形字(ancient pictograph) → 现代汉字(modern… |
-| `pop-in` | `PopIn` | motion: snap \| bouncy \| settle | Entrance scale physics for any appearing element. |
-| `pulse-circle` | `PulseCircle` | — | Emitting expanding fading ripple rings from a point for a fixed repeatCount to draw a beat of attention to a spot. |
-| `read-along-highlight` | `ReadAlongHighlight` | cursor: ball \| underline \| box \| none | Sweep a moving highlight (+ optional bouncing cursor) across each item of a text IN TIME, marking the rhythm for read-along / recite / sing-along — the active item glows + swells… |
-| `smear` | `Smear` | — | Motion-blur substitute for fast straight-line travel (>180 vbu/frame). |
-| `sparkle-burst` | `SparkleBurst` | — | Firing a one-shot radial burst of stars outward from a point to celebrate a correct answer or completed beat. |
-| `vocab-flashcard` | `VocabFlashcard` | mode: reveal \| flip \| label-after | Bind a vocabulary WORD to the PICTURE of the thing it names, revealed as ONE beat (and optionally flipped picture↔word). |
+_Wrap or animate an existing element; carry no teaching content of their own._
 
-## FX components
+### Motion
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `breathe` | `Breathe` | — | Moving-hold idle breathing so held elements stay alive. |
-| `fx-defs` | `FXDefs` | — | Render once per scene root to publish the FX filter defs. |
-| `glint-flash` | `GlintFlash` | — | Point flash at a moment of emphasis. |
-| `glow-pulse` | `GlowPulse` | — | Pulsing aura wrapper to draw the eye. |
-| `shine-sweep` | `ShineSweep` | — | Cinematic shine sweeping across a rectangle (card/title). |
-| `sparkle` | `Sparkle` | — | One-shot sparkle particle accent on a reward/reveal. |
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `drag` | `Drag` | Stagger an appendage/child chain with trailing lag. _(needs intent sentence)_ | — | Stagger an appendage/child chain with trailing lag. | Single-element entrances. |
+| `draw-path` | `DrawPath` | Revealing any SVG path stroke-by-stroke via durationInFrames or an external progress, using a pathLength dash trick. _(needs intent sentence)_ | — | Revealing any SVG path stroke-by-stroke via durationInFrames or an external progress, using a pathLength dash trick. | A hanzi stroke needing a ghost guide and cursor — use AnimatedStrokePath; an object traveling along a path — use FollowPath. |
+| `follow-path` | `FollowPath` | Moving a child element along a path spec via progress, optionally rotating it to the path tangent, to animate something tracing a route. _(needs intent sentence)_ | — | Moving a child element along a path spec via progress, optionally rotating it to the path tangent, to animate something tracing a route. | Drawing the path's ink rather than moving along it — use DrawPath. |
+| `pop-in` | `PopIn` | Entrance scale physics for any appearing element. _(needs intent sentence)_ | motion: snap \| bouncy \| settle | Entrance scale physics for any appearing element. | Continuous/idle motion — use Breathe. |
+| `pulse-circle` | `PulseCircle` | Emitting expanding fading ripple rings from a point for a fixed repeatCount to draw a beat of attention to a spot. _(needs intent sentence)_ | — | Emitting expanding fading ripple rings from a point for a fixed repeatCount to draw a beat of attention to a spot. | A celebratory star burst — use SparkleBurst; a directed pointer — use PointerHandArrow. |
+| `read-along-highlight` | `ReadAlongHighlight` | Sweep a moving highlight (+ optional bouncing cursor) across each item of a text IN TIME, marking the rhythm for read-along / recite / sing-along — the active item glows + swells while a cursor trave… _(needs intent sentence)_ | cursor: ball \| underline \| box \| none | Sweep a moving highlight (+ optional bouncing cursor) across each item of a text IN TIME, marking the rhythm for read-along / recite / sing-along — the active item glows + swells while a cursor travels with it, turning 机械重复 into a song. | Teaching the child to WRITE the glyphs (stroke order, 笔顺, spelling) — use GlyphStrokeWriter / HanziCard, which own the written form; this sweeps a highlight FOR RHYTHM, it does no… |
+| `smear` | `Smear` | Motion-blur substitute for fast straight-line travel (>180 vbu/frame). _(needs intent sentence)_ | — | Motion-blur substitute for fast straight-line travel (>180 vbu/frame). | Slow or curved motion. |
+| `sparkle-burst` | `SparkleBurst` | Firing a one-shot radial burst of stars outward from a point to celebrate a correct answer or completed beat. _(needs intent sentence)_ | — | Firing a one-shot radial burst of stars outward from a point to celebrate a correct answer or completed beat. | A sustained attention pulse — use PulseCircle; a persistent reward token — use RewardProgressToken. |
 
-## Lesson-infra components
+### FX
 
-### Audio & caption layers (`media`)
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `breathe` | `Breathe` | Moving-hold idle breathing so held elements stay alive. _(needs intent sentence)_ | — | Moving-hold idle breathing so held elements stay alive. | During active motion. |
+| `fx-defs` | `FXDefs` | Render once per scene root to publish the FX filter defs. _(needs intent sentence)_ | — | Render once per scene root to publish the FX filter defs. | Never omit when any fx/ component is used. |
+| `glint-flash` | `GlintFlash` | Point flash at a moment of emphasis. _(needs intent sentence)_ | — | Point flash at a moment of emphasis. | Repeatedly — one accent per beat. |
+| `glow-pulse` | `GlowPulse` | Pulsing aura wrapper to draw the eye. _(needs intent sentence)_ | — | Pulsing aura wrapper to draw the eye. | On more than one element at a time. |
+| `shine-sweep` | `ShineSweep` | Cinematic shine sweeping across a rectangle (card/title). _(needs intent sentence)_ | — | Cinematic shine sweeping across a rectangle (card/title). | On teaching primitives the child is reasoning about. |
+| `sparkle` | `Sparkle` | One-shot sparkle particle accent on a reward/reveal. _(needs intent sentence)_ | — | One-shot sparkle particle accent on a reward/reveal. | Under narration or as continuous decoration. |
 
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `lesson-audio-layer` | `LessonAudioLayer` | — | Mount once in the Complete<Lesson> wrapper to play the narration track. |
-| `lesson-bgm-layer` | `LessonBgmLayer` | — | Mount in the Complete<Lesson> wrapper to play the background music bed as the SECOND audio track. |
-| `lesson-caption-layer` | `LessonCaptionLayer` | — | Mount in the Complete<Lesson> wrapper to render the bottom caption ribbon from the lesson's caption cues (kids-cute cream/navy theme baked in). |
-| `lesson-sfx-layer` | `LessonSfxLayer` | — | Mount in the Complete<Lesson> wrapper to fire discrete sound effects (a pop, a chime, a whoosh) at composer-owned motion frames. |
-
-### Decorative 3D section transitions (`transition`)
-
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `section-handoff` | `SectionHandoff` | — | Mount between two major lesson sections for a decorative iridescent portal-ring pass-through (3D). |
-| `topic-intro-card` | `TopicIntroCard` | — | Mount at lesson open (or a section transition) for the decorative ceramic 3D topic card landing with a slow push-in — carries the lesson title. |
-
-### Style wrapper (`style`)
-
-| id | component | variants | use when (one-line; full prose in primitive-registry.json) |
-| --- | --- | --- | --- |
-| `style-preset` | `StylePreset` | — | Wrap the scene root (OUTSIDE SceneFrame) to apply an aesthetic overlay; |
-
-## Motion vocabulary
+### Motion vocabulary
 
 - **EASE** (`src/motion-primitives/curves.ts`): `enter`, `balanced`, `overshoot`, `outCubic`, `outQuint`, `inOutCubic`
 - **SPRING**: `snappy`, `bouncy`, `smooth`
 
-## Styles
+## COMPOSITE — teaching beats
+
+_Each orchestrates atoms + assets + modifiers into ONE self-contained teaching beat (count-and-mark, split-and-merge, match-pairs…). Reach for these FIRST when a whole move is needed._
+
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `abstraction-ladder` | `AbstractionLadder` | Revealing ONE quantity surviving across an ordered ladder of representations — 实物 → 小棒(1:1) → 圆点 → 数字 — in one continuous left→right (or top→down) reveal, so the SAME count is seen conserved at every… _(needs intent sentence)_ | orientation: row \| column; stages: objects \| sticks \| dots \| numeral | Revealing ONE quantity surviving across an ordered ladder of representations — 实物 → 小棒(1:1) → 圆点 → 数字 — in one continuous left→right (or top→down) reveal, so the SAME count is seen conserved at every step of abstraction and the child stops splitting 'counting objects' from 'the… | A single static representation (no abstraction step to show) — use the bare primitive (CountableObject / NumberCard); or a ten-ones→one-ten bundling where the units physically GAT… |
+| `asset-morph` | `AssetMorph` | Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a SparkleBurst over the swap… _(needs intent sentence)_ | direction: bundle \| unbundle | Transform a PARAMETRIC group the child has been reasoning about into its fixed-form generated IconAsset (or back) without a visible cut: a short FX-masked crossfade fires a SparkleBurst over the swap while the arriving element settles, so ten sticks BECOME one roped bundle (dire… | Swapping two things that are NOT the same object (no identity to preserve) — use a plain cut or PopIn; or morphing at multiplicity where each unit needs its own highlight — keep t… |
+| `conservation-morph-bundle` | `ConservationMorphBundle` | The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. _(needs intent sentence)_ | — | The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. | Bundling with NO conservation peek (use AssetMorph alone), or a peek with no preceding morph (use ConservationBundle alone). Multiplicity where each inner one needs its own live h… |
+| `dialogue-exchange` | `DialogueExchange` | A turn-taking spoken exchange between TWO caller-supplied speakers: each speaks in order, turn k's speech bubble pops in ONLY after turn k-1 (+ gap) with its tail pointing at the speaker who said it,… _(needs intent sentence)_ | gesture: none \| wave \| point-self \| point-other | A turn-taking spoken exchange between TWO caller-supplied speakers: each speaks in order, turn k's speech bubble pops in ONLY after turn k-1 (+ gap) with its tail pointing at the speaker who said it, the speaking figure leans/bobs toward the other, and at most the two most-recen… | A monologue / single narrator (no second speaker, no turn-taking) — just place a bubble or LabelCallout. More than two speakers in one frame (it is strictly two-sided; a third par… |
+| `glyph-stroke-writer` | `GlyphStrokeWriter` | Teaching a child to WRITE a single glyph in the correct stroke order (笔顺) inside a writing cell — a numeral (1/2/3/4/5, or any digit) or a comparison symbol (= > <), or any future glyph. _(needs intent sentence)_ | — | Teaching a child to WRITE a single glyph in the correct stroke order (笔顺) inside a writing cell — a numeral (1/2/3/4/5, or any digit) or a comparison symbol (= > <), or any future glyph. | Showing a glyph that is already WRITTEN (no stroke-order teaching) — use NumberCard / ComparisonSymbol / a plain text glyph. Tracing a full hanzi character (the GLYPH_STROKES data… |
+| `match-pairs-board` | `MatchPairsBoard` | The 连一连 / 'match the pairs' beat: TWO caller-supplied columns (pictures one side, words/characters the other) with a line drawn from each item to the one it belongs with, IN ORDER, every correct link… _(needs intent sentence)_ | mode: demonstrate \| quiz; connectorStyle: dotted \| solid | The 连一连 / 'match the pairs' beat: TWO caller-supplied columns (pictures one side, words/characters the other) with a line drawn from each item to the one it belongs with, IN ORDER, every correct link snapping its right endpoint dot GREEN on completion, and an optional all-matche… | A one-to-one quantity COMPARISON by matching (5 > 3, counting surplus) — use getPairedColumnPlacement + PairConnector + UnmatchedSlot, which own the ragged-overhang 'who has no pa… |
+| `ordered-row-spotlight` | `OrderedRowSpotlight` | Teaching the ordinal cluster on ONE ordered row of caller-supplied items (countables, faces, sticks): count the row 1→N with a moving finger (the 摆—数—说—写 count step), mark ONLY the Nth position as 第N… _(needs intent sentence)_ | direction: ltr \| rtl | Teaching the ordinal cluster on ONE ordered row of caller-supplied items (countables, faces, sticks): count the row 1→N with a moving finger (the 摆—数—说—写 count step), mark ONLY the Nth position as 第N (an ordinal spotlight ring + the 第N token), contrast circle-ALL ('一共5', a PartW… | An UNORDERED set where position is meaningless (pure 'how many' / cardinality across kinds) — use CountableObject rows + AbstractionLadder; comparing TWO different quantities by m… |
+| `part-whole-composer` | `PartWholeComposer` | The concrete-object 分与合 beat: N caller-rendered countables laid out as a whole and SPLIT into two parts, MERGED back together (addition 合并), or walked through EVERY ordered decomposition. _(needs intent sentence)_ | mode: split \| merge \| enumerate | The concrete-object 分与合 beat: N caller-rendered countables laid out as a whole and SPLIT into two parts, MERGED back together (addition 合并), or walked through EVERY ordered decomposition. | A single isolated split with NO walk and NO numeric bond — just place two StickGroup/CountableObject clusters and a FenHeDiagram directly; this composite earns its keep on the ORD… |
+| `pictograph-evolution` | `PictographEvolution` | Reveal that a Chinese character's SHAPE grew from the thing it pictures: walk an ordered list of representation stages — 实物(real object) → 古代象形字(ancient pictograph) → 现代汉字(modern char) — drawn on ONE… _(needs intent sentence)_ | mode: morph \| crossfade | Reveal that a Chinese character's SHAPE grew from the thing it pictures: walk an ordered list of representation stages — 实物(real object) → 古代象形字(ancient pictograph) → 现代汉字(modern char) — drawn on ONE shared center, morphing the SAME form from each stage into the next, then (the… | Teaching the child to WRITE the character (stroke order, 笔顺) — use GlyphStrokeWriter, which traces strokes IN ORDER; this morphs WHOLE forms and does not draw stroke-by-stroke. Bi… |
+| `vocab-flashcard` | `VocabFlashcard` | Bind a vocabulary WORD to the PICTURE of the thing it names, revealed as ONE beat (and optionally flipped picture↔word). _(needs intent sentence)_ | mode: reveal \| flip \| label-after | Bind a vocabulary WORD to the PICTURE of the thing it names, revealed as ONE beat (and optionally flipped picture↔word). | Teaching the child to WRITE the word's strokes / spelling (stroke order, 笔顺) — use GlyphStrokeWriter / HanziCard, which own the written form; this card only NAMES a picture, it do… |
+
+## INFRA — lesson plumbing
+
+_Scene-mounted, non-teaching. Decorative 3D / styles frame a moment; they are never the teaching object._
+
+### Audio & caption layers (`media`)
+
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `lesson-audio-layer` | `LessonAudioLayer` | Mount once in the Complete<Lesson> wrapper to play the narration track. _(needs intent sentence)_ | — | Mount once in the Complete<Lesson> wrapper to play the narration track. | Never mount inside a scene/cue subtree or more than once per composition — it is the wrapper-level audio root. Do not use the legacy teacherAudioSrc single-WAV path for new lesson… |
+| `lesson-bgm-layer` | `LessonBgmLayer` | Mount in the Complete<Lesson> wrapper to play the background music bed as the SECOND audio track. _(needs intent sentence)_ | — | Mount in the Complete<Lesson> wrapper to play the background music bed as the SECOND audio track. | Do not use it to fire one-shot sound effects (use LessonSfxLayer). Do not let the bed drive cue length — music consumes the reconciled timeline, it never sets it. |
+| `lesson-caption-layer` | `LessonCaptionLayer` | Mount in the Complete<Lesson> wrapper to render the bottom caption ribbon from the lesson's caption cues (kids-cute cream/navy theme baked in). _(needs intent sentence)_ | — | Mount in the Complete<Lesson> wrapper to render the bottom caption ribbon from the lesson's caption cues (kids-cute cream/navy theme baked in). | Do not stack a second caption surface or re-skin per lesson — the theme is intentionally fixed. Do not pass captions that duplicate an active on-screen label without a labelWindow… |
+| `lesson-sfx-layer` | `LessonSfxLayer` | Mount in the Complete<Lesson> wrapper to fire discrete sound effects (a pop, a chime, a whoosh) at composer-owned motion frames. _(needs intent sentence)_ | — | Mount in the Complete<Lesson> wrapper to fire discrete sound effects (a pop, a chime, a whoosh) at composer-owned motion frames. | Do not use it for the continuous music bed (use LessonBgmLayer) or for narration. Never let an SFX play louder than the narration, and never derive its frame from a master-timelin… |
+
+### Decorative 3D section transitions (`transition`)
+
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `section-handoff` | `SectionHandoff` | Mount between two major lesson sections for a decorative iridescent portal-ring pass-through (3D). _(needs intent sentence)_ | — | Mount between two major lesson sections for a decorative iridescent portal-ring pass-through (3D). | Decorative only — never put a teaching primitive the child reasons about inside it (the teaching object stays SVG). Do not use it for the lesson-open title card (that is TopicIntr… |
+| `topic-intro-card` | `TopicIntroCard` | Mount at lesson open (or a section transition) for the decorative ceramic 3D topic card landing with a slow push-in — carries the lesson title. _(needs intent sentence)_ | — | Mount at lesson open (or a section transition) for the decorative ceramic 3D topic card landing with a slow push-in — carries the lesson title. | Decorative only — never the teaching surface. For between-section handoffs reach for SectionHandoff instead. Do not pass an absolute master-timeline frame. |
+
+### Style wrapper (`style`)
+
+| id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
+| --- | --- | --- | --- | --- | --- |
+| `style-preset` | `StylePreset` | Wrap the scene root (OUTSIDE SceneFrame) to apply an aesthetic overlay; set style to a style id from the styles[] section (e.g. _(needs intent sentence)_ | — | Wrap the scene root (OUTSIDE SceneFrame) to apply an aesthetic overlay; set style to a style id from the styles[] section (e.g. | Do not pass a style id that is not registered in styles[] (the wrapper throws on unknown styles). It carries no aesthetic of its own — the per-lesson choice is only the style prop… |
+
+### Styles
 
 | id | use when | status |
 | --- | --- | --- |

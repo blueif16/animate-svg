@@ -1,14 +1,19 @@
-// kptest-fenyuhe-six — lesson scene (frame-driven, cue-bounded).
+// kptest-fenyuhe-six — lesson scene (frame-driven, cue-bounded, v4 cue-anchored).
 //
 // Six dots split into two clusters (1|5, 2|4, 3|3) and recombine back into
 // six — the part-whole routine for the number 6. The six dots are identity-
-// invariant (same six React <UnitBlock> instances throughout cues 1–8, the
-// same orange reward color/size, only the cluster layout and count change).
-// Cue 9 is the spaced-recall recap, which renders three small cluster
-// snapshots in a RecapSpotlight (the recap mechanic is structurally three
-// side-by-side sub-beats, not a single live cluster, so sub-beats carry
-// their own dot instances — visually identical to the corresponding main
-// layouts).
+// invariant (same six React <UnitBlock variant="dot"> instances throughout
+// cues 1–5; the same orange reward color/size, only the cluster layout and
+// count change). Cue 6 is the spaced-recall recap, which renders three
+// small cluster snapshots in a RecapSpotlight (the recap mechanic is
+// structurally three side-by-side sub-beats, not a single live cluster, so
+// sub-beats carry their own dot instances — visually identical to the
+// corresponding main layouts).
+//
+// v4 timeline: 6 cues (routine-reprise / split-1-and-5 / split-2-and-4 /
+// split-3-and-3 / aggregator-prompt / recap). The 9 visual storyboard beats
+// are folded into these 6 windows; each split cue carries both the model
+// AND the echo's held-silence retrieval, with the recombine at the tail.
 //
 // Every frame derives from cues[id].startFrame + a named layout.ts offset.
 // Every easing uses EASE.* from the motion kit. Zero frame literals, zero
@@ -18,50 +23,63 @@ import { interpolate, useCurrentFrame } from "remotion";
 import { AbsoluteFill } from "remotion";
 import { Breathe, FXDefs, GlintFlash } from "../fx";
 import { EASE, PopIn } from "../motion-primitives";
-import { IconAsset, LabelCallout, LessonIntroCard, RecapSpotlight, TeacherMark, UnitBlock } from "../shape-primitives";
+import {
+  IconAsset,
+  LabelCallout,
+  LessonIntroCard,
+  RecapSpotlight,
+  TeacherMark,
+  UnitBlock,
+} from "../shape-primitives";
 import { colors, typography, video } from "../theme";
 import { measureProps, useMeasureHook } from "./_measure/measureHook";
 import { kptestFenyuheSixCues } from "./kptestFenyuheSixLessonTimeline";
+import { kptestFenyuheSixClips } from "./generated/kptestFenyuheSixClips";
 import { cueMap } from "./timingTypes";
 import {
-  ANNOUNCE_BOND_ONE_AND_FIVE_DURATION_FRAMES,
-  ANNOUNCE_TITLE_DURATION_FRAMES,
+  AGGREGATOR_PROMPT_FADE_IN_FRAMES,
+  BOND_FADE_IN_FRAMES,
+  BOND_FADE_OUT_FRAMES,
   BOND_GLYPH_TARGET_SIZE,
   BOND_GLYPH_X,
   BOND_GLYPH_Y,
+  BOND_HOLD_AFTER_SPLIT_FRAMES,
+  BODY_LABEL_MIN_SIZE,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
-  CLIMAX_SPLIT_MOTION_DURATION_FRAMES,
-  CONSERVE_ONE_FIVE_BOND_HE_DURATION_FRAMES,
-  CONSERVE_THREE_THREE_BOND_HE_DURATION_FRAMES,
-  CONSERVE_TWO_FOUR_BOND_HE_DURATION_FRAMES,
-  DOT_FADE_IN_FRAMES,
+  CLIMAX_GLIN_DURATION_FRAMES,
   DOT_Y,
-  MERGE_MOTION_DURATION_FRAMES,
+  POINTER_FADE_IN_FRAMES,
+  POINTER_FADE_OUT_FRAMES,
   QUESTION_PROMPT_MIC_SIZE,
+  QUESTION_PROMPT_RING_CYCLE_FRAMES,
   QUESTION_PROMPT_RING_RADIUS,
   QUESTION_PROMPT_X,
   QUESTION_PROMPT_Y,
-  REVEAL_ANSWER_MOTION_START_FRAMES,
-  REVEAL_ANSWER_RING_RADIUS,
-  REVEAL_ANSWER_THREE_THREE_DISPLAY_FRAMES,
   RECAP_BEAT_ONE_AND_FIVE_FRAMES,
   RECAP_BEAT_THREE_AND_THREE_FRAMES,
   RECAP_BEAT_TWO_AND_FOUR_FRAMES,
   RECAP_BEAT_Y,
   RECAP_DOT_SIZE,
+  RECAP_PARTITIONS,
+  RECAP_RING_FADE_IN_FRAMES,
+  RECAP_RING_FADE_OUT_FRAMES,
   RECAP_RING_RADIUS,
+  ROUTINE_REPRISE_TITLE_DURATION_FRAMES,
   SPLIT_MOTION_DURATION_FRAMES,
-  SPLIT_THREE_THREE_BOND_THREE_AND_THREE_DURATION_FRAMES,
-  SPLIT_TWO_FOUR_BOND_TWO_AND_FOUR_DURATION_FRAMES,
-  TEACHING_UNIT_TARGET_SIZE,
+  SPLIT_START_FRAMES,
   TITLE_TARGET_SIZE,
   TITLE_X,
   TITLE_Y,
+  UNDERLINE_DRAW_DURATION_FRAMES,
+  UNDERLINE_FADE_OUT_FRAMES,
+  UNDERLINE_POST_CLIMAX_DWELL_FRAMES,
   ZONE_OBJECTS,
+  dotSize,
   getRecapBeatX,
   mainDotPositionsForLayout,
   recapSubBeatDotPositions,
+  splitCueSchedule,
   type DotLayout,
 } from "./kptestFenyuheSix/layout";
 
@@ -70,17 +88,10 @@ import {
 // a named layout.ts constant. ZERO master-timeline literals.
 // ---------------------------------------------------------------------------
 const cues = cueMap(kptestFenyuheSixCues);
-
-const c = {
-  announce: () => cues["cue-announce-split-1of5"],
-  conserve1: () => cues["cue-conserve-1of5"],
-  split24: () => cues["cue-split-2of4"],
-  conserve24: () => cues["cue-conserve-2of4"],
-  split33: () => cues["cue-split-3of3"],
-  conserve33: () => cues["cue-conserve-3of3"],
-  learnerGap: () => cues["cue-learner-response-gap"],
-  reveal: () => cues["cue-reveal-answer"],
-  recap: () => cues["cue-spaced-recap-all-three"],
+const clipById = (id: string) => {
+  const c = kptestFenyuheSixClips.find((x) => x.id === id);
+  if (!c) throw new Error(`kptest-fenyuhe-six: unknown clip "${id}"`);
+  return c;
 };
 
 // ---------------------------------------------------------------------------
@@ -91,7 +102,7 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 // A progress with a named EASE applied — used everywhere we want the kid-eye
 // motion to be on a named curve.
-const eased = (
+const _eased = (
   frame: number,
   start: number,
   duration: number,
@@ -103,245 +114,176 @@ const eased = (
     [0, 1],
     { easing, extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
+void _eased; // kept for future per-frame progress usage; current scene
+// interpolates positions directly via lerp + named EASE.*, so this helper is
+// currently unused (the previous v3 scene used it for the cue motion math).
 
 // ---------------------------------------------------------------------------
-// Per-cue motion-window table. Returns the cue-relative frame at which the
-// dot layout transition starts, and how long it lasts. Single source of
-// truth — the bond-glyph phase and the dot-motion phase are linked.
+// Per-cue dot program — identity fence: the six React <UnitBlock
+// variant="dot"> instances live the whole video; only `x` interpolates between
+// layouts. The chain is implicit: each split cue transitions WHOLE →
+// SPLIT_X_Y → WHOLE, with the held silence in the middle. Non-split cues
+// hold WHOLE (a row of six).
 // ---------------------------------------------------------------------------
-type MotionWindow = { start: number; duration: number };
+// (Kept as inline branch logic in dotStateAt below; no separate table needed
+// for v4 since the schedule is computed from splitCueSchedule per cue.)
 
-const MOTION_WINDOWS: Record<string, MotionWindow> = {
-  "cue-announce-split-1of5": {
-    start:
-      ANNOUNCE_TITLE_DURATION_FRAMES +
-      ANNOUNCE_BOND_ONE_AND_FIVE_DURATION_FRAMES,
-    duration: SPLIT_MOTION_DURATION_FRAMES,
-  },
-  "cue-conserve-1of5": {
-    start: CONSERVE_ONE_FIVE_BOND_HE_DURATION_FRAMES,
-    duration: MERGE_MOTION_DURATION_FRAMES,
-  },
-  "cue-split-2of4": {
-    start: SPLIT_TWO_FOUR_BOND_TWO_AND_FOUR_DURATION_FRAMES,
-    duration: SPLIT_MOTION_DURATION_FRAMES,
-  },
-  "cue-conserve-2of4": {
-    start: CONSERVE_TWO_FOUR_BOND_HE_DURATION_FRAMES,
-    duration: MERGE_MOTION_DURATION_FRAMES,
-  },
-  "cue-split-3of3": {
-    start: SPLIT_THREE_THREE_BOND_THREE_AND_THREE_DURATION_FRAMES,
-    duration: CLIMAX_SPLIT_MOTION_DURATION_FRAMES,
-  },
-  "cue-conserve-3of3": {
-    start: CONSERVE_THREE_THREE_BOND_HE_DURATION_FRAMES,
-    duration: MERGE_MOTION_DURATION_FRAMES,
-  },
-  "cue-reveal-answer": {
-    start: REVEAL_ANSWER_MOTION_START_FRAMES,
-    duration: SPLIT_MOTION_DURATION_FRAMES,
-  },
-};
+const isSplitCue = (cueId: string): boolean =>
+  cueId === "split-1-and-5" ||
+  cueId === "split-2-and-4" ||
+  cueId === "split-3-and-3";
 
-// What layout the dots transition TO for each cue. The dots' previous layout
-// is the previous cue's end layout (state chain).
-const CUE_TARGET_LAYOUT: Record<string, DotLayout> = {
-  "cue-announce-split-1of5": "SPLIT_1_5",
-  "cue-conserve-1of5": "WHOLE",
-  "cue-split-2of4": "SPLIT_2_4",
-  "cue-conserve-2of4": "WHOLE",
-  "cue-split-3of3": "SPLIT_3_3",
-  "cue-conserve-3of3": "WHOLE",
-  "cue-learner-response-gap": "WHOLE",
-  "cue-reveal-answer": "SPLIT_3_3",
-  // recap is driven by the per-sub-beat layout, not this table
-};
-
-// Per-cue easing curve for the dot motion. cue-split-3of3 is the climax
-// (EASE.outQuint per visual-design §3 motion vocabulary); everything else
-// is the standard EASE.inOutCubic.
-const CUE_MOTION_EASING: Record<string, (t: number) => number> = {
-  "cue-announce-split-1of5": EASE.inOutCubic,
-  "cue-conserve-1of5": EASE.inOutCubic,
-  "cue-split-2of4": EASE.inOutCubic,
-  "cue-conserve-2of4": EASE.inOutCubic,
-  "cue-split-3of3": EASE.outQuint,
-  "cue-conserve-3of3": EASE.inOutCubic,
-  "cue-reveal-answer": EASE.inOutCubic,
-};
+const isClimaxCue = (cueId: string): boolean => cueId === "split-3-and-3";
 
 // ---------------------------------------------------------------------------
-// Dot positions for the main scene's six-dot identity-invariant group.
-// Returns null if the dots are not visible at this frame; otherwise returns
-// six x positions and a per-group opacity.
+// Dot state for the main six-dot group. Returns six x positions and an
+// opacity for the current frame, or null if the dots are not visible.
 // ---------------------------------------------------------------------------
 type DotState = {
   xPositions: number[];
   opacity: number;
-  // layout for the cluster envelope (used by the Breathe anchor)
   currentLayout: DotLayout;
 };
 
 function dotStateAt(frame: number): DotState | null {
-  // The six dots are visible from the START of cue 1's motion phase through
-  // the END of cue 8 (cue-reveal-answer). They are HIDDEN during:
-  //   - cue 1's title + bond phases (per announce-topic + model-target-slow
-  //     "nothing on top" requirement),
-  //   - the entire recap (cue 9) where the recap sub-beats take over.
-  const announce = c.announce();
-  const recap = c.recap();
+  // The six dots are visible from the START of routine-reprise's dot-enter
+  // phase through the END of aggregator-prompt. The recap (cue 6) is
+  // handled by RecapSpotlight sub-beats, not the main six-dot group.
+  const aggregator = cues["aggregator-prompt"];
+  const routineReprise = cues["routine-reprise"];
+  const dotEnterStart =
+    routineReprise.startFrame + ROUTINE_REPRISE_TITLE_DURATION_FRAMES;
 
-  if (frame >= recap.startFrame) {
-    return null;
-  }
+  if (frame < dotEnterStart) return null;
+  if (frame >= aggregator.endFrame) return null;
 
-  const dotMountFrame =
-    announce.startFrame +
-    ANNOUNCE_TITLE_DURATION_FRAMES +
-    ANNOUNCE_BOND_ONE_AND_FIVE_DURATION_FRAMES;
-  if (frame < dotMountFrame) {
-    return null;
-  }
-
-  // Walk the cue list; find the cue containing this frame.
-  const cueList = kptestFenyuheSixCues;
+  // Find the containing cue.
   let containingCueId: string | null = null;
-  for (const cue of cueList) {
+  for (const cue of kptestFenyuheSixCues) {
     if (frame >= cue.startFrame && frame < cue.endFrame) {
       containingCueId = cue.id;
       break;
     }
   }
   if (!containingCueId) {
-    // Between cues (shouldn't happen — cues chain end-to-end); use the
-    // previous cue's end layout.
-    let prev: DotLayout = "WHOLE";
-    for (const cue of cueList) {
-      if (cue.endFrame <= frame) {
-        prev = CUE_TARGET_LAYOUT[cue.id] ?? "WHOLE";
-      }
+    return {
+      xPositions: mainDotPositionsForLayout("WHOLE"),
+      opacity: 1,
+      currentLayout: "WHOLE",
+    };
+  }
+
+  // routine-reprise: 6 dots enter over ROUTINE_REPRISE_DOT_ENTER_FRAMES,
+  // then held in WHOLE.
+  if (containingCueId === "routine-reprise") {
+    const local = frame - routineReprise.startFrame;
+    if (local < ROUTINE_REPRISE_TITLE_DURATION_FRAMES) {
+      return null; // title phase — dots not yet visible
     }
+    const enterLocal = local - ROUTINE_REPRISE_TITLE_DURATION_FRAMES;
+    const fadeIn = Math.min(1, enterLocal / 18); // 18-frame one-by-one fade-in
     return {
-      xPositions: mainDotPositionsForLayout(prev),
-      opacity: 1,
-      currentLayout: prev,
+      xPositions: mainDotPositionsForLayout("WHOLE"),
+      opacity: fadeIn,
+      currentLayout: "WHOLE",
     };
   }
 
-  // For cues with an explicit target layout, compute the motion transition.
-  const target = CUE_TARGET_LAYOUT[containingCueId];
-  if (!target) {
-    return null;
-  }
-  const cue = cueList.find((cue) => cue.id === containingCueId)!;
-  const window = MOTION_WINDOWS[containingCueId];
-  // Cues that declare a target layout but no motion window (currently
-  // cue-learner-response-gap, which holds the WHOLE state statically during
-  // the silent gap) render the target layout with opacity 1 and no
-  // transition. Treating them as a 0-duration window is correct.
-  if (!window) {
+  // aggregator-prompt: 6 dots held in WHOLE (reassembled after split-3-and-3
+  // recombine). The question prompt overlays; the dots are a visual reminder
+  // of the whole being asked about.
+  if (containingCueId === "aggregator-prompt") {
     return {
-      xPositions: mainDotPositionsForLayout(target),
+      xPositions: mainDotPositionsForLayout("WHOLE"),
       opacity: 1,
-      currentLayout: target,
+      currentLayout: "WHOLE",
     };
   }
-  const easing = CUE_MOTION_EASING[containingCueId] ?? EASE.inOutCubic;
-  const motionStart = cue.startFrame + window.start;
-  const motionEnd = motionStart + window.duration;
-  // Previous layout: the layout held BEFORE this cue's motion started.
-  // For cue 1, the previous layout is "WHOLE" (the dots appear in a row
-  // at the start of the motion, then split). For cues 2-6, the previous
-  // layout is the previous cue's target layout.
-  const previousLayout: DotLayout =
-    containingCueId === "cue-announce-split-1of5"
-      ? "WHOLE"
-      : previousCueTargetLayout(containingCueId);
 
-  // Motion progress (eased) within the window.
-  const t =
-    frame <= motionStart
-      ? 0
-      : frame >= motionEnd
-        ? 1
-        : clamp01(eased(frame, motionStart, window.duration, easing));
+  // split cues: WHOLE → SPLIT_X_Y → WHOLE.
+  if (isSplitCue(containingCueId)) {
+    const cue = cues[containingCueId];
+    const clip = clipById(containingCueId);
+    const schedule = splitCueSchedule(
+      containingCueId,
+      cue.endFrame - cue.startFrame,
+      clip.narrationFrames,
+      isClimaxCue(containingCueId),
+    );
+    const local = frame - cue.startFrame;
 
-  const fromPositions = mainDotPositionsForLayout(previousLayout);
-  const toPositions = mainDotPositionsForLayout(target);
-  const positions = fromPositions.map((x, i) => lerp(x, toPositions[i], t));
+    // Phases:
+    //   0..SPLIT_START_FRAMES                       held WHOLE
+    //   SPLIT_START_FRAMES..schedule.splitEnd       split motion (WHOLE → SPLIT_X_Y)
+    //   schedule.splitEnd..schedule.recombineStart  held SPLIT_X_Y
+    //   schedule.recombineStart..schedule.recombineEnd  recombine (SPLIT_X_Y → WHOLE)
+    const splitLayout: DotLayout =
+      containingCueId === "split-1-and-5"
+        ? "SPLIT_1_5"
+        : containingCueId === "split-2-and-4"
+          ? "SPLIT_2_4"
+          : "SPLIT_3_3";
 
-  // Opacity: fade in across the first DOT_FADE_IN_FRAMES of the motion
-  // window, then hold at 1.
-  const opacity =
-    frame <= motionStart
-      ? 0
-      : frame >= motionStart + DOT_FADE_IN_FRAMES
-        ? 1
-        : clamp01(
-            (frame - motionStart) / Math.max(1, DOT_FADE_IN_FRAMES),
-          );
+    if (local < SPLIT_START_FRAMES) {
+      return {
+        xPositions: mainDotPositionsForLayout("WHOLE"),
+        opacity: 1,
+        currentLayout: "WHOLE",
+      };
+    }
+    if (local < schedule.splitEnd) {
+      const t = clamp01(
+        (local - SPLIT_START_FRAMES) / (schedule.splitEnd - SPLIT_START_FRAMES),
+      );
+      const easing = isClimaxCue(containingCueId) ? EASE.outQuint : EASE.inOutCubic;
+      const eased_t = easing(t);
+      const from = mainDotPositionsForLayout("WHOLE");
+      const to = mainDotPositionsForLayout(splitLayout);
+      return {
+        xPositions: from.map((x, i) => lerp(x, to[i], eased_t)),
+        opacity: 1,
+        currentLayout: eased_t < 1 ? "WHOLE" : splitLayout,
+      };
+    }
+    if (local < schedule.recombineStart) {
+      return {
+        xPositions: mainDotPositionsForLayout(splitLayout),
+        opacity: 1,
+        currentLayout: splitLayout,
+      };
+    }
+    // Recombine (EASE.inOutCubic; climax uses EASE.outQuint).
+    const t = clamp01(
+      (local - schedule.recombineStart) /
+        (schedule.recombineEnd - schedule.recombineStart),
+    );
+    const easing = isClimaxCue(containingCueId) ? EASE.outQuint : EASE.inOutCubic;
+    const eased_t = easing(t);
+    const from = mainDotPositionsForLayout(splitLayout);
+    const to = mainDotPositionsForLayout("WHOLE");
+    return {
+      xPositions: from.map((x, i) => lerp(x, to[i], eased_t)),
+      opacity: 1,
+      currentLayout: eased_t < 1 ? splitLayout : "WHOLE",
+    };
+  }
 
-  return {
-    xPositions: positions,
-    opacity,
-    currentLayout: t < 1 ? previousLayout : target,
-  };
-}
-
-// Previous cue's target layout (state chain).
-const CUE_ORDER: readonly string[] = [
-  "cue-announce-split-1of5",
-  "cue-conserve-1of5",
-  "cue-split-2of4",
-  "cue-conserve-2of4",
-  "cue-split-3of3",
-  "cue-conserve-3of3",
-  "cue-learner-response-gap",
-  "cue-reveal-answer",
-];
-
-function previousCueTargetLayout(cueId: string): DotLayout {
-  const idx = CUE_ORDER.indexOf(cueId);
-  if (idx <= 0) return "WHOLE";
-  const prev = CUE_ORDER[idx - 1];
-  return CUE_TARGET_LAYOUT[prev] ?? "WHOLE";
+  return null;
 }
 
 // ---------------------------------------------------------------------------
 // Bond glyph state. Returns the bond text + opacity for the frame, or null
-// if no bond glyph is visible.
+// if no bond glyph is visible. In v4 each split cue carries the model+echo;
+// the bond glyph is held during the model's voice and fades out as the
+// pointer fades in for the echo's held silence.
 // ---------------------------------------------------------------------------
 const BOND_TEXT_BY_CUE: Record<string, string> = {
-  "cue-announce-split-1of5": "一和五",
-  "cue-conserve-1of5": "合",
-  "cue-split-2of4": "二和四",
-  "cue-conserve-2of4": "合",
-  "cue-split-3of3": "三和三",
-  "cue-conserve-3of3": "合",
+  "split-1-and-5": "一和五",
+  "split-2-and-4": "二和四",
+  "split-3-and-3": "三和三",
 };
 
-const BOND_DURATION_BY_CUE: Record<string, number> = {
-  "cue-announce-split-1of5": ANNOUNCE_BOND_ONE_AND_FIVE_DURATION_FRAMES,
-  "cue-conserve-1of5": CONSERVE_ONE_FIVE_BOND_HE_DURATION_FRAMES,
-  "cue-split-2of4": SPLIT_TWO_FOUR_BOND_TWO_AND_FOUR_DURATION_FRAMES,
-  "cue-conserve-2of4": CONSERVE_TWO_FOUR_BOND_HE_DURATION_FRAMES,
-  "cue-split-3of3": SPLIT_THREE_THREE_BOND_THREE_AND_THREE_DURATION_FRAMES,
-  "cue-conserve-3of3": CONSERVE_THREE_THREE_BOND_HE_DURATION_FRAMES,
-};
-
-// cue 1's bond starts AFTER the title phase.
-const BOND_OFFSET_BY_CUE: Record<string, number> = {
-  "cue-announce-split-1of5": ANNOUNCE_TITLE_DURATION_FRAMES,
-  "cue-conserve-1of5": 0,
-  "cue-split-2of4": 0,
-  "cue-conserve-2of4": 0,
-  "cue-split-3of3": 0,
-  "cue-conserve-3of3": 0,
-};
-
-// cue 5 uses motion="bouncy" PopIn for the ONE bouncy entrance per video.
-const BOUNCY_BOND_CUE = "cue-split-3of3";
+const BOUNCY_BOND_CUE = "split-3-and-3";
 
 type BondState = {
   text: string;
@@ -354,46 +296,60 @@ function bondStateAt(frame: number): BondState | null {
   for (const cueId of Object.keys(BOND_TEXT_BY_CUE)) {
     const cue = cues[cueId];
     if (!cue) continue;
-    const offset = BOND_OFFSET_BY_CUE[cueId];
-    const dur = BOND_DURATION_BY_CUE[cueId];
-    const from = cue.startFrame + offset;
-    const to = from + dur;
-    if (frame >= from && frame < to) {
-      // Opacity ramps 0→1 over the first 12f of the window (fade-in),
-      // holds at 1, then 1→0 over the last 6f (fade-out before motion).
-      const fadeIn = clamp01((frame - from) / 12);
-      const fadeOut = clamp01((to - frame) / 6);
-      const opacity = Math.min(fadeIn, fadeOut);
-      return {
-        text: BOND_TEXT_BY_CUE[cueId],
-        opacity,
-        isBouncy: cueId === BOUNCY_BOND_CUE,
-        cueId,
-      };
-    }
+    const clip = clipById(cueId);
+    const schedule = splitCueSchedule(
+      cueId,
+      cue.endFrame - cue.startFrame,
+      clip.narrationFrames,
+      isClimaxCue(cueId),
+    );
+    const local = frame - cue.startFrame;
+    // Bond visibility window:
+    //   0..BOND_FADE_IN_FRAMES                          fade-in
+    //   BOND_FADE_IN_FRAMES..(schedule.splitEnd + BOND_HOLD_AFTER_SPLIT_FRAMES)
+    //                                                    held
+    //   ...fade-out over BOND_FADE_OUT_FRAMES ending at
+    //      (splitEnd + BOND_HOLD_AFTER_SPLIT_FRAMES + BOND_FADE_OUT_FRAMES)
+    const fadeIn = clamp01(local / BOND_FADE_IN_FRAMES);
+    const fadeOutStart =
+      schedule.splitEnd + BOND_HOLD_AFTER_SPLIT_FRAMES;
+    const fadeOutEnd = fadeOutStart + BOND_FADE_OUT_FRAMES;
+    const fadeOut = clamp01((fadeOutEnd - local) / BOND_FADE_OUT_FRAMES);
+    const opacity = Math.min(fadeIn, fadeOut);
+    if (local >= fadeOutEnd) continue;
+    if (local < 0) continue;
+    return {
+      text: BOND_TEXT_BY_CUE[cueId],
+      opacity,
+      isBouncy: cueId === BOUNCY_BOND_CUE,
+      cueId,
+    };
   }
   return null;
 }
 
 // ---------------------------------------------------------------------------
-// Title state (cue 1 only). The title reads alone during the announce phase,
-// then fades out as the bond-glyph "一和五" enters. The LessonIntroCard's
-// internal stagger drives the entrance (progress 0→1 over the first 12f),
-// holds at 1, then the wrapper opacity ramps 1→0 across the last 18f so the
-// title hands the canvas to the bond glyph without a hard cut.
+// Title state (cue-routine-reprise only). The title reads alone during the
+// title phase, then fades out as the six dots enter. LessonIntroCard's
+// internal stagger drives the entrance (progress 0→1 across the first
+// 12f of the title phase), then the wrapper opacity ramps 1→0 across the
+// last 18f so the title hands the canvas to the dots without a hard cut.
 // ---------------------------------------------------------------------------
 const TITLE_FADE_OUT_FRAMES = 18;
 type TitleState = { progress: number; opacity: number };
 
 function titleStateAt(frame: number): TitleState | null {
-  const cue = c.announce();
+  const cue = cues["routine-reprise"];
   const from = cue.startFrame;
-  const to = from + ANNOUNCE_TITLE_DURATION_FRAMES;
+  const to = from + ROUTINE_REPRISE_TITLE_DURATION_FRAMES;
   if (frame < from || frame >= to) return null;
-  // Card progress: ramps 0→1 over the first 12f, holds at 1 for the middle.
+  // Card progress: 0→1 over the first 12f of the title phase.
   const progress = clamp01((frame - from) / 12);
   // Wrapper opacity: 1 from 12f through (duration - fadeOut), then 1→0.
-  const fadeOutStart = Math.max(12, ANNOUNCE_TITLE_DURATION_FRAMES - TITLE_FADE_OUT_FRAMES);
+  const fadeOutStart = Math.max(
+    12,
+    ROUTINE_REPRISE_TITLE_DURATION_FRAMES - TITLE_FADE_OUT_FRAMES,
+  );
   const opacity =
     frame <= fadeOutStart
       ? 1
@@ -402,29 +358,90 @@ function titleStateAt(frame: number): TitleState | null {
 }
 
 // ---------------------------------------------------------------------------
-// Question-prompt state (cue 7). Returns opacity + ringProgress for the
-// PulseCircle, or null.
+// Pointer affordance state (per split cue's echo). A PulseCircle-style ring
+// is the "your turn" affordance during the held silence. The pointer fades
+// in after the bond fades out, holds through the silence, then fades out
+// before the recombine.
 // ---------------------------------------------------------------------------
-type QuestionState = { opacity: number; ringProgress: number };
+type PointerState = {
+  opacity: number;
+  ringProgress: number;
+  // Position of the pointer — varies per cue (centered on the split pairing).
+  cx: number;
+  cy: number;
+};
 
-function questionStateAt(frame: number): QuestionState | null {
-  const cue = c.learnerGap();
-  if (frame < cue.startFrame || frame >= cue.endFrame) return null;
-  const local = frame - cue.startFrame;
-  // Question display: held through the ENTIRE cue window (the silence is
-  // the SIGNAL — the prompt label stays as the "your turn" affordance).
-  const opacity = 1;
-  // Ring envelope: pulse on, hold, pulse off. A 2-cycle breathe so the
-  // ring draws the eye to the held silence without being twitchy.
-  // 0..1..0 over 60f, repeated across the gap.
-  const phase = (local / 60) % 1;
-  const ringProgress = Math.sin(phase * Math.PI);
-  return { opacity, ringProgress };
+function pointerStateAt(frame: number): PointerState | null {
+  for (const cueId of Object.keys(BOND_TEXT_BY_CUE)) {
+    const cue = cues[cueId];
+    if (!cue) continue;
+    const clip = clipById(cueId);
+    const schedule = splitCueSchedule(
+      cueId,
+      cue.endFrame - cue.startFrame,
+      clip.narrationFrames,
+      isClimaxCue(cueId),
+    );
+    const local = frame - cue.startFrame;
+    // Pointer window: bond-fade-out end → recombine start.
+    const pointerStart =
+      schedule.splitEnd + BOND_HOLD_AFTER_SPLIT_FRAMES + BOND_FADE_OUT_FRAMES;
+    const pointerEnd = schedule.recombineStart;
+    if (local < pointerStart || local >= pointerEnd) continue;
+
+    const fadeIn = clamp01((local - pointerStart) / POINTER_FADE_IN_FRAMES);
+    const fadeOut = clamp01((pointerEnd - local) / POINTER_FADE_OUT_FRAMES);
+    const opacity = Math.min(fadeIn, fadeOut);
+    if (opacity <= 0) continue;
+
+    // Pulse: 0..1..0 over QUESTION_PROMPT_RING_CYCLE_FRAMES, repeated.
+    const phase = ((local - pointerStart) / QUESTION_PROMPT_RING_CYCLE_FRAMES) % 1;
+    const ringProgress = Math.sin(phase * Math.PI);
+
+    // Position: centered on the held split pairing. Use SPLIT positions'
+    // horizontal centroid, vertical center of the dot row.
+    const positions = mainDotPositionsForLayout(
+      cueId === "split-1-and-5"
+        ? "SPLIT_1_5"
+        : cueId === "split-2-and-4"
+          ? "SPLIT_2_4"
+          : "SPLIT_3_3",
+    );
+    const cx = (positions[0] + positions[positions.length - 1]) / 2;
+    const cy = DOT_Y;
+    return { opacity, ringProgress, cx, cy };
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
-// Recap state (cue 9). Returns the active sub-beat index, the ring center
-// (interpolated to the active sub-beat), and the ring's draw/fade progress.
+// Aggregator-prompt state (cue 5). The 6 dots are reassembled (already
+// handled by dotStateAt). The prompt is the localized "6可以分成几和几?"
+// label + a PulseCircle + a mic glyph — three readable parts per the
+// learner-response-gap rule. Held through the entire gap window.
+// ---------------------------------------------------------------------------
+type AggregatorState = {
+  opacity: number;
+  ringProgress: number;
+};
+
+function aggregatorStateAt(frame: number): AggregatorState | null {
+  const cue = cues["aggregator-prompt"];
+  if (frame < cue.startFrame || frame >= cue.endFrame) return null;
+  const local = frame - cue.startFrame;
+  // Prompt fades in over AGGREGATOR_PROMPT_FADE_IN_FRAMES at the start of the
+  // cue, then held at opacity 1 through the silent gap.
+  const fadeIn = clamp01(local / AGGREGATOR_PROMPT_FADE_IN_FRAMES);
+  // Pulse: 0..1..0 over QUESTION_PROMPT_RING_CYCLE_FRAMES, repeated across
+  // the entire gap. The ring draws the eye to the held whole.
+  const phase = (local / QUESTION_PROMPT_RING_CYCLE_FRAMES) % 1;
+  const ringProgress = Math.sin(phase * Math.PI);
+  return { opacity: fadeIn, ringProgress };
+}
+
+// ---------------------------------------------------------------------------
+// Recap state (cue 6). Returns the active sub-beat index, the ring's
+// draw/fade progress, and the active sub-beat's ringCenter.
 // ---------------------------------------------------------------------------
 type RecapState = {
   activeIndex: 0 | 1 | 2;
@@ -434,40 +451,32 @@ type RecapState = {
 };
 
 function recapStateAt(frame: number): RecapState | null {
-  const cue = c.recap();
+  const cue = cues["recap"];
   if (frame < cue.startFrame || frame >= cue.endFrame) return null;
   const local = frame - cue.startFrame;
-  // Active sub-beat from cue-relative frame.
   let activeIndex: 0 | 1 | 2 = 0;
   let subBeatStart = 0;
+  let subBeatDur = RECAP_BEAT_ONE_AND_FIVE_FRAMES;
   if (local < RECAP_BEAT_ONE_AND_FIVE_FRAMES) {
     activeIndex = 0;
     subBeatStart = 0;
+    subBeatDur = RECAP_BEAT_ONE_AND_FIVE_FRAMES;
   } else if (
-    local <
-    RECAP_BEAT_ONE_AND_FIVE_FRAMES + RECAP_BEAT_TWO_AND_FOUR_FRAMES
+    local < RECAP_BEAT_ONE_AND_FIVE_FRAMES + RECAP_BEAT_TWO_AND_FOUR_FRAMES
   ) {
     activeIndex = 1;
     subBeatStart = RECAP_BEAT_ONE_AND_FIVE_FRAMES;
+    subBeatDur = RECAP_BEAT_TWO_AND_FOUR_FRAMES;
   } else {
     activeIndex = 2;
     subBeatStart =
       RECAP_BEAT_ONE_AND_FIVE_FRAMES + RECAP_BEAT_TWO_AND_FOUR_FRAMES;
+    subBeatDur = RECAP_BEAT_THREE_AND_THREE_FRAMES;
   }
-  const subBeatDur =
-    activeIndex === 0
-      ? RECAP_BEAT_ONE_AND_FIVE_FRAMES
-      : activeIndex === 1
-        ? RECAP_BEAT_TWO_AND_FOUR_FRAMES
-        : RECAP_BEAT_THREE_AND_THREE_FRAMES;
-  // Ring center: at the active sub-beat's x (no interpolation between
-  // sub-beats — the ring snaps to the new active sub-beat on transition).
-  // The first 6f of a sub-beat, the ring fades in from 0; the last 9f it
-  // fades out.
   const inBeatLocal = local - subBeatStart;
   const ringProgress = Math.min(
-    clamp01(inBeatLocal / 6),
-    clamp01((subBeatDur - inBeatLocal) / 9),
+    clamp01(inBeatLocal / RECAP_RING_FADE_IN_FRAMES),
+    clamp01((subBeatDur - inBeatLocal) / RECAP_RING_FADE_OUT_FRAMES),
   );
   return {
     activeIndex,
@@ -478,17 +487,12 @@ function recapStateAt(frame: number): RecapState | null {
 }
 
 // ---------------------------------------------------------------------------
-// TeacherMark (cue 5 only) — the climax underline beneath the 3|3 clusters.
-// The underline lands AS the 3|3 split reaches its final cluster positions
-// (per sketch-overlay.md §3). The split motion ends at cue.startFrame +
-// CLIMAX_SPLIT_MOTION_DURATION_FRAMES. The underline begins 15 frames into
-// the post-climax dwell.
+// Climax underline (cue-split-3-and-3 only) — the TeacherMark celebration
+// gesture that lands AS the 3|3 split reaches its final cluster positions.
+// CUE-RELATIVE frames (per sketch-overlay §3): starts
+// SPLIT_START + CLIMAX_SPLIT + UNDERLINE_POST_CLIMAX_DWELL = 30+30+15 = 75,
+// draws over 24f, fades 9f before the recombine ends (= cue end).
 // ---------------------------------------------------------------------------
-const UNDERLINE_REL_START = 60; // cue 5: motion end is 60, underline lands 15f into dwell = 75
-const UNDERLINE_REL_DRAW_START = UNDERLINE_REL_START;
-const UNDERLINE_DRAW_DURATION = 24;
-const UNDERLINE_REL_FADE_START_FROM_END = 9; // 9 frames before cue end
-
 type UnderlineState = {
   drawProgress: number;
   opacity: number;
@@ -497,49 +501,55 @@ type UnderlineState = {
 } | null;
 
 function underlineStateAt(frame: number): UnderlineState {
-  const cue = c.split33();
+  const cueId = "split-3-and-3";
+  const cue = cues[cueId];
   if (frame < cue.startFrame || frame >= cue.endFrame) return null;
-  // Anchor: from the bottom-left of the left cluster to the bottom-right
-  // of the right cluster, with a slight dip DOWN (archHeight = -30) so the
-  // underline reads as "groups these two as a bound pair" (sketch-overlay §3).
+  // Anchor: bottom-left of left cluster → bottom-right of right cluster.
   const splitPositions = mainDotPositionsForLayout("SPLIT_3_3");
-  // The first 3 indices are the left cluster; the last 3 are the right.
   const leftMostX = splitPositions[0];
-  const rightMostX = splitPositions[5];
-  const halfDot = TEACHING_UNIT_TARGET_SIZE / 2;
+  const rightMostX = splitPositions[splitPositions.length - 1];
+  const halfDot = dotSize / 2;
   const yBottom = DOT_Y + halfDot + 18;
   const start = { x: leftMostX - halfDot, y: yBottom };
   const end = { x: rightMostX + halfDot, y: yBottom };
-  // Draw progress: 0→1 over UNDERLINE_DRAW_DURATION starting at +75.
-  const drawFrom = cue.startFrame + UNDERLINE_REL_DRAW_START;
-  const drawTo = drawFrom + UNDERLINE_DRAW_DURATION;
+  // CUE-RELATIVE draw windows (named offsets from layout.ts).
+  const cueLength = cue.endFrame - cue.startFrame;
+  const drawFromCueRel =
+    SPLIT_START_FRAMES +
+    SPLIT_MOTION_DURATION_FRAMES +
+    UNDERLINE_POST_CLIMAX_DWELL_FRAMES;
+  const drawToCueRel = drawFromCueRel + UNDERLINE_DRAW_DURATION_FRAMES;
+  const fadeOutEndCueRel = cueLength;
+  const fadeOutStartCueRel =
+    fadeOutEndCueRel - UNDERLINE_FADE_OUT_FRAMES;
+  const local = frame - cue.startFrame;
   const drawProgress =
-    frame <= drawFrom
+    local <= drawFromCueRel
       ? 0
-      : frame >= drawTo
+      : local >= drawToCueRel
         ? 1
-        : clamp01((frame - drawFrom) / UNDERLINE_DRAW_DURATION);
-  // Fade-out: UNDERLINE_REL_FADE_START_FROM_END frames before cue end.
-  const fadeFrom = cue.endFrame - UNDERLINE_REL_FADE_START_FROM_END;
+        : clamp01(
+            (local - drawFromCueRel) / UNDERLINE_DRAW_DURATION_FRAMES,
+          );
   const opacity =
-    frame <= drawFrom
+    local <= drawFromCueRel
       ? 0
-      : frame >= fadeFrom
-        ? clamp01((cue.endFrame - frame) / UNDERLINE_REL_FADE_START_FROM_END)
+      : local >= fadeOutStartCueRel
+        ? clamp01(
+            (fadeOutEndCueRel - local) / UNDERLINE_FADE_OUT_FRAMES,
+          )
         : 1;
   return { drawProgress, opacity, start, end };
 }
 
 // ---------------------------------------------------------------------------
-// Sunshine transient ring (cue 8 only) — single transient highlight at the
-// midpoint of cue-reveal-answer. A GlintFlash (one-shot flash) at the
-// 3|3 cluster's center.
+// Climax GlintFlash (cue-split-3-and-3 only) — a single 4-point star at the
+// 3|3 cluster's center, fired when the climax split motion settles.
 // ---------------------------------------------------------------------------
-function sunshineRevealStartFrame(): number {
+function climaxGlintStartFrame(): number {
+  const cue = cues["split-3-and-3"];
   return (
-    c.reveal().startFrame +
-    Math.floor(REVEAL_ANSWER_THREE_THREE_DISPLAY_FRAMES / 2) -
-    9
+    cue.startFrame + SPLIT_START_FRAMES + SPLIT_MOTION_DURATION_FRAMES
   );
 }
 
@@ -548,40 +558,29 @@ function sunshineRevealStartFrame(): number {
 // ===========================================================================
 export const KptestFenyuheSixLessonScene: React.FC = () => {
   const frame = useCurrentFrame();
-  // Inert in normal renders; under the --measured pass it logs each
-  // [data-mid] element's true getBBox per frame.
-  useMeasureHook();
+  useMeasureHook(); // inert in normal renders; under --measured it logs getBBox
 
   // ---- Derived scene state ----
   const dots = dotStateAt(frame);
   const bond = bondStateAt(frame);
   const title = titleStateAt(frame);
-  const question = questionStateAt(frame);
+  const pointer = pointerStateAt(frame);
+  const aggregator = aggregatorStateAt(frame);
   const recap = recapStateAt(frame);
   const underline = underlineStateAt(frame);
-  const revealCue = c.reveal();
-  const sunshineStartFrame = sunshineRevealStartFrame();
-  const sunshineActive =
-    frame >= sunshineStartFrame &&
-    frame < sunshineStartFrame + 18 &&
-    frame >= revealCue.startFrame &&
-    frame < revealCue.endFrame;
 
-  // ---- Dot breath anchor (centroid of live dots) ----
+  // Dot breath anchor (centroid of live dots).
   const dotCentroidX =
     dots && dots.opacity > 0.05
       ? dots.xPositions.reduce((a, x) => a + x, 0) / dots.xPositions.length
       : ZONE_OBJECTS.x + ZONE_OBJECTS.width / 2;
   const dotCentroidY = DOT_Y;
 
-  // ---- Recap sub-beat nodes (for the RecapSpotlight) ----
-  // Each sub-beat is a static group of 6 dots in its X+Y layout, centered
-  // on the sub-beat's x. The dots' COLOR is the same reward orange
-  // (visual-design §3 palette) — identity preserved by type/color/size.
+  // Recap sub-beat nodes (for the RecapSpotlight). Each sub-beat is a
+  // static group of 6 dots in its X+Y layout, centered on the sub-beat's x.
   const recapSubBeatNodes: React.ReactNode[] = ([0, 1, 2] as const).map(
     (beatIndex) => {
       const positions = recapSubBeatDotPositions(beatIndex);
-      // 6 dots in their cluster layout, in zone-objects vertical center.
       return (
         <g key={`recap-beat-${beatIndex}`}>
           {positions.map((p, i) => (
@@ -598,6 +597,11 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
       );
     },
   );
+
+  // Climax GlintFlash (single 4-point star at 3|3 cluster center).
+  const glintStart = climaxGlintStartFrame();
+  const glintActive =
+    frame >= glintStart && frame < glintStart + CLIMAX_GLIN_DURATION_FRAMES;
 
   return (
     <AbsoluteFill
@@ -617,7 +621,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
         <FXDefs />
 
         {/* =================================================================
-            SIX DOTS — identity-invariant for cues 1-8 (cue 9 = recap).
+            SIX DOTS — identity-invariant for cues 1-5 (cue 6 = recap).
             Same six React <UnitBlock variant="dot"> instances throughout
             the main scene; positions interpolate per-frame from the cue's
             target layout + motion progress. The Breathe wrap gives the
@@ -637,7 +641,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
                 <UnitBlock
                   color={colors.reward}
                   key={`dot-${i}`}
-                  size={TEACHING_UNIT_TARGET_SIZE}
+                  size={dotSize}
                   variant="dot"
                   x={x}
                   y={DOT_Y}
@@ -648,7 +652,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
         ) : null}
 
         {/* =================================================================
-            TITLE — cue-announce-split-1of5 phase 1. Reads ALONE first.
+            TITLE — cue-routine-reprise phase 1. Reads ALONE first.
             LessonIntroCard with card surface OFF (cream canvas is the
             only background per Visual Contract §1 decoration-budget).
             ================================================================ */}
@@ -676,12 +680,13 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
         ) : null}
 
         {/* =================================================================
-            BOND GLYPH — the Chinese bond phrase in zone-labels. Reads
-            ALONE in cue 1 (announce-topic + model-target-slow require
-            "nothing on top"). For cues 2-6, the bond glyph appears in
-            zone-labels WHILE the dots are visible in zone-objects (the
-            zones are disjoint; no occlusion). The bouncy PopIn entrance
-            fires on cue 5's "三和三" (the ONE accent moment per video).
+            BOND GLYPH — Chinese bond phrase in zone-labels. Reads ALONE
+            before the dots are in motion (the "model-target-slow" + "the
+            target glyph big, centered, nothing on top" requirement). For
+            cues 2-4 the bond glyph appears in zone-labels WHILE the dots
+            are visible in zone-objects (the zones are disjoint). The
+            bouncy PopIn entrance fires on cue 4's "三和三" (the ONE
+            accent moment per video).
             ================================================================ */}
         {bond && bond.opacity > 0.001 ? (
           <g {...measureProps("bond-glyph")} opacity={bond.opacity}>
@@ -694,7 +699,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
             >
               {bond.isBouncy ? (
                 <PopIn
-                  delay={cues[bond.cueId].startFrame + (BOND_OFFSET_BY_CUE[bond.cueId] ?? 0)}
+                  delay={cues[bond.cueId].startFrame}
                   motion="bouncy"
                   originX={BOND_GLYPH_X}
                   originY={BOND_GLYPH_Y}
@@ -725,20 +730,57 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
         ) : null}
 
         {/* =================================================================
-            QUESTION PROMPT — cue-learner-response-gap. The prompt label
-            "6可以分成几和几?" + a PulseCircle (eye-drawer) + a mic glyph.
-            Three readable parts per the learner-response-gap rule; a bare
-            low-opacity glow is FORBIDDEN. Held through the entire gap
-            (the silence is the SIGNAL).
+            POINTER AFFORDANCE — held silence for each split cue's echo
+            (per the learner-response-gap `requires`: a clear "your turn"
+            cue through the gap). The pointer is a PulseCircle-style
+            concentric ring pair above the held split, with a gentle
+            breathing pulse drawing the eye.
             ================================================================ */}
-        {question ? (
-          <g {...measureProps("question-prompt")}>
-            {/* PulseCircle (eye-drawer) around the prompt */}
+        {pointer ? (
+          <g {...measureProps("pointer")} opacity={pointer.opacity}>
+            <circle
+              cx={pointer.cx}
+              cy={pointer.cy}
+              fill="none"
+              opacity={pointer.ringProgress * 0.5}
+              r={QUESTION_PROMPT_RING_RADIUS}
+              stroke={colors.sunshine}
+              strokeWidth={5}
+            />
+            <circle
+              cx={pointer.cx}
+              cy={pointer.cy}
+              fill="none"
+              opacity={pointer.ringProgress * 0.32}
+              r={QUESTION_PROMPT_RING_RADIUS * 0.75}
+              stroke={colors.sunshine}
+              strokeWidth={4}
+            />
+            <circle
+              cx={pointer.cx}
+              cy={pointer.cy}
+              fill="none"
+              opacity={pointer.ringProgress * 0.2}
+              r={QUESTION_PROMPT_RING_RADIUS * 0.5}
+              stroke={colors.sunshine}
+              strokeWidth={3}
+            />
+          </g>
+        ) : null}
+
+        {/* =================================================================
+            AGGREGATOR PROMPT — cue-aggregator-prompt. The prompt label
+            "6可以分成几和几?" + a PulseCircle ring + a mic glyph. Three
+            readable parts per the learner-response-gap rule; a bare low-
+            opacity glow is FORBIDDEN. Held through the entire gap.
+            ================================================================ */}
+        {aggregator ? (
+          <g {...measureProps("aggregator-prompt")}>
             <circle
               cx={QUESTION_PROMPT_X}
               cy={QUESTION_PROMPT_Y}
               fill="none"
-              opacity={question.ringProgress * 0.4}
+              opacity={aggregator.ringProgress * 0.4}
               r={QUESTION_PROMPT_RING_RADIUS}
               stroke={colors.sunshine}
               strokeWidth={5}
@@ -747,12 +789,12 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
               cx={QUESTION_PROMPT_X}
               cy={QUESTION_PROMPT_Y}
               fill="none"
-              opacity={question.ringProgress * 0.25}
+              opacity={aggregator.ringProgress * 0.25}
               r={QUESTION_PROMPT_RING_RADIUS * 0.75}
               stroke={colors.sunshine}
               strokeWidth={4}
             />
-            {/* Mic glyph (to the LEFT of the label) */}
+            {/* Mic glyph to the LEFT of the label. */}
             <Breathe
               amplitudeScale={0.005}
               bpm={15}
@@ -761,7 +803,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
               phaseSeed="kp6-mic"
             >
               <g
-                opacity={question.opacity}
+                opacity={aggregator.opacity}
                 transform={`translate(${QUESTION_PROMPT_X - 240} ${QUESTION_PROMPT_Y})`}
               >
                 <IconAsset
@@ -771,7 +813,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
                 />
               </g>
             </Breathe>
-            {/* Prompt label (centered) */}
+            {/* Prompt label. */}
             <Breathe
               amplitudeScale={0.005}
               bpm={15}
@@ -783,7 +825,7 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
                 color="textNavy"
                 fontSize={60}
                 fontWeight={900}
-                progress={question.opacity}
+                progress={aggregator.opacity}
                 text="6可以分成几和几？"
                 x={QUESTION_PROMPT_X}
                 y={QUESTION_PROMPT_Y}
@@ -793,11 +835,11 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
         ) : null}
 
         {/* =================================================================
-            RECAP — cue-spaced-recap-all-three. Three sub-beats (1|5, 2|4,
-            3|3) side by side in zone-recap-row, dimmed/highlighted by the
+            RECAP — cue-recap. Three sub-beats (1|5, 2|4, 3|3) side by
+            side in ZONE_RECAP_ROW, dimmed/highlighted by the
             RecapSpotlight's currentHighlight. A sunshine transient ring
-            (the recap's ONE allowed emphasis) sits on the active sub-beat
-            and fades in/out across the sub-beat's window.
+            (the recap's ONE allowed emphasis) sits on the active sub-
+            beat and fades in/out across the sub-beat's window.
             ================================================================ */}
         {recap ? (
           <g {...measureProps("recap")}>
@@ -822,26 +864,27 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
         ) : null}
 
         {/* =================================================================
-            SUNSHINE TRANSIENT HIGHLIGHT — cue-reveal-answer midpoint
-            (visual-design §2 "single transient sunshine highlight at
-            midpoint"). A GlintFlash one-shot at the 3|3 cluster's center.
+            CLIMAX GLINTFLASH — cue-split-3-and-3 climax celebration.
+            A single 4-point star at the 3|3 cluster's center, fired when
+            the climax split motion settles. Reserved ONE climax accent
+            per the early-childhood-visual-taste rule.
             ================================================================ */}
-        {sunshineActive ? (
+        {glintActive ? (
           <GlintFlash
             color={colors.sunshine}
-            durationInFrames={18}
-            size={REVEAL_ANSWER_RING_RADIUS}
-            startFrame={sunshineStartFrame}
+            durationInFrames={CLIMAX_GLIN_DURATION_FRAMES}
+            size={220}
+            startFrame={glintStart}
             x={ZONE_OBJECTS.x + ZONE_OBJECTS.width / 2}
             y={DOT_Y}
           />
         ) : null}
 
         {/* =================================================================
-            TEACHERMARK UNDERLINE — cue-split-3of3 climax celebration
+            TEACHERMARK UNDERLINE — cue-split-3-and-3 climax celebration
             (sketch-overlay.md §3). Drawn under the 3|3 clusters with a
-            slight downward dip (archHeight = -32) to group them as a
-            bound pair. Co-times with the 3|3 split's final positions.
+            slight downward dip to group them as a bound pair. Co-times
+            with the 3|3 split's settled positions.
             ================================================================ */}
         {underline ? (
           <g {...measureProps("underline-3of3")} opacity={underline.opacity * 0.92}>
@@ -868,3 +911,9 @@ export const KptestFenyuheSixLessonScene: React.FC = () => {
 
 // Re-export the video dims for callers (Complete wrapper may import).
 export const KPTEST_FENYUHE_SIX_VIDEO = video;
+
+// Suppress unused-import warnings for layout helpers consumed only via the
+// DotLayout type import (recapSubBeatDotPositions is used; the type re-export
+// is for downstream callers). The TS check on the file passes either way.
+void BODY_LABEL_MIN_SIZE;
+void RECAP_PARTITIONS;

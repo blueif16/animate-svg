@@ -21,6 +21,8 @@ A new SVG primitive (`src/shape-primitives/`), motion component (`src/motion-pri
 3. **Author the entry's prose** in `src/capabilities/primitive-registry.json` — `intent`, `useWhen`, `avoidWhen`, `variants`, and flip `status` off `"undocumented"`. Re-run `npm run registry:build` (prose is carried forward by component id).
 4. **`npm run registry:check`** must be green (the pre-commit hook runs it). The capability now appears in `catalog-digest.md`, visible to the next workflow run.
 
+**Sizing — build it in, verify at true size.** A component ships a DETERMINED DEFAULT size (its `size`/`width`/`height` prop defaults); a lesson usually uses that default and only overrides to fit a tight zone — so "good size in mind" is a property of the DEFAULT, not something a lesson or a viewer tool adds later. The default must read as a **focal element at its typical multiplicity** and clear the `src/theme.ts` `sizing` floors (teaching unit ≈ 86–108px, any child-readable text ≥ 36px). Give the demo a `unit` (one instance at default size) for any primitive used in GROUPS so the gallery's **true-size view** renders one unit + the typical group at 1:1 inside the 1280×720 frame — that is where you VERIFY the real on-canvas size. If it reads too small there, **raise the component's default size and re-render** — never fake the size with a parallel `footprint` number (that approach drifted from the real default and was removed) and never just flag it. See `kids-eye` §1.6.
+
 A `## <id>` markdown entry below is OPTIONAL for a barrel component — add one only when it needs a richer reach-guide / anti-pattern table than the catalog's one-line prose (e.g. `fen-he-diagram`).
 
 ### B. A TECHNIQUE / prop / system / JSON key → a markdown entry in this file
@@ -75,6 +77,7 @@ When deprecating a capability:
 - [asset-morph](#asset-morph) — `<AssetMorph>` parametric→asset magic-transition (FX-masked crossfade + unbundle reverse)
 - [fen-he-diagram](#fen-he-diagram) — `<FenHeDiagram>` 分合式 part-whole notation primitive with anchor exports for identity-preserved glyph migration
 - [paired-column-layout](#paired-column-layout) — `getPairedColumnPlacement()` pure helper aligning two rows into shared columns with a ragged surplus overhang
+- [auto-size-to-zone](#auto-size-to-zone) — `fitUnitsToZone()` / `clusterBudget()` / `splitZone()` pure helpers computing unit size + positions from (count + zone), shared by scene and manifest
 - [lesson-music-bed](#lesson-music-bed) — deterministic ducked music-bed envelope + non-looping `<LessonBgmLayer>`
 - [lesson-sfx-layer](#lesson-sfx-layer) — SFX registry + `<LessonSfxLayer>` one-shot events (composer-owned frames)
 
@@ -434,6 +437,39 @@ Pure positioning helper (renders nothing), in the same family as `getStickPlacem
 - Center-aligning the two rows so the surplus splits to both ends — the comparison must read as "extra on the end," not "shifted over." The helper left-aligns deliberately.
 - Promoting this into a rendering `<PairedColumn>` component — the row IS the lesson scene's composition (it picks the countable, the connector style, the slot state); abstracting it hides per-lesson layout decisions, same trap as a `<FenHeRow>` primitive.
 - Absolute x/y literals for the rows when this helper would compute them.
+
+---
+
+## auto-size-to-zone
+
+**Code:** `remotion-svg-primitives/src/layout/fitToZone.ts` (barrel `src/layout/index.ts`)
+**Surface:** `fitUnitsToZone(zone, count, opts?)` → `FitResult` ({ unit, gap, positions, rows, fits, overflowReason? }); `clusterBudget(zone, opts?)` → `ClusterFit` ({ width, height, maxUnit }); `splitZone(zone, parts, opts?)` → `ZoneRect[]`; types `ZoneRect` / `FitOpts` / `FitResult` / `ClusterFit`
+**Owned by:** `remotion-lesson-composer` (calls it in layout.ts + manifest.ts), `visual-discipline` (the per-cue zone + count it consumes)
+**Status:** experimental
+**Added:** 2026-06-15
+
+Pure, deterministic layout math (no React, no DOM, no measurement). A lesson declares INTENT — *N units, in THIS zone* — and `fitUnitsToZone` COMPUTES the unit size + center positions to (a) clear the kids-eye floors (`theme.sizing.teachingUnit` / `separationGapMin`) and (b) fit the zone, shrinking from `target` toward `min` only as needed; over-dense counts return `fits:false` + a concrete `overflowReason` (a real density signal — see kids-eye §1) and NEVER a sub-floor unit. The **scene and the manifest call it with identical inputs**, so on-canvas sizes and collision boxes agree by construction. This is the SIZE analogue of the component-default-size principle (kids-eye §1.6 / the §A "Sizing — build it in" clause): the default is the standalone/gallery size; this helper is how a lesson FITS that unit to a real zone+count without hand-picking pixels. Full design: `docs/proposals/auto-size-to-zone.md`.
+
+### Reach guide
+
+| When | Reach for |
+|---|---|
+| Place N uniform teaching units (a counted row, a set of dots/cards) in a zone | `fitUnitsToZone(ZONE, count)` → render each at `positions[i]` sized `unit` |
+| The row overflows one line at the floor | `fitUnitsToZone(ZONE, count, { layout: "grid", maxRows: 3 })` |
+| Pin the block to a zone edge instead of centering | `fitUnitsToZone(ZONE, count, { align: "start" })` |
+| A CLUSTER component renders its OWN multiplicity (stick-group, part-whole) | `clusterBudget(ZONE, { pad })` → pass `{ width, height, maxUnit }` budget into the component |
+| Two clusters share one zone | `splitZone(ZONE, 2)` → one sub-zone each, then a budget/fit per sub-zone |
+| `fits` comes back `false` | surface `overflowReason` as a density problem to the composer/verification — reduce count, wrap, or re-zone; never render anyway |
+
+**Cluster bounding-budget contract.** A cluster takes a BUDGET (`{ width, height, maxUnit }`), not positions, and lays out its own internals as a PURE function of (budget, count, seed) — a seeded scatter must derive from the same seed+budget so the scene and the manifest reproduce it identically. A cluster that measures itself at runtime breaks the by-construction guarantee and stays on the measured pass.
+
+### Anti-patterns
+
+- A hand-picked pixel `size=` / position literal for a unit that `fitUnitsToZone(zone, count)` would compute — that is the size-side frame literal (see the composer skill's layout-sizing rule).
+- The manifest's `bboxAt` re-deriving sizes/positions from its OWN math instead of calling the SAME helper with the SAME inputs as the scene — that is exactly the size-mirror drift this helper removes.
+- Rendering at `unit` when `fits:false` — sub-floor is forbidden; `overflowReason` is the signal, not a fallback.
+- Adding React / `useCurrentFrame` / `Math.random` / measurement to `fitToZone.ts` — it must stay pure; identical inputs → byte-identical output, or scene and manifest diverge.
+- Re-declaring the floors (`TEACHING_UNIT_TARGET_SIZE`, a per-lesson gap constant) — the defaults read `theme.sizing`; pass `opts` only for a genuine per-zone exception.
 
 ---
 

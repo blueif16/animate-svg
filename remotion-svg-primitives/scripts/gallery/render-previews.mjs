@@ -27,8 +27,10 @@
 import { bundle } from "@remotion/bundler";
 import { renderStill, renderMedia, selectComposition } from "@remotion/renderer";
 import { enableTailwind } from "@remotion/tailwind-v4";
-import { readFileSync, mkdirSync, writeFileSync, existsSync, rmSync, statSync } from "node:fs";
+import { readFileSync, mkdirSync, writeFileSync, existsSync, rmSync, statSync, mkdtempSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
+import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -42,7 +44,9 @@ const OUT_DIR = join(REPO, "gallery", "previews");
 const SCALE = Number(process.env.GALLERY_SCALE || 0.5); // 760x440 -> 380x220
 const CONCURRENCY = Number(process.env.GALLERY_CONCURRENCY || 1);
 const GIF_EVERY_NTH = Number(process.env.GALLERY_GIF_EVERY_NTH || 2); // 30fps -> 15fps gif
-const POSTER_FRAME = Number(process.env.GALLERY_POSTER_FRAME || 22);
+// Mid-action still (see PREVIEW_POSTER_FRAME in PreviewComposition.tsx) — samples
+// while a one-shot effect is firing rather than its idle tail.
+const POSTER_FRAME = Number(process.env.GALLERY_POSTER_FRAME || 16);
 const POSTER_ONLY = process.env.GALLERY_POSTER_ONLY === "1";
 
 const argv = process.argv.slice(2);
@@ -59,6 +63,43 @@ const onlyArg = (() => {
 // gate's "demoed" set 1:1 (no false "noDemo" for the bare-ident components).
 const registry = JSON.parse(readFileSync(REGISTRY, "utf8"));
 const demoSrc = readFileSync(DEMO_PROPS, "utf8");
+
+// HONEST PREVIEW: a card animates only if its gif TRULY moves. Coalesce the gif
+// and RMSE-diff frame 0 vs the middle frame via ImageMagick (already on the
+// machine); a normalized RMSE under ~0.003 means identical frames = static (45
+// posters wearing a "live" badge was the bug). If magick is unavailable, fall
+// back to "declares loopFrames" (the only demos built to move).
+const hasLoopFrames = (id) =>
+  new RegExp(`["']?${id}["']?\\s*:\\s*\\{[^}]*loopFrames`).test(demoSrc);
+function gifHasMotion(gifPath, id) {
+  try {
+    const tmp = mkdtempSync(join(tmpdir(), "gifmo-"));
+    try {
+      execFileSync("magick", [gifPath, "-coalesce", join(tmp, "f-%03d.png")], { stdio: "ignore" });
+      const frames = readdirSync(tmp).filter((f) => f.startsWith("f-")).sort();
+      if (frames.length < 2) return false;
+      // Sample several frames vs frame 0 — motion can peak AWAY from the midpoint
+      // (e.g. a morph that returns near its start at the middle), so a single
+      // f0-vs-mid compare false-negatives. Take the max normalized RMSE.
+      // `compare` prints the metric to stderr and exits 0 for IDENTICAL frames /
+      // non-zero when they differ — spawnSync captures stderr either way (the
+      // try/catch on execFileSync missed the exit-0 identical case → false "live").
+      const last = frames.length - 1;
+      const probes = [...new Set([0.25, 0.5, 0.75, 1].map((q) => Math.min(last, Math.round(last * q))))];
+      let maxRmse = 0;
+      for (const i of probes) {
+        const r = spawnSync("compare", ["-metric", "RMSE", join(tmp, frames[0]), join(tmp, frames[i]), "null:"], { encoding: "utf8" });
+        const m = `${r.stderr || ""}${r.stdout || ""}`.match(/\(([\d.]+)\)/); // normalized RMSE
+        if (m) maxRmse = Math.max(maxRmse, Number(m[1]));
+      }
+      return maxRmse > 0.003; // any sampled frame differs from frame 0 → moving
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  } catch {
+    return hasLoopFrames(id); // magick missing — best-effort fallback
+  }
+}
 const mappedIds = (() => {
   const startIdx = demoSrc.indexOf("export const demoProps");
   const braceOpen = demoSrc.indexOf("{", startIdx);
@@ -79,6 +120,7 @@ const mappedIds = (() => {
 const registryIds = [
   ...(registry.primitives ?? []),
   ...(registry.motionComponents ?? []),
+  ...(registry.specialComponents ?? []),
   ...(registry.fxComponents ?? []),
 ]
   .map((e) => e.id)
@@ -116,19 +158,24 @@ const failed = [];
 async function renderOne(id) {
   const dir = join(OUT_DIR, id);
   mkdirSync(dir, { recursive: true });
-  const inputProps = { id };
+  const fitProps = { id, mode: "fit" };
 
   const composition = await selectComposition({
     serveUrl,
     id: "component-preview",
-    inputProps,
+    inputProps: fitProps,
   });
 
-  // poster still (PNG)
+  // Remotion 4.0 renders from composition.props (the EFFECTIVE props), not the
+  // per-call inputProps — so override composition.props per render or both modes
+  // come out as the baked default ("fit").
+  const withMode = (mode) => ({ ...composition, props: { id, mode } });
+
+  // FIT poster (the grid thumbnail) — the demo scaled to FILL the cell.
   await renderStill({
-    composition,
+    composition: withMode("fit"),
     serveUrl,
-    inputProps,
+    inputProps: fitProps,
     output: join(dir, "poster.png"),
     frame: POSTER_FRAME,
     scale: SCALE,
@@ -137,17 +184,30 @@ async function renderOne(id) {
     chromiumOptions: { gl: "angle" },
   });
 
-  // looping GIF. NOTE: with the gif codec in this Remotion build, passing
-  // `output` returns OK but writes no file — the encoded bytes come back on
-  // `result.buffer`. So we OMIT output and write the buffer ourselves.
-  // The poster already succeeded by here; a gif failure is non-fatal — we
-  // keep the poster and record the id as poster-only.
+  // SIZE still — the component at its DEFAULT size (one unit + the typical group)
+  // placed 1:1 inside the to-scale 1280×720 frame, so its real on-canvas size
+  // reads honestly. A still: size is the point, not motion.
+  await renderStill({
+    composition: withMode("size"),
+    serveUrl,
+    inputProps: { id, mode: "size" },
+    output: join(dir, "size.png"),
+    frame: POSTER_FRAME,
+    scale: SCALE,
+    imageFormat: "png",
+    overwrite: true,
+    chromiumOptions: { gl: "angle" },
+  });
+
+  // Looping GIF. NOTE: with the gif codec in this Remotion build, passing
+  // `output` returns OK but writes no file — the bytes come back on
+  // `result.buffer`, so we write it ourselves. A gif failure is non-fatal.
   if (!POSTER_ONLY) {
     try {
       const result = await renderMedia({
-        composition,
+        composition: withMode("fit"),
         serveUrl,
-        inputProps,
+        inputProps: fitProps,
         codec: "gif",
         imageFormat: "png",
         scale: SCALE,
@@ -202,15 +262,25 @@ await Promise.all(Array.from({ length: Math.max(1, CONCURRENCY) }, (_, n) => wor
 // rendered previews — the page should see every poster/gif present, period.
 const allConsidered = onlyArg ? mappedAllIds : targets;
 const diskOk = [];
-const diskWithGif = [];
+const diskWithGif = []; // gif present AND actually moves — the honest "live" set
+const diskStaticGif = []; // gif on disk but visually static (45 identical frames)
 const diskPosterOnly = [];
+const diskSize = []; // ids with a true-size view (size.png) on disk
+console.log("Classifying gif motion (honest preview)…");
 for (const id of allConsidered) {
   const dir = join(OUT_DIR, id);
   const hasPoster = existsSync(join(dir, "poster.png"));
   if (!hasPoster) continue;
   diskOk.push(id);
-  if (existsSync(join(dir, "loop.gif"))) diskWithGif.push(id);
-  else diskPosterOnly.push(id);
+  const gifPath = join(dir, "loop.gif");
+  if (existsSync(gifPath)) {
+    if (gifHasMotion(gifPath, id)) diskWithGif.push(id);
+    else {
+      diskStaticGif.push(id);
+      diskPosterOnly.push(id);
+    }
+  } else diskPosterOnly.push(id);
+  if (existsSync(join(dir, "size.png"))) diskSize.push(id);
 }
 
 const manifest = {
@@ -220,8 +290,10 @@ const manifest = {
   width: Math.round(760 * SCALE),
   height: Math.round(440 * SCALE),
   ok: diskOk.sort(), // ids that have a poster.png on disk
-  withGif: diskWithGif.sort(), // ids that also have loop.gif on disk
-  posterOnly: diskPosterOnly.sort(), // poster present, no gif
+  withGif: diskWithGif.sort(), // HONEST: ids whose gif actually moves (live badge)
+  staticGif: diskStaticGif.sort(), // gif on disk but static — shown as poster, no badge
+  posterOnly: diskPosterOnly.sort(), // poster present, no MOVING gif
+  size: diskSize.sort(), // ids with a true-size view (size.png)
   failed: failed.sort((a, b) => a.id.localeCompare(b.id)), // failures THIS run
   noDemo: noDemo.sort(),
 };

@@ -12,8 +12,12 @@
 //          src/lessons/<camelLessonId>LessonTimeline.ts (padded cues — preferred)
 //          src/lessons/generated/<camelLessonId>Timing.ts (raw fallback)
 //
-// Output:  <lesson-id>-contact.png next to the MP4
-//          <lesson-id>-contact.json (sidecar legend)
+// Output:  <lesson-id>-contact.png  — human review mosaic (downscaled tiles)
+//          <lesson-id>-contact.json — sidecar legend (+ critique-frames manifest)
+//          critique-frames/*.png    — FULL-RES native per-cue frames for the
+//                                     machine critic. The mosaic downscales tiles
+//                                     to ~320px, which hides per-cell overlaps /
+//                                     faint halos; the critic reads THESE instead.
 //
 // Usage:
 //   node scripts/make-contact-sheet.mjs --config lesson-data/<id>/pipeline.json
@@ -164,15 +168,23 @@ const main = async () => {
 
   const outDir = path.resolve(process.cwd(), "out", lessonId);
   fs.mkdirSync(outDir, { recursive: true });
+  // FULL-RES per-cue frames for the machine critic. The mosaic below is for
+  // humans; its downscaled tiles hide per-cell overlaps and faint halos, so the
+  // critic gets the native frames instead. Rebuilt fresh each run.
+  const critDir = path.join(outDir, "critique-frames");
+  fs.rmSync(critDir, { recursive: true, force: true });
+  fs.mkdirSync(critDir, { recursive: true });
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "contact-sheet-"));
 
   const sharpMod = await import("sharp");
   const sharp = sharpMod.default;
 
   try {
-    // Pass 1: extract all tile frames via ffmpeg.
+    // Pass 1: extract every sample frame via ffmpeg at FULL native resolution
+    // (no scale filter → the MP4's own pixels) into critique-frames/. The mosaic
+    // tile is downscaled FROM this native frame in pass 2.
     const rows = [];
-    for (const cue of cues) {
+    for (const [rowIdx, cue] of cues.entries()) {
       const samples = buildSampleFrames(cue, samplesPerCue);
       const tiles = [];
       for (const [idx, sample] of samples.entries()) {
@@ -182,24 +194,16 @@ const main = async () => {
         // on the missing tile. Applies to every sample type, not just cue-end.
         const safeFrame = Math.min(sample.frame, lastFrame);
         const timeSeconds = safeFrame / fps;
-        const tilePath = path.join(
-          tmpDir,
-          `${cue.id.replace(/[^a-z0-9_-]/gi, "_")}-${idx}.png`,
+        const cueSlug = cue.id.replace(/[^a-z0-9_-]/gi, "_");
+        const tagSlug = String(sample.tag).replace(/[^a-z0-9]+/gi, "-");
+        // Stable, sortable name: rNN-<cue>-<idx>-<tag>-f<frame>.png
+        const nativePath = path.join(
+          critDir,
+          `r${String(rowIdx).padStart(2, "0")}-${cueSlug}-${idx}-${tagSlug}-f${safeFrame}.png`,
         );
         const ff = spawnSync(
           "ffmpeg",
-          [
-            "-y",
-            "-ss",
-            String(timeSeconds),
-            "-i",
-            mp4Path,
-            "-frames:v",
-            "1",
-            "-vf",
-            `scale=${tileWidth}:${tileHeight}`,
-            tilePath,
-          ],
+          ["-y", "-ss", String(timeSeconds), "-i", mp4Path, "-frames:v", "1", nativePath],
           { encoding: "utf8" },
         );
         if (ff.status !== 0) {
@@ -208,7 +212,7 @@ const main = async () => {
             `ffmpeg failed for cue ${cue.id} at frame ${sample.frame}`,
           );
         }
-        tiles.push({ ...sample, tilePath });
+        tiles.push({ ...sample, nativePath });
       }
       rows.push({ cue, samples, tiles });
     }
@@ -260,13 +264,13 @@ const main = async () => {
           c * (tileWidth + gap);
 
         // Defensive guard: the clamp above keeps every seek in range, but if a
-        // tile is still missing (ffmpeg wrote nothing), fall back to the
+        // frame is still missing (ffmpeg wrote nothing), fall back to the
         // previous tile in the row so one bad frame can't abort the whole sheet.
-        let tileSrc = tile.tilePath;
+        let tileSrc = tile.nativePath;
         if (!fs.existsSync(tileSrc)) {
           const prev = tiles[c - 1];
-          if (prev && fs.existsSync(prev.tilePath)) {
-            tileSrc = prev.tilePath;
+          if (prev && fs.existsSync(prev.nativePath)) {
+            tileSrc = prev.nativePath;
           } else {
             console.warn(
               `[contact-sheet] missing tile for cue ${cue.id} f${tile.frame}; skipping`,
@@ -313,6 +317,7 @@ const main = async () => {
     const legend = {
       lessonId,
       contactSheet: path.basename(outPath),
+      critiqueFramesDir: path.relative(process.cwd(), critDir),
       fps,
       samplesPerCue,
       source: extracted.source,
@@ -336,11 +341,12 @@ const main = async () => {
         holdSeconds: Number(
           ((row.cue.endFrame - row.cue.narrationEndFrame) / fps).toFixed(2),
         ),
-        samples: row.samples.map((s) => ({
+        samples: row.tiles.map((s) => ({
           tag: s.tag,
           frame: s.frame,
           relSeconds: Number(s.relSeconds.toFixed(2)),
           marker: s.marker,
+          critiqueFrame: path.basename(s.nativePath),
         })),
       })),
     };
@@ -348,10 +354,14 @@ const main = async () => {
     fs.writeFileSync(legendPath, `${JSON.stringify(legend, null, 2)}\n`);
 
     const stat = fs.statSync(outPath);
+    const critCount = fs.readdirSync(critDir).filter((f) => f.endsWith(".png")).length;
     console.log(
-      `\n== Contact sheet: ${outPath} (${(stat.size / 1024).toFixed(0)} KB)`,
+      `\n== Contact sheet:   ${outPath} (${(stat.size / 1024).toFixed(0)} KB)`,
     );
-    console.log(`== Legend:        ${legendPath}`);
+    console.log(`== Legend:          ${legendPath}`);
+    console.log(
+      `== Critique frames: ${critDir} (${critCount} full-res frames for the critic)`,
+    );
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

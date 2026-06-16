@@ -29,7 +29,11 @@ const capabilityBase = {
   // gated on THIS, not the kebab id, so pascal->kebab derivation can't drift.
   component: z.string(),
   source: z.string(),
-  intent: z.array(z.string()),
+  // SELECTION SIGNAL — the one field the composing model picks on. NEW form: ONE
+  // complete, trigger-first sentence (was a keyword-tag array). z.union keeps the
+  // legacy string[] valid during the per-category re-authoring sweep; tighten to
+  // z.string() once every category is swept.
+  intent: z.union([z.string(), z.array(z.string())]),
   useWhen: z.string(),
   avoidWhen: z.string(),
   // Pure-derivable prop variants (e.g. {motion: ["snap","bouncy","settle"]}).
@@ -76,6 +80,8 @@ export const reusableComponentSchema = z
     id: z.string(),
     component: z.string(),
     source: z.string(),
+    // SELECTION SIGNAL — one trigger-first sentence (see capabilityBase.intent).
+    intent: z.union([z.string(), z.array(z.string())]).optional(),
     useWhen: z.string(),
     avoidWhen: z.string(),
     variants: z.record(z.string(), z.array(z.string())).optional(),
@@ -103,7 +109,7 @@ export const lessonComponentSchema = z
     id: z.string(),
     component: z.string(),
     source: z.string(),
-    intent: z.array(z.string()),
+    intent: z.union([z.string(), z.array(z.string())]),
     useWhen: z.string(),
     avoidWhen: z.string(),
     variants: z.record(z.string(), z.array(z.string())).optional(),
@@ -165,6 +171,14 @@ export const primitiveRegistrySchema = z
     primitives: z.array(primitiveSchema),
     motionComponents: z.array(reusableComponentSchema),
     fxComponents: z.array(reusableComponentSchema),
+    // specialComponents[] — the COMPOSITE tier: components that orchestrate
+    // atoms + assets + modifiers into ONE self-contained teaching beat (AssetMorph,
+    // PartWholeComposer, OrderedRowSpotlight…). Same reusable shape as motion/fx;
+    // existence is still discovered from the motion barrel, but membership of THIS
+    // section is owned by the MOTION_COMPOSITES set in scripts/registry/families.mjs
+    // (one shared tier authority). Closes the unmodeled-tier gap the gap-filler
+    // skill already referenced. See research/registry-exposure-and-taxonomy-2026-06-14.md §5.
+    specialComponents: z.array(reusableComponentSchema),
     lessonComponents: z.array(lessonComponentSchema),
     motionVocabulary: motionVocabularySchema,
     styles: z.array(styleSchema),

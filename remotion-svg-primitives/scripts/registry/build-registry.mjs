@@ -33,7 +33,7 @@ import {
   parseBarrelValueExports,
   parseObjectKeys,
 } from "./code-unions.mjs";
-import {KIND_ORDER, MODULE_KIND} from "./families.mjs";
+import {KIND_ORDER, MODULE_KIND, MOTION_COMPOSITES} from "./families.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..", ".."); // remotion-svg-primitives
@@ -208,11 +208,20 @@ const buildNext = () => {
   const current = readJson(P.registry);
   const next = {...current};
   next.$comment = BANNER;
-  next.generatedSections = ["primitives", "motionComponents", "fxComponents", "lessonComponents", "motionVocabulary"];
+  next.generatedSections = ["primitives", "motionComponents", "specialComponents", "fxComponents", "lessonComponents", "motionVocabulary"];
   next.membershipGatedSections = ["styles"];
   next.manifestAuthoredSections = ["recipes"];
   next.primitives = buildPrimitives(byComponent(current.primitives));
-  next.motionComponents = buildReusable(P.motionBarrel, byComponent(current.motionComponents));
+  // The motion barrel holds BOTH modifier-tier helpers AND composite-tier beats;
+  // split by the shared MOTION_COMPOSITES tier authority (families.mjs). Prose
+  // carries forward from EITHER prior section (an entry migrates across the split).
+  const motionPrior = byComponent([
+    ...(current.motionComponents ?? []),
+    ...(current.specialComponents ?? []),
+  ]);
+  const allMotion = buildReusable(P.motionBarrel, motionPrior);
+  next.motionComponents = allMotion.filter((e) => !MOTION_COMPOSITES.has(e.component));
+  next.specialComponents = allMotion.filter((e) => MOTION_COMPOSITES.has(e.component));
   next.fxComponents = buildReusable(P.fxBarrel, byComponent(current.fxComponents));
   next.lessonComponents = buildLessonComponents(byComponent(current.lessonComponents));
   next.motionVocabulary = buildMotionVocabulary();
@@ -230,6 +239,7 @@ const undocumented = (next) =>
   [
     ...next.primitives,
     ...next.motionComponents,
+    ...next.specialComponents,
     ...next.fxComponents,
     ...next.lessonComponents,
   ].filter((e) => e.status === "undocumented" || !e.useWhen).length;
@@ -278,6 +288,7 @@ if (checkMode) {
     console.log(
       `registry:check ok — catalog in sync with code ` +
         `(${next.primitives.length} primitives, ${next.motionComponents.length} motion, ` +
+        `${next.specialComponents.length} composite, ` +
         `${next.fxComponents.length} fx, ${next.lessonComponents.length} lesson-infra, ` +
         `curves ${next.motionVocabulary.curves.length}/` +
         `springs ${next.motionVocabulary.springs.length}). ${undocumented(next)} entr(ies) still need prose.`,
@@ -297,8 +308,8 @@ if (committed === generated) {
   const next = JSON.parse(generated);
   console.log(
     `registry:build — no change (${next.primitives.length} primitives, ` +
-      `${next.motionComponents.length} motion, ${next.fxComponents.length} fx, ` +
-      `${next.lessonComponents.length} lesson-infra already in sync).`,
+      `${next.motionComponents.length} motion, ${next.specialComponents.length} composite, ` +
+      `${next.fxComponents.length} fx, ${next.lessonComponents.length} lesson-infra already in sync).`,
   );
 } else {
   fs.writeFileSync(P.registry, generated);
@@ -306,7 +317,8 @@ if (committed === generated) {
   console.log(
     `registry:build — regenerated catalog from code: ${next.primitives.length} primitives ` +
       `(${KIND_ORDER.map((k) => `${k}=${next.primitives.filter((p) => p.kind === k).length}`).join(" ")}), ` +
-      `${next.motionComponents.length} motion components, ${next.fxComponents.length} fx components, ` +
+      `${next.motionComponents.length} motion components, ${next.specialComponents.length} composite components, ` +
+      `${next.fxComponents.length} fx components, ` +
       `${next.lessonComponents.length} lesson-infra components ` +
       `(${LESSON_FAMILY_ORDER.map((f) => `${f}=${next.lessonComponents.filter((c) => c.family === f).length}`).join(" ")}), ` +
       `motion vocabulary (curves ${next.motionVocabulary.curves.length}, springs ${next.motionVocabulary.springs.length}). ` +

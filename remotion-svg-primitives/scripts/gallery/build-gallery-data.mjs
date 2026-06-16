@@ -34,9 +34,11 @@ const card = (e, category, categoryGroup) => ({
   id: e.id,
   component: e.component ?? e.id,
   source: e.source ?? "",
-  useWhen: e.useWhen ?? "", // FUNCTIONALITY — the primary field
-  intent: Array.isArray(e.intent) ? e.intent : [], // TAGS
-  avoidWhen: e.avoidWhen ?? "",
+  // intent = the SELECTION SENTENCE (new) the model picks on; may still be a
+  // legacy string[] mid-migration, or null. useWhen = the longer confirm detail.
+  intent: e.intent ?? null,
+  useWhen: e.useWhen ?? "",
+  avoidWhen: e.avoidWhen ?? "", // the "not for X; use <sibling>" boundary
   variants: e.variants && Object.keys(e.variants).length ? e.variants : null,
   status: e.status ?? "stable",
   supersededBy: e.supersededBy ?? null,
@@ -58,9 +60,12 @@ for (const p of registry.primitives ?? []) {
   cards.push(card(p, KIND_LABEL[p.kind] ?? p.kind, "Teaching primitives"));
 }
 
-// motionComponents[] / fxComponents[]
+// motionComponents[] / fxComponents[] (MODIFIER tier)
 for (const m of registry.motionComponents ?? []) cards.push(card(m, "Motion components", "Motion & FX"));
 for (const f of registry.fxComponents ?? []) cards.push(card(f, "FX components", "Motion & FX"));
+
+// specialComponents[] — the COMPOSITE tier (one self-contained teaching beat).
+for (const s of registry.specialComponents ?? []) cards.push(card(s, "Composite teaching beats", "Composite"));
 
 // lessonComponents[] — grouped by their existing `family` discriminant.
 const FAMILY_LABEL = {
@@ -117,7 +122,9 @@ if (existsSync(PREVIEWS_MANIFEST)) {
       hasPosters: true,
       ok: pm.ok ?? [],
       withGif: pm.withGif ?? [],
+      staticGif: pm.staticGif ?? [],
       posterOnly: pm.posterOnly ?? [],
+      size: pm.size ?? [],
       failed: pm.failed ?? [],
       noDemo: pm.noDemo ?? [],
       dims: pm.width && pm.height ? {w: pm.width, h: pm.height} : null,
@@ -130,9 +137,11 @@ if (existsSync(PREVIEWS_MANIFEST)) {
 // tag each card so the page renders poster/gif vs placeholder without a lookup.
 const posterSet = new Set(previews.ok ?? []);
 const gifSet = new Set(previews.withGif ?? []);
+const sizeSet = new Set(previews.size ?? []);
 for (const c of cards) {
   c.hasPoster = posterSet.has(c.id);
-  c.hasGif = gifSet.has(c.id);
+  c.hasGif = gifSet.has(c.id); // honest: only when the gif actually moves
+  c.hasSize = sizeSet.has(c.id); // true-size view (size.png) present
 }
 
 // ---- coverage counts (reported on the page header; nothing computed beyond

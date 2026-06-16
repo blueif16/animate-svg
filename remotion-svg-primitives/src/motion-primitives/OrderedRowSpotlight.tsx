@@ -97,8 +97,10 @@ export type OrderedRowSpotlightProps = {
   /**
    * Draw the direction arrow (TeacherMark label-arrow) along the row toward the
    * position-1 end. On a `direction` flip the arrow re-points and re-draws — the
-   * "set direction" half of the two-action set-then-count beat. Default true
-   * whenever an ordinal context is in play; pass false for a bare count-walk.
+   * "set direction" half of the two-action set-then-count beat. OPT-IN: default
+   * false. This is a flourish ON TOP OF the row's one teaching intention
+   * (number the positions); it never auto-draws from context — a caller that
+   * wants the set-direction beat asks for it explicitly.
    */
   showDirectionArrow?: boolean;
   /** Horizontal spacing between adjacent item centers (px). Default 150. */
@@ -168,7 +170,7 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
   atFrame,
   stepDurationFrames = 18,
   stepFrames,
-  showDirectionArrow,
+  showDirectionArrow = false,
   rowGap = 150,
   arrowColor,
   spotlightColor,
@@ -212,9 +214,10 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
   const ltr = direction === "ltr";
   const ink = arrowColor ?? colors.textNavy;
   const accent = spotlightColor ?? colors.coral;
-  const hasOrdinalContext =
-    spotlightOrdinal !== undefined || showCardinalBracket;
-  const wantArrow = showDirectionArrow ?? hasOrdinalContext;
+  // The direction arrow is an OPT-IN flourish, never auto-drawn from context:
+  // a flourish the caller did not request must not appear (flourishes default
+  // off). `wantArrow` is exactly the explicit prop.
+  const wantArrow = showDirectionArrow;
 
   if (n === 0) {
     return null;

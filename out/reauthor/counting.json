@@ -1,0 +1,142 @@
+[
+  {
+    "id": "answer-tile",
+    "intent": "Reach for this to offer a choice the child taps to answer, showing correct/wrong/selected/focused state on a number, word, or icon.",
+    "avoidWhen": "Not for a bare digit shown for reading with no answer-choice framing; use `number-card`.",
+    "useWhen": "A tappable answer card holding a number, text, or icon child plus an optional small label, with correct/wrong/selected/focused states and a state badge.",
+    "footprint": { "designW": 152, "designH": 104, "minFontPx": 36, "scalable": true, "_note": "counting.tsx defaults width=152 height=104; main glyph PrimitiveLabel fontSize=42 (>=36); secondary label fontSize=20 is a modifier, not the load-bearing read." }
+  },
+  {
+    "id": "comparison-symbol",
+    "intent": "Show >, <, or = between two quantities to compare them, optionally as a hungry-mouth glyph or hidden behind a ? until revealed.",
+    "avoidWhen": "Not for the = inside a built-out number sentence; use `equation-strip`'s operator tile.",
+    "useWhen": "Places a comparison glyph between two sets with formal or mouth style; revealed=false hides it behind a dashed ? card until the reveal beat.",
+    "footprint": { "designW": 84, "designH": 84, "minFontPx": 36, "scalable": true, "_note": "counting.tsx default size=84 (scale base); glyph fontSize=78, hidden-state ? fontSize=40 — both >=36." }
+  },
+  {
+    "id": "conservation-bundle",
+    "intent": "Prove a bundled ten still holds ten ones — fade the wrap to a ghost and reveal the inner sticks — to defuse the 'a ten is just one thing now' misconception.",
+    "avoidWhen": "Not for ten ones BECOMING one ten (the wrap drawing on); use `bundle-wrap`, or `asset-morph` for the cleaner FX-masked swap.",
+    "useWhen": "xrayProgress fades the wrap band to a faint outline and reveals the count inner sticks living inside, with optional highlight on the ones.",
+    "footprint": { "designW": 220, "designH": 170, "minFontPx": 36, "scalable": true, "_note": "no readable text — sticks are the content; demoProps stickLength=120 count=10 → ~220 wide × ~170 tall; default stickLength=150 scales larger. minFontPx=36 floor (no glyph)." }
+  },
+  {
+    "id": "countable-object",
+    "intent": "Show one cute countable thing (fish, star, fruit) to populate a counting or comparison set, with selected/dimmed states.",
+    "avoidWhen": "Not for abstract place-value units or sticks; use `unit-block` or `small-stick`.",
+    "useWhen": "A single themed countable in one of six variants with an optional name label; size scales it and selected/dimmed mark its state in a set.",
+    "footprint": { "designW": 96, "designH": 96, "minFontPx": 36, "scalable": true, "_note": "counting.tsx default size=96 (scale = size/100, body drawn in a ~100-unit box); optional label only — minFontPx=36 floor." }
+  },
+  {
+    "id": "counting-bead-device",
+    "intent": "Show 'each next number is one more' on a single-rod bead counter (计数器) where pulling one more bead grows the count by exactly one for a 1→N count-up.",
+    "avoidWhen": "Not for place-value tens/ones (use `place-value-mat`), a ten-fill grid (use `ten-frame-rod`), or a fixed decorative abacus (use the abacus `icon-asset`).",
+    "useWhen": "count (0..capacity) drives the value readout; the newest bead slides into its seat via revealProgress and swells a ring via activePulse so one more bead and a bigger number are one beat. Horizontal or vertical.",
+    "footprint": { "designW": 560, "designH": 140, "minFontPx": 36, "scalable": true, "_note": "demoProps rodLength=520 + beadRadius giving ~560 wide; value readout size=max(44, r*1.9)=57 at r=30 (>=36); height ~140 with the readout." }
+  },
+  {
+    "id": "count-step-indicator",
+    "intent": "Mark the running count at each step of a counting sequence with a small circular badge that pops and fades in via progress.",
+    "avoidWhen": "Not for a running total with a unit label (use `step-tally`) or tracking a position on a line (use `number-line-track`).",
+    "useWhen": "A small circular badge carrying the current count value; progress pops and fades it in to punctuate one step of the walk.",
+    "footprint": { "designW": 56, "designH": 56, "minFontPx": 36, "scalable": true, "_note": "counting.tsx default size=56; number label fontSize=size*0.62=34.7px < 36 at default — raised to 36 floor; render at size>=58 to clear it natively." }
+  },
+  {
+    "id": "equation-strip",
+    "intent": "Lay out a horizontal number sentence (left op right = result) with an optional active or blank tile to spotlight a missing term.",
+    "avoidWhen": "Not for a part-whole split rather than an arithmetic sentence; use `fen-he-diagram` or `part-whole-brace`.",
+    "useWhen": "Renders a row of term/operator tiles on a card; activeIndex highlights one tile and blankIndex empties one to pose the missing-term question.",
+    "footprint": { "designW": 458, "designH": 102, "minFontPx": 36, "scalable": true, "_note": "5 tiles × tileWidth 74 + 4 gaps × 12 + 28 padding ≈ 446; height 78 + 24 = 102; term fontSize=38, operator 34 — load-bearing term >=36." }
+  },
+  {
+    "id": "fen-he-diagram",
+    "intent": "Reach for this to show a whole splitting into two parts — or two parts composing into a whole — when the part-whole RELATIONSHIP is the point (分合式).",
+    "avoidWhen": "Not for plain counting or for comparing two quantities — use a CountableObject set or a paired-column compare.",
+    "useWhen": "Renders the 分合式 bracket with identity-preserving anchors so the same objects flow between whole and parts. Pass the whole and each part as children.",
+    "footprint": { "designW": 220, "designH": 200, "minFontPx": 36, "scalable": true, "_note": "demoProps diagramWidth=220; part NumberCards sized diagramWidth*0.36 → glyph ~60px (>=36); height ~200 spanning whole + two part cards." }
+  },
+  {
+    "id": "label-callout",
+    "intent": "Name what is on screen with a centered word or phrase that fades in via progress, with an optional draw-on underline.",
+    "avoidWhen": "Not for a hand-drawn teacher annotation pointing at a target; use `teacher-mark`.",
+    "useWhen": "Drops a centered text label with fade or write-on appearance and an optional underline; progress reveals it to caption the current beat.",
+    "footprint": { "designW": 240, "designH": 80, "minFontPx": 48, "scalable": true, "_note": "counting.tsx default fontSize=48; designW from approxTextWidth ≈ 4 chars × 48 × 0.62 ≈ 120 per word, ~240 for a short phrase; minFontPx=48 (the text IS the content)." }
+  },
+  {
+    "id": "number-card",
+    "intent": "Show a single digit or short value on a rounded card with correct/wrong/selected states for reading or building a number.",
+    "avoidWhen": "Not when the value is an answer choice carrying an icon or label; use `answer-tile`.",
+    "useWhen": "Renders a value (or a blank line) on a rounded card, auto-sizing the glyph from the card's short side so the digit always insets cleanly at any width.",
+    "footprint": { "designW": 92, "designH": 112, "minFontPx": 36, "scalable": true, "_note": "counting.tsx defaults width=92 height=112; glyph = shortSide*0.56 = 51.5px (>=36); two-digit ratio 0.46 = 42px." }
+  },
+  {
+    "id": "number-line-track",
+    "intent": "Show position, ticks, and animated arc jumps along a min-to-max number line with a current-value badge.",
+    "avoidWhen": "Not for counting discrete objects with no linear scale; use a `countable-object` set or `stick-group`.",
+    "useWhen": "Draws a labeled number line with tick marks, point highlights, and animated jump arcs between values; current marks the live position.",
+    "footprint": { "designW": 560, "designH": 88, "minFontPx": 36, "scalable": true, "_note": "counting.tsx default width=560 height=88; badge/highlight labels render at fontSize=18 < 36 — raised to 36 floor; the line + position is the primary read, badge numbers are secondary." }
+  },
+  {
+    "id": "ordinal-label-token",
+    "intent": "Mark a POSITION (序数) not a quantity with a label whose colored prefix (第 or any locale prefix) is visually distinct from the digit beside it.",
+    "avoidWhen": "Not for a bare cardinal with one fill (use `number-card`); the whole walk-the-row, spotlight-the-Nth ordinal beat is `ordered-row-spotlight`; an icon answer choice is `answer-tile`.",
+    "useWhen": "A NumberCard surface carrying a caller-supplied prefix glyph in a separate prefixColor/prefixWeight beside the value digit, with selected/focused/correct/wrong states.",
+    "footprint": { "designW": 132, "designH": 112, "minFontPx": 36, "scalable": true, "_note": "counting.tsx defaults width=132 height=112; value = shortSide*0.56 = 62.7px, prefix 0.74× = 46px — both >=36." }
+  },
+  {
+    "id": "part-whole-brace",
+    "intent": "Bracket a span as one whole or one part with a curly brace that reveals via progress, in any of four directions with an optional label.",
+    "avoidWhen": "Not for the numeric whole/parts relationship itself; use `fen-he-diagram`.",
+    "useWhen": "Draws a curly brace spanning a width in the up/down/left/right direction; progress reveals it and an optional label names the bracketed span.",
+    "footprint": { "designW": 180, "designH": 80, "minFontPx": 36, "scalable": true, "_note": "demoProps width=180; brace depth = clamp(width*0.16, 24..42); optional label fontSize=22 < 36 — raised to 36 floor (the brace shape, not the label, is the content)." }
+  },
+  {
+    "id": "place-value-mat",
+    "intent": "Reach for this to bridge a ten-bundle-plus-loose-ones to the DIGITS of a numeral, by seating contents in labeled tens/ones (and optional hundreds) columns.",
+    "avoidWhen": "Not for bare countables or a plain ten-structure with no column/digit framing — use a CountableObject set or TenFrameRod.",
+    "useWhen": "Lays out columns under headers with a divider and an optional written digit per column; pass a child or perColumnCount per column and highlightColumn to focus one.",
+    "footprint": { "designW": 360, "designH": 220, "minFontPx": 36, "scalable": true, "_note": "default columnWidth=180 × 2 columns = 360 wide; height=220; written digit = min(72, digitHeight*0.78)=72px (>=36); header label min(26,...) is a column tag, secondary." }
+  },
+  {
+    "id": "region-split",
+    "intent": "Split one filled round region (a cookie/disk) into N equal parts to teach halves/thirds/quarters, shading one part or pulling parts out to share.",
+    "avoidWhen": "Not for decomposing a NUMBER into addends (use `fen-he-diagram`) or bracketing a linear span (use `part-whole-brace`) — this divides a continuous area, not a count.",
+    "useWhen": "cutProgress draws the cuts on, highlightPart shades one part, and separation pulls the parts apart to hand each out; optional 1/N labels.",
+    "footprint": { "designW": 180, "designH": 180, "minFontPx": 36, "scalable": true, "_note": "default radius=90 → 180 diameter; 1/N fraction labels render at radius*0.3 = 27px < 36 — raised to 36 floor; render radius>=120 to clear it natively." }
+  },
+  {
+    "id": "small-stick",
+    "intent": "Show one counting stick with idle/active/counted highlight, rotation, and scale — the unit for stick counting and bundling.",
+    "avoidWhen": "Not for placing many sticks at once; use `stick-group`, which lays out and highlights them for you.",
+    "useWhen": "A single stick whose highlight state (idle/active/counted) recolors it as it is counted; length, thickness, rotation, and scale shape it.",
+    "footprint": { "designW": 18, "designH": 120, "minFontPx": 36, "scalable": true, "_note": "counting.tsx defaults length=120 thickness=18; no text — minFontPx=36 floor (the stick is the content)." }
+  },
+  {
+    "id": "step-tally",
+    "intent": "Show the running total as a numeric pill or a row of dots, with an optional unit label, popping in via progress.",
+    "avoidWhen": "Not for marking just the current step with no total; use `count-step-indicator`.",
+    "useWhen": "Renders the total as a numeric pill or a dot row; progress pops it in and an optional unit label (e.g. 个) sits beside the number.",
+    "footprint": { "designW": 96, "designH": 64, "minFontPx": 36, "scalable": true, "_note": "default size=64; numeric total fontSize=size*0.62=39.7px (>=36); unit label size*0.42=26.9px is a secondary modifier; dots variant widens with step count." }
+  },
+  {
+    "id": "stick-group",
+    "intent": "Lay out N counting sticks in a scatter, row, or bundle with per-index active highlight and reveal-up-to for counting and bundling.",
+    "avoidWhen": "Not for a single stick or a non-stick countable; use `small-stick` or `countable-object`.",
+    "useWhen": "Places count sticks in scatter/row/bundle layout; activeIndex highlights the one being counted and revealUpTo reveals them progressively.",
+    "footprint": { "designW": 320, "designH": 280, "minFontPx": 36, "scalable": true, "_note": "default stickLength=120 thickness=18 rowGap=130 scatterRadius=220; a row of ~5 spans ~320 wide, scatter/bundle vary; demoProps wraps in scale(0.42). No text — minFontPx=36 floor." }
+  },
+  {
+    "id": "ten-frame-rod",
+    "intent": "Fill a 10-cell ten-frame or one-row rod by count to show how many make ten and the ones inside.",
+    "avoidWhen": "Not for counting loose objects with no ten-structure (use a `countable-object` set) or physical stick bundling (use `stick-group` plus `bundle-wrap`).",
+    "useWhen": "Fills a two-row ten-frame or one-row rod by count or by colored segments; ones marks the loose units beyond a filled ten.",
+    "footprint": { "designW": 178, "designH": 72, "minFontPx": 36, "scalable": true, "_note": "default size=34, frame=5 cols×2 rows → width 5*34+4*4=186, height 2*34+4=72; demoProps size 28-30 → ~178 wide. No readable digit (filled cells/dots) — minFontPx=36 floor." }
+  },
+  {
+    "id": "unit-block",
+    "intent": "Show 1-10 place-value units as cubes, dots, chips, or a segmented rod, optionally stacked, with a value label.",
+    "avoidWhen": "Not for cute themed countables (use `countable-object`) or a structured ten-frame (use `ten-frame-rod`).",
+    "useWhen": "Renders count units in cube/dot/chip/rod form, optionally stacked, with an optional numeric value label beneath the group.",
+    "footprint": { "designW": 160, "designH": 100, "minFontPx": 36, "scalable": true, "_note": "default size=32 per cell, ~4 cells → ~160 wide; value label = max(16, size*0.45) = 16px at default size < 36 — raised to 36 floor; render size>=80 for a legible value." }
+  }
+]

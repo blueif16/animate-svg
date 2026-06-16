@@ -199,6 +199,23 @@ Music+SFX is a SECOND audio track you ADD; it consumes the reconciled timeline a
 
 Discipline (inherited from `lesson-sound-design`): ≤1 motivated SFX per beat; NO SFX over instruction narration; the bed asset is ≥ lesson length so it never loops. Assert `bedSeconds ≥ totalSeconds` and FAIL if not. A lesson with no `audio-cues.json` ships silent — that is valid; do not invent a bed.
 
+## ZERO SIZE LITERALS — fit units to (count + zone), share the call with the manifest
+
+The size-side analogue of the ZERO FRAME LITERALS rule. A teaching object laid out in a zone gets its unit size + center positions from `fitUnitsToZone(zone, count)` (`src/layout`) — NEVER a hand-picked pixel `size=` or a per-lesson `dotGap`. Why: hand-tuned sizes are exactly the per-lesson churn this kills (one default can't be right for every count), and a hand-mirrored manifest can drift from the scene's size math.
+
+The `zone` is the kids-eye §1.5 zone; the `count` is the Visual Contract's per-cue object count (visual-discipline §1). The scene renders each unit at `positions[i]` sized `unit`; the manifest's `bboxAt` derives each box from the SAME `fitUnitsToZone(zone, count)` call with the SAME inputs in `layout.ts` — so collisions are exact by construction and the linear pass is certain (the measured pass stops catching size-mirror drift and becomes a true overshoot-only backstop). If `fits` comes back `false`, that is a real density problem: surface `overflowReason` as a pipelineFinding (reduce count / wrap to grid / re-zone) — never render the unit sub-floor. Clusters that render their own multiplicity take a `clusterBudget(zone)` budget, not positions. Full reach guide + the cluster bounding-budget contract: `CAPABILITIES.md#auto-size-to-zone`; design: `docs/proposals/auto-size-to-zone.md`.
+
+```ts
+// ✗ FORBIDDEN — hand-picked pixel size + gap, mirrored by hand in the manifest
+const DOT_SIZE = 96; const DOT_GAP = 40;  // tuned per lesson, then re-checked for collisions
+
+// ✓ REQUIRED — size + positions computed from (zone, count); manifest reads the same call
+import { fitUnitsToZone } from "../../layout";
+export const dotFit = fitUnitsToZone(ZONE_OBJECTS, DOT_COUNT);  // layout.ts — scene AND manifest import this
+// scene:    <Dot x={dotFit.positions[i].x} y={dotFit.positions[i].y} size={dotFit.unit} />
+// manifest: bboxAt → square of side dotFit.unit centered on dotFit.positions[i]
+```
+
 ## Bbox manifest
 
 - Extract layout constants (positions, sizes, motion timings, anchor coords) into `src/lessons/<camelLessonId>/layout.ts` (pure TS, no React). The scene imports from it. The manifest imports from it. One source.
