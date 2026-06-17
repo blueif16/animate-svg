@@ -46,6 +46,7 @@
 
 import { spawn, execFileSync } from "node:child_process";
 import { createInterface } from "node:readline";
+import { createRequire } from "node:module";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -201,6 +202,26 @@ const outRel = `out/${args.run}`;
 const promptDir = path.join(BASE_RUN_CWD, outRel, "_pi");
 const statusPath = path.resolve(args.status || path.join(BASE_RUN_CWD, outRel, "run-status.json"));
 
+// GLOBAL REGISTRY — so a zero-arg `pi-tui` lists this project with no per-repo config. Idempotent
+// upsert keyed by abs project dir; opt out with PI_RUNNER_NO_REGISTER=1. Best-effort: a registry
+// write must NEVER affect a run, hence the swallow. Format matches viz-model.mjs's reader.
+// Record the ABSOLUTE workflow path (and root) so the TUI can load the static DAG directly: when
+// cwd≠root (monorepo subdir), the namespace key is the SUBDIR, but pi-runner/.env lives under ROOT,
+// so viz-model's .env scan can't re-derive the workflow from the subdir — without this field the
+// detail view degrades to runtime-only nodes (a --from/--only partial run then loses its un-run tail
+// and stage structure). WORKFLOW/BASE_ROOT are the MAIN-tree paths (stable across --worktree teardown).
+if (process.env.PI_RUNNER_NO_REGISTER !== "1") {
+  try {
+    const regPath = process.env.PI_RUNNER_REGISTRY || path.join(os.homedir(), ".pi-runner", "registry.json");
+    let reg = {};
+    try { reg = JSON.parse(fs.readFileSync(regPath, "utf8")); } catch {}
+    reg.namespaces ??= {};
+    reg.namespaces[BASE_RUN_CWD] = { name: path.basename(BASE_RUN_CWD), out: "out", workflow: WORKFLOW, root: BASE_ROOT, lastSeen: new Date().toISOString() };
+    fs.mkdirSync(path.dirname(regPath), { recursive: true });
+    fs.writeFileSync(regPath, JSON.stringify(reg, null, 2));
+  } catch { /* best-effort: never let registry I/O break a run */ }
+}
+
 // SANDBOX (opt-in via --sandbox / PI_RUNNER_SANDBOX=1) — macOS Seatbelt read-scope. PROTOTYPE: only a
 // node that DECLARES its read scope (a `DRIVER-READ-SCOPE:` marker) is wrapped; the rest run unchanged,
 // so ON or OFF is non-breaking. macOS only (the Linux fleet would use bubblewrap — not wired here).
@@ -342,6 +363,29 @@ function artifactStateAbs(p) {
   return { path: p, exists: false, bytes: 0 };
 }
 
+// DRIVER-SEED: <dest> <= <src> — deterministically PRE-STAGE a node's STARTING artifact before pi
+// spawns (driver plumbing, never the model). The classic case: copy the per-archetype blueprint
+// template into spec/blueprint.json so HARDEN fills <FILL:…> leaves via `edit` instead of composing
+// the whole structure. <src> may carry {jsonfile:field} tokens resolved from on-disk JSON (the
+// archetype is frozen into spec/classification.json by W0, before HARDEN). Copies ONLY when the dest is
+// absent/empty AND the resolved src exists — idempotent (a resume never clobbers a filled artifact; a
+// no-template archetype falls through to the node's own §0.5 hand-build). Generic: any workflow opts a
+// node in via the contract() `seed` field. No-op when the marker is absent.
+function driverSeed(prompt) {
+  const m = /(?:^|\n)\s*DRIVER-SEED:\s*(\S+)\s*<=\s*(\S+)\s*(?:\n|$)/.exec(prompt || "");
+  return m ? { to: m[1], from: m[2] } : null;
+}
+function resolveSeedTokens(spec) {
+  // {relpath.json:field} → the top-level `field` of the JSON at relpath (resolved vs RUN_CWD).
+  return spec.replace(/\{([^:{}]+):([^{}]+)\}/g, (whole, file, field) => {
+    try {
+      const abs = path.isAbsolute(file) ? file : path.resolve(RUN_CWD, file);
+      const v = JSON.parse(fs.readFileSync(abs, "utf8"))[field];
+      return v == null ? whole : String(v);
+    } catch { return whole; }
+  });
+}
+
 // ===== WORKTREE ISOLATION (opt-in) =========================================================
 // Create a fresh per-run git worktree (branch pi/<run>, checked out at HEAD) so N concurrent runs
 // are PHYSICALLY isolated — a node in one run cannot see or clobber another lesson's files. The
@@ -435,6 +479,94 @@ function markerPaths(prompt, key) {
 // Presence-only marker (no value), e.g. DRIVER-NO-ESCALATE — opts a node out of the escalation gate.
 function hasMarker(prompt, key) {
   return new RegExp(`(?:^|\\n)\\s*${key}\\b`).test(prompt || "");
+}
+// Single-VALUE marker (the rest of the line as ONE token), e.g. DRIVER-SCHEMA / DRIVER-FILL-SENTINEL.
+// markerPaths splits on whitespace (multi-path); this keeps the value whole (a schema PATH, a sentinel
+// STRING). Returns null when absent. The value may itself contain no spaces (a path / a fence token).
+function markerValue(prompt, key) {
+  const m = new RegExp(`(?:^|\\n)\\s*${key}:\\s*(.+?)\\s*(?:\\n|$)`).exec(prompt || "");
+  return m ? m[1] : null;
+}
+
+// POST-NODE SCHEMA GATE — a GENERIC, draft-2020-12-capable JSON-Schema validator the driver runs over a
+// node's produced artifact after it exits (parallel to the DRIVER-ARTIFACTS existence gate). A node opts
+// in by declaring a DRIVER-SCHEMA: <path> marker (the contract() `schema` field renders it); the driver
+// validates EACH of that node's DRIVER-ARTIFACTS against the schema, and an invalid artifact is a contract
+// BREACH (status=blocked) exactly like a missing one. This catches the class the existence gate cannot — a
+// present-but-malformed artifact (a wrong type, a missing required key, an unfilled <FILL:> sentinel that
+// still violates a type/enum) — PROGRAMMATICALLY, never relying on an LLM. draft-2020-12 because a modern
+// schema using allOf/if-then/$defs/const is what ajv-cli's default draft-07 rejects (the live gap this closes).
+//
+// LEAN + GRACEFULLY-DEGRADING (engine law): run.mjs stays byte-identical across repos, so it CANNOT hard-
+// depend on a bundled validator — a draft-2020-12 validator is an OPTIONAL per-repo dep (declare `ajv`
+// [+`ajv-formats`] in pi-runner/package.json so it installs into pi-runner/node_modules; another repo may
+// not). The loader is best-effort: it resolves a draft-2020-12 validator from the engine dir / RUN_CWD /
+// ROOT node_modules and, if NONE resolves, returns null → the gate WARNS loudly and SKIPS (non-blocking),
+// so a missing optional dep never bricks a run while a declared schema WITH a validator present is enforced
+// hard. Memoized (resolved once per run). Returns a `compile(schemaObj) -> (data) => {ok, errors}` factory or null.
+let _schemaValidatorFactory; // undefined = not tried; null = unavailable; fn = the factory
+async function loadSchemaValidatorFactory() {
+  if (_schemaValidatorFactory !== undefined) return _schemaValidatorFactory;
+  const bases = [...new Set([HERE, RUN_CWD, ROOT])].map((d) => path.join(d, "__pi-runner-resolve-base.js"));
+  const specs = ["ajv/dist/2020.js", "ajv/dist/2020", "ajv2020"]; // draft-2020-12 entry points
+  for (const base of bases) {
+    const req = createRequire(base);
+    for (const spec of specs) {
+      let resolved;
+      try { resolved = req.resolve(spec); } catch { continue; }
+      try {
+        const m = await import(resolved);
+        const Ajv2020 = m.Ajv2020 || m.default || m;
+        if (typeof Ajv2020 !== "function") continue;
+        let addFormats = null;
+        try { addFormats = (await import(req.resolve("ajv-formats"))).default; } catch {}
+        _schemaValidatorFactory = (schema) => {
+          const ajv = new Ajv2020({ allErrors: true, strict: false });
+          if (addFormats) try { addFormats(ajv); } catch {}
+          const v = ajv.compile(schema);
+          return (data) => ({ ok: !!v(data), errors: v.errors || [] });
+        };
+        return _schemaValidatorFactory;
+      } catch { /* try the next spec/base */ }
+    }
+  }
+  _schemaValidatorFactory = null;
+  return null;
+}
+// Validate a node's DRIVER-ARTIFACTS against its DRIVER-SCHEMA. Returns { checked, invalid:[{path,errors}],
+// skipped:<reason> } — `skipped` set (and invalid empty) when no schema is declared, no validator resolves,
+// or the schema won't parse (a parse failure of the ARTIFACT is itself an invalid → breach; a parse failure
+// of the SCHEMA is a config error → skip+warn, never a false breach). Resolves artifact + schema paths the
+// same forgiving way the existence gate does (RUN_CWD/ROOT/PROJECT_BASE).
+async function schemaCheck(prompt) {
+  const schemaPath = markerValue(prompt, "DRIVER-SCHEMA");
+  if (!schemaPath) return { checked: 0, invalid: [], skipped: null };
+  const factory = await loadSchemaValidatorFactory();
+  if (!factory) return { checked: 0, invalid: [], skipped: "no draft-2020-12 validator resolved (install ajv in pi-runner/ to enable the schema gate)" };
+  const required = markerPaths(prompt, "DRIVER-ARTIFACTS");
+  if (!required) return { checked: 0, invalid: [], skipped: "DRIVER-SCHEMA declared but no DRIVER-ARTIFACTS to validate" };
+  // Resolve the schema file forgivingly (it is repo-relative like DRIVER-ARTIFACTS, or absolute).
+  const schemaAbs = path.isAbsolute(schemaPath)
+    ? schemaPath
+    : [path.join(RUN_CWD, schemaPath), path.join(ROOT, schemaPath), ...(PROJECT_BASE ? [path.join(PROJECT_BASE, schemaPath)] : [])].find((c) => { try { return fs.statSync(c).size >= 0; } catch { return false; } }) || path.join(RUN_CWD, schemaPath);
+  let validate;
+  try { validate = factory(JSON.parse(fs.readFileSync(schemaAbs, "utf8"))); }
+  catch (e) { return { checked: 0, invalid: [], skipped: `schema unreadable/uncompilable (${path.basename(schemaPath)}): ${e.message}` }; }
+  const invalid = [];
+  let checked = 0;
+  for (const p of required) {
+    const candidates = path.isAbsolute(p) ? [p]
+      : [path.join(RUN_CWD, p), path.join(ROOT, p), ...(PROJECT_BASE ? [path.join(PROJECT_BASE, p)] : [])];
+    const found = candidates.find((c) => { try { return fs.statSync(c).size > 0; } catch { return false; } });
+    if (!found) continue; // a MISSING artifact is the existence gate's job, not the schema gate's
+    checked++;
+    let data;
+    try { data = JSON.parse(fs.readFileSync(found, "utf8")); }
+    catch (e) { invalid.push({ path: p, errors: [`not valid JSON: ${e.message}`] }); continue; }
+    const r = validate(data);
+    if (!r.ok) invalid.push({ path: p, errors: (r.errors || []).slice(0, 8).map((e) => `${e.instancePath || "/"} ${e.message}`) });
+  }
+  return { checked, invalid, skipped: null };
 }
 // Resolve a possibly-relative path to absolute the SAME forgiving way artifactState does, so the
 // owned-path check and the existence check agree on where a file is.
@@ -567,17 +699,26 @@ function lastJsonBlock(text) {
 
 function piArgs(promptFileAbs, opts = {}) {
   // headless executor: print+json, trust project files, ephemeral, --offline (no startup network
-  // ops; the model call still works), --no-extensions. NOTE: models.json is CORE pi config, not an
-  // extension, so --no-extensions does NOT disable it — pi still resolves the `cp` provider + its
-  // credential from ~/.pi/agent/models.json. We only NAME the provider; --model when pinned; -e only
-  // for an explicit custom-API/OAuth provider or the generic node-contract extension.
+  // ops; the model call still works), --no-extensions, --no-context-files. NOTE: models.json is CORE
+  // pi config, not an extension, so --no-extensions does NOT disable it — pi still resolves the `cp`
+  // provider + its credential from ~/.pi/agent/models.json. We only NAME the provider; --model when
+  // pinned; -e only for an explicit custom-API/OAuth provider or the generic node-contract extension.
+  // --no-context-files (-nc) is a HEADLESS INVARIANT: a pi node must run on ONLY the prompt the driver
+  // hands it — pi must NOT auto-discover/inject a repo AGENTS.md/CLAUDE.md into the executor. Those
+  // files address the ORCHESTRATOR (load-these-skills-first, run-policy directives); silently prepending
+  // them to a per-node executor derails it (e.g. a Harden node told "load BOTH governing skills FIRST"
+  // burns its turn meta-reasoning instead of writing the artifact). The exact realized prompt the driver
+  // captured (extract.mjs) is the WHOLE contract; nothing else may leak in.
   // opts = { model, provider, toolsAllow, toolsDeny } — per-node overrides (escalation consult model,
   // tool gating) that ride ONE node without mutating module state.
   const prov = opts.provider || args.provider;
   const mdl = opts.model !== undefined ? opts.model : model;
   const a = ["-p", "--mode", "json", "-a", "--no-session", "--offline", "--no-extensions",
-             "--provider", prov];
+             "--no-context-files", "--provider", prov];
   if (mdl) a.push("--model", mdl);
+  // Cap reasoning depth (off|minimal|low|medium|high|xhigh). pi defaults to "medium"; on the Anthropic
+  // path this actually modulates the thinking budget (on the OpenAI path MiniMax ignores reasoning_effort).
+  if (process.env.PI_RUNNER_THINKING) a.push("--thinking", process.env.PI_RUNNER_THINKING);
   if (opts.toolsAllow) a.push("--tools", opts.toolsAllow);       // DRIVER-TOOLS marker → per-node allowlist
   if (opts.toolsDeny) a.push("--exclude-tools", opts.toolsDeny); // DRIVER-EXCLUDE-TOOLS marker → per-node denylist
   if (contractExtension) a.push("-e", contractExtension);        // generic node-contract ext (submit_result + owns-block), opt-in
@@ -628,6 +769,29 @@ async function runNode(node, opts = {}) {
     return n;
   }
 
+  // DRIVER-SEED pre-stage (see driverSeed): deterministically stage this node's STARTING artifact
+  // before pi spawns — e.g. copy the per-archetype blueprint template so HARDEN fills leaves via
+  // `edit` rather than re-composing the structure. Copy ONLY when dest is absent/empty AND src exists.
+  const seed = driverSeed(node.prompt);
+  if (seed) {
+    const toAbs = path.isAbsolute(seed.to) ? seed.to : path.resolve(RUN_CWD, seed.to);
+    const fr = resolveSeedTokens(seed.from);
+    const fromAbs = path.isAbsolute(fr) ? fr : path.resolve(RUN_CWD, fr);
+    let destBytes = -1; try { destBytes = fs.statSync(toAbs).size; } catch {}
+    if (destBytes > 0) {
+      console.log(`    ⇪ DRIVER-SEED ${node.id} — dest present (${path.relative(RUN_CWD, toAbs)}); not re-staging`);
+    } else if (!fs.existsSync(fromAbs)) {
+      console.log(`    ⇪ DRIVER-SEED ${node.id} — no template at ${path.relative(RUN_CWD, fromAbs)} (node hand-builds)`);
+    } else if (args.dryRun) {
+      console.log(`    DRY: DRIVER-SEED ${node.id} — would stage ${path.relative(RUN_CWD, toAbs)} from ${path.relative(RUN_CWD, fromAbs)}`);
+    } else {
+      ensureDir(path.dirname(toAbs));
+      fs.copyFileSync(fromAbs, toAbs);
+      n.seeded = path.relative(BASE_RUN_CWD, toAbs);
+      console.log(`    ⇪ DRIVER-SEED ${node.id} — staged ${path.relative(RUN_CWD, toAbs)} from ${path.relative(RUN_CWD, fromAbs)}`);
+    }
+  }
+
   ensureDir(promptDir);
   const promptFile = path.join(promptDir, `${node.id}.prompt.md`);
   // promptPrefix carries the escalation CONSULT preamble (the prior cheap attempt's failure evidence)
@@ -647,9 +811,27 @@ async function runNode(node, opts = {}) {
   const sandboxScope = SANDBOX_OK ? markerPaths(node.prompt, "DRIVER-READ-SCOPE") : null;
   // Hand the node's owned lane to the node-contract extension's in-loop block (PI_NODE_OWNS); only set
   // when the node declares DRIVER-OWNS and the extension is active. No-op otherwise.
+  // ALSO hand the node's REQUIRED artifacts (DRIVER-ARTIFACTS) to the extension's write-first gate
+  // (PI_NODE_REQUIRE): the extension BLOCKS submit_result while any required path is absent/empty on
+  // disk, and re-prompts once on a turn ending with one still missing. Same marker the driver verifies
+  // post-hoc (the contractMissing → blocked floor below stays the backstop), so ON or OFF is identical
+  // when the feature is absent. Both are space-separated abs paths the contract() helper renders.
   const childEnv = process.env;
   const ownLane = markerPaths(node.prompt, "DRIVER-OWNS");
-  const spawnEnv = contractExtension && ownLane ? { ...childEnv, PI_NODE_OWNS: ownLane.join(" ") } : childEnv;
+  const requireLane = markerPaths(node.prompt, "DRIVER-ARTIFACTS");
+  // The template-fill SENTINEL the node-contract write-first gate refuses to submit_result over (e.g.
+  // "<FILL:"). A node that pre-seeds a SCHEMA-SHAPED skeleton (DRIVER-SEED) is DONE only once every leaf
+  // is replaced — a present-but-unfilled skeleton passes the existence gate yet is not a satisfied
+  // contract. The fast in-loop sentinel is the COMPLEMENT of the post-node DRIVER-SCHEMA gate (a left
+  // <FILL:> also breaks the schema's type/enum, caught post-hoc regardless); it gives the model immediate
+  // feedback. Declared via DRIVER-FILL-SENTINEL; inert when absent (back-compat).
+  const fillSentinel = markerValue(node.prompt, "DRIVER-FILL-SENTINEL");
+  const spawnEnv = contractExtension
+    ? { ...childEnv,
+        ...(ownLane ? { PI_NODE_OWNS: ownLane.join(" ") } : {}),
+        ...(requireLane ? { PI_NODE_REQUIRE: requireLane.join(" ") } : {}),
+        ...(fillSentinel ? { PI_NODE_FILL_SENTINEL: fillSentinel } : {}) }
+    : childEnv;
   console.log(`  ▶ ${node.label}  [${node.id}]`);
 
   if (args.dryRun) {
@@ -676,6 +858,20 @@ async function runNode(node, opts = {}) {
     let lastDelta = null, repeatRun = 0;                            // consecutive identical-delta run (stuck-loop guard)
     let submittedResult = null;                                     // structured return from the node-contract submit_result tool (if active)
     const tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, billable: 0, contextPeak: 0, cost: 0 };
+    // PER-CALL TIMING (the wall-clock x-ray). pi's events carry NO per-event timestamp and its
+    // tool_execution_start/end carry no time at all (verified: only `session` has an ISO stamp and
+    // message_end a per-turn epoch-ms), so per-tool/per-turn wall-clock can ONLY be reconstructed at
+    // the point the driver RECEIVES each line. We stamp every event with a node-relative `_t` ms (and
+    // the slimmed archive line also gets an absolute `_rt`), then pair tool_execution_start→end by the
+    // native `toolCallId` and turn_start/message_start→message_end for turns — accumulating ONE compact
+    // per-node timeline. All driver-side, all additive (no pi change). Lands in BOTH modes (cheap;
+    // bounded by tool-call + turn count, not by delta volume), so production keeps the x-ray too.
+    const tlTools = [];                                  // [{ id, name, tStartMs, durMs }] — pi tool calls, start→end paired by toolCallId
+    const tlTurns = [];                                  // [{ tStartMs, durMs, tokIn, tokOut, tokBillable }] — model turns, start→message_end
+    const toolOpen = new Map();                          // toolCallId -> { name, startRel } awaiting its tool_execution_end
+    let turnStartRel = null;                             // node-relative ms the current turn began (turn_start/message_start)
+    let firstEventRel = null, lastEventRel = 0;          // node-relative span of the event stream (for the reconciliation check)
+    let tokBefore = 0;                                   // running billable BEFORE the current message_end (→ per-turn delta)
     // SINGLE FLIP (--debug) gates the FORENSIC artifacts: the event stream AND the timeline
     // debug.log. The stream is SLIMMED as written (message_update snapshots stripped below), so it
     // stays in the low MB instead of the 100s of MB pi's cumulative deltas would otherwise produce.
@@ -730,6 +926,14 @@ async function runNode(node, opts = {}) {
     rl.on("line", (line) => {
       eventCount++;
       lastEventAt = Date.now();
+      // RECEIVE-TIME stamp (the per-event clock pi does not provide). `tRel` = ms since this node's
+      // t0; `rtISO` = wall-clock. Captured ONCE here so the slimmed archive line and the per-tool/
+      // per-turn timeline below share one consistent clock. Additive — no existing reader of
+      // events.jsonl enumerates keys, so injecting _t/_rt never breaks the tail/replay consumer.
+      const tRel = lastEventAt - t0;
+      const rtISO = new Date(lastEventAt).toISOString();
+      if (firstEventRel === null) firstEventRel = tRel;
+      lastEventRel = tRel;
       let ev;
       try { ev = JSON.parse(line); } catch { if (evStream) evStream.write(line + "\n"); return; }
       const t = typeof ev.type === "string" ? ev.type : "";
@@ -742,6 +946,9 @@ async function runNode(node, opts = {}) {
       if (ev.type === "message_update" && ame && ame.type === "text_delta" && typeof ame.delta === "string") assistantText += ame.delta;
       else if (ev.type === "message_update" && ame && ame.type === "thinking_delta" && typeof ame.delta === "string") { thinkingChars += ame.delta.length; thinkingDeltas++; thinkLastAt = lastEventAt; if (!thinkFirstAt) thinkFirstAt = lastEventAt; }
       else if (typeof ev.delta === "string" && t.includes("text")) assistantText += ev.delta;
+      // TURN START — a model turn opens at turn_start (or the first message_start if turn_start is
+      // absent in this pi version). Mark it ONCE per turn so message_end can close the interval.
+      if (t === "turn_start" || (t === "message_start" && turnStartRel === null)) turnStartRel = tRel;
       // Per-call usage is final on message_end. input/output are PER CALL → summing them is the true
       // billable total (input re-sends context each turn, which is what you pay). totalTokens is a
       // CUMULATIVE context counter, not per-call → take its MAX (peak context footprint), never sum.
@@ -753,6 +960,15 @@ async function runNode(node, opts = {}) {
         tokens.billable = tokens.input + tokens.output;
         tokens.contextPeak = Math.max(tokens.contextPeak, u.totalTokens || 0);
         tokens.cost += (u.cost && u.cost.total) || 0;
+        // PER-TURN row: timing (turn open → this message_end) + the billable token DELTA this turn
+        // added. tokIn/tokOut are already per-call (this turn's), so they ARE the delta; tokBillable
+        // is taken as (running billable − the snapshot before this turn) so the turns' deltas SUM to
+        // the node billable exactly (the reconciliation invariant). turn_start may be absent → fall
+        // back to firstEvent for turn 0 so the first row still has a real start.
+        const tStart = turnStartRel != null ? turnStartRel : (firstEventRel ?? tRel);
+        tlTurns.push({ tStartMs: tStart, durMs: tRel - tStart, tokIn: u.input || 0, tokOut: u.output || 0, tokBillable: tokens.billable - tokBefore });
+        tokBefore = tokens.billable;
+        turnStartRel = null;
       }
       if (t.startsWith("tool_execution_start")) {
         toolCalls++;
@@ -760,6 +976,10 @@ async function runNode(node, opts = {}) {
         toolBreakdown[tn] = (toolBreakdown[tn] || 0) + 1;
         n.live.currentTool = tn;
         dbg(`tool▶ ${tn}`);
+        // OPEN a per-tool interval keyed by the NATIVE toolCallId (exact start→end pairing, never
+        // positional). A long bash/render dominates a node's wall-clock; this is the only way to see it.
+        const cid = ev.toolCallId || ev.id || `${tn}#${toolCalls}`;
+        toolOpen.set(cid, { name: tn, startRel: tRel });
         // No-progress tool-thrash guard: identical (name+args) repeated with no write/edit between.
         if (TOOL_REPEAT_KILL > 0 && !finished) {
           if (/^(write|edit|str_replace|apply_patch|multi_edit|create|submit_result)/i.test(tn)) {
@@ -781,6 +1001,14 @@ async function runNode(node, opts = {}) {
         const res = ev.result || ev.toolResult || ev.output || null;
         const det = (res && (res.details || res.detail)) || ev.details || null;
         if (tn === "submit_result" && det && typeof det === "object") submittedResult = det;
+        // CLOSE the matching tool interval → one timeline row (name · start · duration). Match by the
+        // native toolCallId; fall back to the oldest still-open call (FIFO) for a pi version that omits
+        // the id on the end event, so a duration is still recorded rather than dropped.
+        const cid = ev.toolCallId || ev.id || null;
+        let open = cid ? toolOpen.get(cid) : null;
+        if (!open && toolOpen.size) { const k = toolOpen.keys().next().value; open = toolOpen.get(k); toolOpen.delete(k); }
+        else if (cid) toolOpen.delete(cid);
+        if (open) tlTools.push({ name: open.name || tn || "tool", tStartMs: open.startRel, durMs: tRel - open.startRel });
         dbg(`tool✓ ${n.live.currentTool || ""}`); n.live.currentTool = null;
       }
       else if (dbgStream && t) dbg(`ev ${t}`);
@@ -790,12 +1018,16 @@ async function runNode(node, opts = {}) {
       // type (incl. message_end's `usage`) is written verbatim. Aggregates above already read the
       // full event, so slimming costs no information.
       if (evStream) {
+        // Stamp every archived event with the driver receive-time: `_t` (node-relative ms) + `_rt`
+        // (wall ISO). Additive top-level keys — the only events.jsonl reader (viz-model.tailNodeOutput)
+        // reads named keys, never enumerates — so this is a pure superset of the prior stream.
+        ev._t = tRel; ev._rt = rtISO;
         if (ev.type === "message_update") {
           if (ev.assistantMessageEvent) delete ev.assistantMessageEvent.partial;
           delete ev.message;
           evStream.write(JSON.stringify(ev) + "\n");
         } else {
-          evStream.write(line + "\n");
+          evStream.write(JSON.stringify(ev) + "\n");
         }
       }
       // Kill an obvious stuck-token loop early instead of letting it burn to the node-timeout.
@@ -833,7 +1065,7 @@ async function runNode(node, opts = {}) {
       }
     }, HEARTBEAT_MS);
 
-    child.on("close", (code) => {
+    child.on("close", async (code) => {
       finished = true;
       clearInterval(hb);
       if (evStream) evStream.end();
@@ -860,8 +1092,19 @@ async function runNode(node, opts = {}) {
         n.requiredArtifacts = reqChecks;
         contractMissing = reqChecks.filter((c) => !c.exists).map((c) => c.path);
       }
+      // POST-NODE SCHEMA GATE (generic, opt-in via DRIVER-SCHEMA — see schemaCheck): validate the PRESENT
+      // required artifacts against the declared JSON-Schema (draft-2020-12). A present-but-INVALID artifact
+      // (wrong type / missing required key / unfilled <FILL:> sentinel that breaks a type/enum) is a contract
+      // BREACH — driver-verified, programmatic, NOT an LLM judgment — exactly like a missing artifact. Skips
+      // (advisory) when no schema is declared, no validator is installed, or the schema won't compile.
+      const schema = await schemaCheck(node.prompt);
+      const schemaInvalid = schema.invalid.map((x) => x.path);
+      if (schema.invalid.length) n.schemaInvalid = schema.invalid;
+      if (schema.skipped) n.schemaSkipped = schema.skipped;
+      else if (schema.checked) n.schemaChecked = schema.checked;
       // Persist the EMPIRICAL signals the escalation classifier reads (all already computed here).
       n.contractMissing = contractMissing;
+      n.schemaInvalidPaths = schemaInvalid;
       n.parsedOk = !!parsed;
       // Soft owned-path containment on the SELF-REPORTED writes (the hard cross-contamination gate —
       // git diff ⊆ owns — arrives with per-stage commits; until then this catches a node that ADMITS
@@ -875,6 +1118,7 @@ async function runNode(node, opts = {}) {
       let st;
       if (n.killedTimeout || n.killedRepeat || n.killedStall || n.killedToolLoop || code !== 0) st = "error";
       else if (contractMissing.length) st = "blocked"; // CONTRACT: a required artifact is missing — driver-verified, beats any self-report
+      else if (schemaInvalid.length) st = "blocked"; // CONTRACT: a required artifact is present but VIOLATES its declared schema — driver-verified breach, beats any self-report
       else if (parsed && parsed.status && parsed.status !== "ok") st = parsed.status; // gap/blocked self-report honored
       else if (declaredMissing && !(requiredPaths && requiredPaths.length)) st = "blocked"; // a missing/empty SELF-REPORTED file blocks ONLY a node with NO DRIVER-ARTIFACTS contract. When a contract WAS declared and is satisfied (contractMissing empty, above), it is the authority — a noisy self-report (a stripped path, or an intentionally size-0 file like .gitkeep) must NOT override it. "Verified, not trusted" cuts both ways: trust the driver-verified contract over the model's self-report.
       else if (!parsed) st = "error"; // clean exit but NO return-protocol block = degenerate run (agent derailed / its output was lost). Fail LOUDLY here — never silently pass it as ok. (A derailed W2c that wandered into another lesson's file + wrote nothing was slipping through as ok and only surfacing one node downstream when its consumer couldn't find the input.)
@@ -886,6 +1130,26 @@ async function runNode(node, opts = {}) {
       n.thinking = { deltas: thinkingDeltas, chars: thinkingChars, spanMs: thinkFirstAt ? thinkLastAt - thinkFirstAt : 0 };
       n.tokens = tokens;
       n.eventCount = eventCount;
+      // PER-NODE TIMELINE (the wall-clock x-ray) — a COMPACT, additive node-record field, present in
+      // BOTH modes (its size is bounded by tool-call + turn count — a few dozen rows, KB not MB). It
+      // answers "where did this node's wall-clock go?": which tools ran when + for how long, each
+      // model turn's duration, and the per-turn token delta. `toolMs`/`turnMs` are the summed busy
+      // times; `wallMs` is the event-stream span (firstEvent→lastEvent). Reconciliation invariants a
+      // consumer can assert (anti-reward-hack): Σ tlTurns.tokBillable === tokens.billable (turns
+      // partition the billable tokens) and toolMs+turnMs ≲ durationMs+wallMs (busy time ≤ node wall-
+      // clock; tools and model turns interleave, never exceeding the node's own elapsed). A timeline
+      // that does not reconcile with the observed node wall-clock/tokens is a bug, not evidence.
+      const toolMs = tlTools.reduce((a, x) => a + (x.durMs || 0), 0);
+      const turnMs = tlTurns.reduce((a, x) => a + (x.durMs || 0), 0);
+      n.timeline = {
+        firstEventMs: firstEventRel ?? 0,
+        lastEventMs: lastEventRel,
+        wallMs: lastEventRel - (firstEventRel ?? 0),    // event-stream span (first→last received event)
+        toolMs, turnMs,                                  // summed per-tool / per-turn busy time
+        tools: tlTools,                                  // [{ name, tStartMs, durMs }] in completion order
+        turns: tlTurns,                                  // [{ tStartMs, durMs, tokIn, tokOut, tokBillable }]
+        toolsOpen: toolOpen.size,                        // tools still in flight at exit (e.g. a killed node) — nonzero flags an unclosed interval
+      };
       n.summary = n.killedTimeout ? `killed: exceeded ${NODE_TIMEOUT_S}s node timeout`
         : n.killedStall ? `killed: silent-stall — no event for ${((n.stallMs || 0) / 1000).toFixed(0)}s with no tool in flight`
         : n.killedToolLoop ? `killed: tool-thrash — ${n.toolLoopSig} repeated ×${n.toolLoopCount} with no write`
@@ -895,6 +1159,8 @@ async function runNode(node, opts = {}) {
       n.pipelineFindings = (parsed && parsed.pipelineFindings) || [];
       if (!parsed) (n.issues = n.issues || []).push("no return JSON block parsed from pi output");
       if (contractMissing.length) (n.issues = n.issues || []).push(`contract breach — required artifact(s) missing: ${contractMissing.join(", ")}`);
+      if (schema.invalid.length) (n.issues = n.issues || []).push(`contract breach — artifact(s) violate the declared schema: ${schema.invalid.map((x) => `${x.path} [${x.errors.join("; ")}]`).join(" | ")}`);
+      if (schema.skipped) (n.issues = n.issues || []).push(`schema gate skipped — ${schema.skipped}`);
       if (ownsBreach.length) (n.issues = n.issues || []).push(`contract warn — reported writes outside owned paths: ${ownsBreach.join(", ")}`);
       if (declaredMissing && requiredPaths && requiredPaths.length) (n.issues = n.issues || []).push(`contract note — a self-reported artifact is empty/unresolved but the DRIVER-ARTIFACTS contract is satisfied (advisory, non-blocking)`);
       if (stderr.trim()) n.stderrTail = stderr.trim().slice(-500);
@@ -920,6 +1186,7 @@ function classifyFailure(n) {
   const issueText = `${(n.issues || []).join(" ")} ${n.summary || ""}`;
   if ((n.status === "blocked" || n.status === "gap") && /upstream|missing input/i.test(issueText)) return "HALT"; // escalation can't manufacture a missing input
   if (n.contractMissing && n.contractMissing.length) return "ESCALATE"; // contract breach — ground-truth trigger
+  if (n.schemaInvalidPaths && n.schemaInvalidPaths.length) return "ESCALATE"; // schema breach — ground-truth trigger (artifact present but malformed)
   if (n.killedRepeat) return "ESCALATE";                                 // stuck loop — a same-model retry just loops again (correlated blind spots)
   if (n.killedToolLoop) return "ESCALATE";                               // no-progress tool thrash — a same-model retry thrashes the same way
   if (n.killedStall) return "ESCALATE";                                  // model went silent/dead — a stronger model is the move, not a blind retry
@@ -931,10 +1198,12 @@ function classifyFailure(n) {
 // The consult is NOT blind: prepend the cheap attempt's VERIFIED failure evidence (not a score).
 function consultPreamble(n) {
   const cls = (n.contractMissing && n.contractMissing.length) ? "contract"
+    : (n.schemaInvalidPaths && n.schemaInvalidPaths.length) ? "schema"
     : n.killedRepeat ? "loop" : n.killedToolLoop ? "tool-thrash" : n.killedStall ? "stall"
     : n.killedTimeout ? "timeout" : !n.parsedOk ? "degenerate" : "capability";
   const ev = [];
   if (n.contractMissing && n.contractMissing.length) ev.push(`missing required artifact(s): ${n.contractMissing.join(", ")}`);
+  if (n.schemaInvalidPaths && n.schemaInvalidPaths.length) ev.push(`artifact(s) violate the declared schema: ${(n.schemaInvalid || []).map((x) => `${x.path} [${(x.errors || []).slice(0, 3).join("; ")}]`).join(" | ") || n.schemaInvalidPaths.join(", ")}`);
   if (n.killedRepeat) ev.push(`looped on a repeated token (~${n.repeatRun}× identical delta)`);
   if (n.killedToolLoop) ev.push(`thrashed on a repeated tool call (${n.toolLoopSig} ×${n.toolLoopCount}) without writing — find it via the catalog/digest, do NOT re-run the same search`);
   if (n.killedStall) ev.push(`went silent for ~${((n.stallMs || 0) / 1000).toFixed(0)}s with no tool running (model stalled)`);

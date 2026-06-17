@@ -47,6 +47,12 @@ const style = A.style || null
 const skipSmoke = A.skipSmoke === true
 const renderScale = A.renderScale || '1'
 const startAt = A.startAt || 'setup'
+// Companion Mode (dev-time) — the orchestrator IS the verification node: skip the in-pipeline
+// verify node(s) and judge each producing stage by hand against the criteria fixture + gold.
+// `mode` is a STATIC input (resolved before any node), so extract.mjs/run.mjs realize a FIXED DAG
+// per mode (companion = producers only; W6 dropped). Works ONLY because verify nodes create no key
+// artifact — drop W6 and every artifact still exists. See transform-workflow-to-pi "Companion Mode".
+const COMPANION = A.mode === 'companion'
 
 const ORDER = ['setup', 'ped', 'story', 'design', 'wave3', 'reconcile', 'compose', 'render', 'verify']
 const startIdx = Math.max(0, ORDER.indexOf(startAt))
@@ -479,7 +485,7 @@ const rRender = run('render') ? await agent([
 // ===========================================================================
 phase('Verify')
 
-const rVerify = run('verify') ? await agent([
+const rVerify = (!COMPANION && run('verify')) ? await agent([
   discipline(),
   'W6 — VERIFICATION. Review the rendered output against the pedagogy discoveries. The PRIMARY surface is the action-aware contact sheet (5 samples per cue: start / narr-mid / narr-end / hold-mid / cue-end) — stagnation is visible at a glance. You CANNOT watch the mp4; judge from the contact sheet + frames.',
   `SKILLS: ${SK.verification}`,
@@ -487,7 +493,7 @@ const rVerify = run('verify') ? await agent([
   'JUDGE: (1) does each cue TEACH its pedagogy discovery (re-run the §1 audit)? (2) layout/legibility — any collision or failed gate from bbox-manifest unaddressed? (3) SOUND checks: melody NOT identifiable under narration ; 3-point duck (intro duck / mid-gap rise / outro resolve) ; measured master ≈ -16 LUFS / TP ≤ -1 dB (the LUFS gate in lesson:check --measured) ; no SFX louder than narration.',
   `OUTPUT: ${REPO}/${P.verification} — per-cue pedagogy verdict + the sound/layout gate results + a punch list of any fixes (mapped to the owning wave for a targeted re-run).`,
   contract({ artifacts: [P.verification], readScope: contentScope }),
-].join('\n'), { label: 'W6 verification', phase: 'Verify', agentType: 'claude', schema: NODE_RESULT }) : (log(`W6 ${skip('verify')}`), null)
+].join('\n'), { label: 'W6 verification', phase: 'Verify', agentType: 'claude', schema: NODE_RESULT }) : (log(COMPANION ? 'W6 verification SKIPPED — companion mode: the orchestrator + human are the verifier' : `W6 ${skip('verify')}`), null)
 
 // ===========================================================================
 // Aggregate — the whole run at a glance (CLAUDE.md observability tier 1). The union of
