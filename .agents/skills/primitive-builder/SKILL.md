@@ -27,9 +27,10 @@ Decide REUSE/GAP from `catalog-digest.md` only. The diff is between the lesson's
 
 ## REUSE is membership, not belief
 
-A REUSE is valid ONLY if the component is a real id in the registry / catalog-digest. Membership, not vibes:
+A REUSE is valid ONLY if the component is a real **and LIVE** id in the catalog-digest. Membership AND liveness, not vibes — and NOT the brief:
 
 - An upstream-suggested name (e.g. visual-design saying "W3b may ship `<FooDiagram>`") is a **HINT, not proof** the thing exists. A name not in the registry is a GAP — build it, or keep the upstream-described mechanic as a hand-rolled composition — **never** a REUSE.
+- **The brief's Continuity list is a HINT too, and it can name a DEPRECATED primitive.** Deprecated entries are absent from the catalog-digest by construction (they live only in the gallery's Legacy band). So if a name the brief hands you (e.g. "reuse `BundleWrap`") is NOT in the digest, it is dead — reach for the digest's LIVE successor for that demand, never propagate the brief's stale name. The digest only shows the live one; trust the digest over the brief. (`registry:check-lesson` now FAILS a cited deprecated id — liveness, not just membership — so a stale citation is a hard error, not a silent pass.)
 - After writing the reuse table, VERIFY it mechanically against the generated registry (the oracle that cannot lie): the per-lesson registry check diffs every component the table names against the registry. A phantom REUSE fails the node. Fix the table (real id, or mark GAP) and re-verify before finishing.
 
 ## Default = reuse / compose
