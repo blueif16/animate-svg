@@ -117,13 +117,17 @@ const LESSON_FAMILY_TITLE = {
   style: "Style wrapper",
 };
 
-// Deprecated entries are QUARANTINED: dropped from every live family/component
-// table (the reuse menu an agent reads must never list a superseded cap as a
-// live option) and instead collected into the "Deprecated" section at the very
-// bottom. `live` is the menu filter; `isDeprecated` collects the quarantine set.
+// Deprecated entries are QUARANTINED OUT of the agent-facing digest entirely:
+// dropped from every live family/component table AND never emitted in a bottom
+// "Deprecated" section — a superseded capability must be invisible to the agents
+// that read this menu (the "from the ground start" rule), not merely demoted.
+// Deprecated entries still live in primitive-registry.json (status:"deprecated"
+// + supersededBy) for the gallery's Legacy band ONLY; the redirect to the
+// replacement is enforced for AGENTS by the registry:check gate that fails if any
+// LIVE entry's prose still references a deprecated id/component (so no live menu
+// row ever points an agent at a dead capability). `live` is the menu filter.
 const isDeprecated = (e) => e.status === "deprecated";
 const live = (arr) => arr.filter((e) => !isDeprecated(e));
-const deprecatedEntries = allEntries.filter(isDeprecated);
 
 const out = [];
 out.push(BANNER);
@@ -219,22 +223,12 @@ if (fs.existsSync(assetCatalogPath)) {
 }
 
 // --- deprecated (quarantine) ------------------------------------------------
-// Superseded capabilities, pulled OUT of the live menu above and listed here so
-// the reason + the replacement to reach for instead are both visible. An agent
-// reading the menu never sees these as a live option; if it lands on one, this
-// section tells it where to go.
-if (deprecatedEntries.length) {
-  out.push("## Deprecated — superseded, do not use\n");
-  out.push(
-    "These capabilities still exist in code (legacy callers compile) but are NOT " +
-      "the right way to build new work. Reach for the `→ use` replacement instead.\n",
-  );
-  for (const e of deprecatedEntries) {
-    const target = e.supersededBy ? `\`${e.supersededBy}\`` : "— (no replacement set) —";
-    out.push(`- \`${e.id}\` → use ${target} — ${cell(e.avoidWhen)}`);
-  }
-  out.push("");
-}
+// Deprecated entries are INTENTIONALLY NOT emitted here. A superseded capability
+// must be invisible to the agents that read this digest — not listed in a bottom
+// "Deprecated" section that an agent could still copy from. They stay in
+// primitive-registry.json (status:"deprecated") for the gallery's Legacy band
+// only; live entries never reference them (registry:check's no-dead-reference
+// gate enforces that), so the digest never points an agent at a dead capability.
 
 const generated = out.join("\n") + "\n";
 

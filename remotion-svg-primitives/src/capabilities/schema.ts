@@ -40,10 +40,12 @@ const capabilityBase = {
   // Hand-authored in cut 1; cross-checked report-only against the source union.
   variants: z.record(z.string(), z.array(z.string())).optional(),
   // Lifecycle: "undocumented" (just discovered, no prose yet) | "experimental" |
-  // "stable" | "deprecated" (superseded — quarantined into the Legacy band of the
-  // gallery + the Deprecated section of the digest, never offered as a live reuse
-  // option). Kept a free string by DESIGN (the schema models structure; the .mjs
-  // gates own membership) — "deprecated" is just the sanctioned quarantine value.
+  // "stable" | "deprecated" (superseded — quarantined into the gallery's Legacy
+  // band ONLY; NEVER surfaced in the agent-facing catalog-digest.md, and no live
+  // entry's prose may reference it — the registry:check no-dead-reference gate
+  // redirects every reference to its supersededBy target). Kept a free string by
+  // DESIGN (the schema models structure; the .mjs gates own membership) —
+  // "deprecated" is just the sanctioned quarantine value.
   status: z.string(),
   // When status === "deprecated", the id of the capability to reach for instead
   // (e.g. bundle-wrap -> asset-morph). Optional; absent for non-deprecated entries.
