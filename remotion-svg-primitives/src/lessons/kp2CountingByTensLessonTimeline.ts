@@ -1,48 +1,29 @@
-import type {
-  CaptionCue,
-  LabelWindow,
-} from "../lesson-media/LessonCaptionLayer";
-import {
-  kp2CountingByTensAlignedCues,
-  kp2CountingByTensAlignedDuration,
-} from "./generated/kp2CountingByTensTiming";
-import { getKp2CountingByTensLabelWindows } from "./Kp2CountingByTensLessonScene";
-import { type AlignedLessonCue, cueToCaption } from "./timingTypes";
+import { cueToCaption, reconcileClipTimeline, type CaptionCue, type VoiceClip } from "@studio/narration-kit";
+import { kp2CountingByTensClips } from "./generated/kp2CountingByTensClips";
 
-// Derived from the ASR-aligned timing module. Do NOT hardcode a duration
-// here — when ASR realigns, this single import keeps the whole scene synced.
-export const completeKp2CountingByTensLessonDuration =
-  kp2CountingByTensAlignedDuration;
+const FPS = 30;
+const TAIL_FRAMES = 9;
 
-export const kp2CountingByTensLessonAudioDefaults = {
-  teacherAudioSrc: "audio/kp2-counting-by-tens-voice.wav",
-} satisfies {
-  teacherAudioSrc: string | null;
+const VISUAL_MOTION_SECONDS: Record<string, number> = {
+  intro: 2.0,
+  "bundle-recall": 2.5,
+  "untie-reveal": 3.0,
+  "slow-count-ones": 5.0,
+  "fast-vs-slow": 4.0,
+  "two-tens": 3.0,
+  "three-tens": 3.0,
+  recap: 4.0,
 };
 
-export const kp2CountingByTensLessonVoiceoverSpans: Array<[number, number]> =
-  kp2CountingByTensAlignedCues.length > 0
-    ? [
-        [
-          kp2CountingByTensAlignedCues[0].startFrame,
-          kp2CountingByTensAlignedCues[
-            kp2CountingByTensAlignedCues.length - 1
-          ].endFrame,
-        ],
-      ]
-    : [];
+const reconciled = reconcileClipTimeline({
+  clips: kp2CountingByTensClips,
+  visualBudgets: VISUAL_MOTION_SECONDS,
+  fps: FPS,
+  tailFrames: TAIL_FRAMES,
+});
 
-// Cast at the boundary — silencedetect-corrected `confidence` literal isn't
-// in the @studio/narration-kit type union yet. Orchestrator decision is to
-// keep upstream timing module as-is. Functional fields are unaffected.
-const alignedCues = kp2CountingByTensAlignedCues as unknown as AlignedLessonCue[];
-
-export const kp2CountingByTensLessonCaptionCues: CaptionCue[] =
-  alignedCues.map(cueToCaption);
-
-// Frame windows during which an in-canvas LabelCallout is on screen.
-// LessonCaptionLayer reads this and suppresses the caption ribbon for any
-// caption cue whose midpoint falls inside one of these windows — programmatic
-// enforcement of the pedagogy "one on-screen representation per beat" rule.
-export const kp2CountingByTensLessonLabelWindows: LabelWindow[] =
-  getKp2CountingByTensLabelWindows(alignedCues);
+export const kp2CountingByTensCues = reconciled.cues;
+export const kp2CountingByTensDuration: number = reconciled.durationFrames;
+export const kp2CountingByTensVoiceClips: VoiceClip[] = reconciled.voiceClips;
+export const kp2CountingByTensLessonCaptionCues: CaptionCue[] = reconciled.cues.map(cueToCaption);
+export const completeKp2CountingByTensLessonDuration = kp2CountingByTensDuration;

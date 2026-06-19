@@ -39,6 +39,7 @@ bundle-recall=97, untie-reveal=96, slow-count-ones=106, fast-vs-slow=86, two-ten
 
 | cue id | mark? | mark type | anchor | drawOnRelativeStart (f) | drawOnDuration (f) | fadeOutRelEnd (f) | purpose |
 |---|---|---|---|---|---|---|---|
+| `intro` | n | — | — | — | — | — | Full-screen Intro card has no mark overlays. Skip. |
 | `bundle-recall` | n | — | — | — | — | — | Clean recall. The bundle's scale-pop entry + the "一个十" label fade-in already say "this is the same bundle from KP1". A mark here would crowd the moment. Skip. |
 | `untie-reveal` | n | — | — | — | — | — | The untie gesture (rope wrapProgress 1→0, layout bundle→row) is the focus. A mark would compete. Skip. |
 | `slow-count-ones` | n | — | — | — | — | — | Badge-per-stick (1..10) + the StepTally `数十次` pill already carry "ten counts". Per visual-design §3 slow-count-ones forbidden: the KP1-analogue underline was deliberately dropped — adding it would be redundant. Skip. |

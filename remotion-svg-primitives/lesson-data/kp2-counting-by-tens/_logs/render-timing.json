@@ -1,0 +1,35 @@
+{
+  "lessonId": "kp2-counting-by-tens",
+  "generatedAt": "2026-06-17T02:14:47.704Z",
+  "totalMs": 25825,
+  "steps": [
+    {
+      "step": "Audio gate",
+      "ms": 46
+    },
+    {
+      "step": "Lesson registry",
+      "ms": 31
+    },
+    {
+      "step": "Render MP4",
+      "ms": 17416
+    },
+    {
+      "step": "Loudnorm pass 1 (measure)",
+      "ms": 1210
+    },
+    {
+      "step": "Loudnorm pass 2 (-16 LUFS / -1 dBTP, linear)",
+      "ms": 608
+    },
+    {
+      "step": "Loudnorm verify (re-measure)",
+      "ms": 1123
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 5391
+    }
+  ]
+}

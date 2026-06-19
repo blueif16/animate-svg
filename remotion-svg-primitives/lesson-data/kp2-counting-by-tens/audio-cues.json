@@ -1,0 +1,49 @@
+{
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": {
+    "sting": "mandarin-accent"
+  },
+  "outro": {
+    "resolve": true
+  },
+  "sfx": [
+    {
+      "cue": "bundle-recall",
+      "event": "popin",
+      "sound": "pop"
+    },
+    {
+      "cue": "untie-reveal",
+      "event": "transition",
+      "sound": "whoosh"
+    },
+    {
+      "cue": "slow-count-ones",
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": "fast-vs-slow",
+      "event": "reward",
+      "sound": "sparkle"
+    },
+    {
+      "cue": "two-tens",
+      "event": "popin",
+      "sound": "pop"
+    },
+    {
+      "cue": "three-tens",
+      "event": "popin",
+      "sound": "pop"
+    },
+    {
+      "cue": "recap",
+      "event": "reward",
+      "sound": "ta-da"
+    }
+  ]
+}
