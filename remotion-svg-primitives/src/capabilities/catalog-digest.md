@@ -156,7 +156,7 @@ _Scene-mounted, non-teaching. Decorative 3D / styles frame a moment; they are ne
 | id | use when | status |
 | --- | --- | --- |
 | `default` | Canonical lesson appearance — no aesthetic overlay. | stable |
-| `ink-wash` | Sumi-e ink on warm rice paper aesthetic overlay. | experimental |
+| `ink-wash` | Sumi-e ink on warm rice paper aesthetic overlay. | stable |
 
 ## Generated asset library — `<IconAsset name=... />` (90)
 

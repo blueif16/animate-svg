@@ -84,7 +84,7 @@
       "intent": "Prove a bundled ten still holds ten ones — fade the wrap to a ghost and reveal the inner sticks — to defuse the 'a ten is just one thing now' misconception.",
       "useWhen": "xrayProgress fades the wrap band to a faint outline and reveals the count inner sticks living inside, with optional highlight on the ones.",
       "avoidWhen": "Not for ten ones BECOMING one ten (the wrap drawing on); use `asset-morph` for the FX-masked swap.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "counting",
@@ -229,7 +229,7 @@
       "intent": "Reach for this to bridge a ten-bundle-plus-loose-ones to the DIGITS of a numeral, by seating contents in labeled tens/ones (and optional hundreds) columns.",
       "useWhen": "Lays out columns under headers with a divider and an optional written digit per column; pass a child or perColumnCount per column and highlightColumn to focus one.",
       "avoidWhen": "Not for bare countables or a plain ten-structure with no column/digit framing — use a CountableObject set or TenFrameRod.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "counting",
@@ -239,7 +239,7 @@
       "intent": "Split one filled round region (a cookie/disk) into N equal parts to teach halves/thirds/quarters, shading one part or pulling parts out to share.",
       "useWhen": "cutProgress draws the cuts on, highlightPart shades one part, and separation pulls the parts apart to hand each out; optional 1/N labels.",
       "avoidWhen": "Not for decomposing a NUMBER into addends (use `fen-he-diagram`) or bracketing a linear span (use `part-whole-brace`) — this divides a continuous area, not a count.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "counting",
@@ -399,7 +399,7 @@
           "playing"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "literacy",
@@ -466,7 +466,7 @@
           "4"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "literacy",
@@ -589,7 +589,7 @@
       "useWhen": "A spaced-recall RECAP STACK with ONE live, moving highlight: walk back through a sequence of already-taught sub-beats keeping each earlier one visible-but-quiet while the current one lights up. Given currentHighlight (the active index into subBeats[]): the active sub-beat's items render in FULL color, previously-shown sub-beats (index < currentHighlight) render DIMMED via a group-opacity wrap (dimOpacity, ~0.3 — the items keep their own colors, just quieted), and not-yet-shown sub-beats (index > currentHighlight) are NOT rendered. A single transient dashed <circle> ring sits on the active sub-beat's ringCenter:[x,y] with ringRadius — the recap's ONE allowed emphasis (one moment, one beat: it draws in over the first half of ringProgress and clears over the second half, eased with EASE.enter). Prop-driven & LESSON-AGNOSTIC, bakes NO topic, value, or string: subBeats:ReactNode[] are the caller-rendered, pre-positioned sub-beats (any nodes — the component only decides which are visible/dimmed and where the ring lands); ringProgress (0..1) is the caller's frame-derived ring envelope (e.g. interpolate over the active cue's frames — ZERO frame literals in the component); ringColor defaults to a theme token. Any lesson with a 'recap stack + a live moving highlight + a transient emphasis ring' reuses it as-is.",
       "avoidWhen": "There is no spaced-recall stack to walk — a single static emphasis on one element is a TeacherMark spotlight ring or a PulseCircle, not a multi-sub-beat dim/highlight. You need a persistent (non-clearing) selection state across a quiz or sort — use SelectionRing / SortingBin. The 'previously seen' look is on ONE self-contained diagram rather than a stack — pass the dimmed prop to that primitive directly (e.g. FenHeDiagram dimmed). It does not lay out or color the sub-beats (the caller owns each node's content + position) and it does not own per-item count/progress animation — it owns only the three-state visibility across the stack and the one transient ring.",
       "variants": {},
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "interaction",
@@ -656,7 +656,7 @@
           "ghost"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "kind": "sketch",
@@ -698,7 +698,7 @@
           "mono"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     }
   ],
   "motionComponents": [
@@ -709,7 +709,7 @@
       "intent": [],
       "useWhen": "Stagger an appendage/child chain with trailing lag.",
       "avoidWhen": "Single-element entrances.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "draw-path",
@@ -791,7 +791,7 @@
           "none"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "smear",
@@ -800,7 +800,7 @@
       "intent": [],
       "useWhen": "Motion-blur substitute for fast straight-line travel (>180 vbu/frame).",
       "avoidWhen": "Slow or curved motion.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "sparkle-burst",
@@ -825,7 +825,7 @@
       "intent": [],
       "useWhen": "Moving-hold idle breathing so held elements stay alive.",
       "avoidWhen": "During active motion.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "fx-defs",
@@ -834,7 +834,7 @@
       "intent": [],
       "useWhen": "Render once per scene root to publish the FX filter defs.",
       "avoidWhen": "Never omit when any fx/ component is used.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "glint-flash",
@@ -843,7 +843,7 @@
       "intent": [],
       "useWhen": "Point flash at a moment of emphasis.",
       "avoidWhen": "Repeatedly — one accent per beat.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "glow-pulse",
@@ -852,7 +852,7 @@
       "intent": [],
       "useWhen": "Pulsing aura wrapper to draw the eye.",
       "avoidWhen": "On more than one element at a time.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "shine-sweep",
@@ -861,7 +861,7 @@
       "intent": [],
       "useWhen": "Cinematic shine sweeping across a rectangle (card/title).",
       "avoidWhen": "On teaching primitives the child is reasoning about.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "sparkle",
@@ -870,7 +870,7 @@
       "intent": [],
       "useWhen": "One-shot sparkle particle accent on a reward/reveal.",
       "avoidWhen": "Under narration or as continuous decoration.",
-      "status": "experimental"
+      "status": "stable"
     }
   ],
   "motionVocabulary": {
@@ -897,7 +897,7 @@
     {
       "id": "ink-wash",
       "useWhen": "Sumi-e ink on warm rice paper aesthetic overlay.",
-      "status": "experimental",
+      "status": "stable",
       "runtimeDir": "src/styles/ink-wash",
       "skillBundle": ".agents/styles/ink-wash"
     }
@@ -1027,7 +1027,7 @@
           "numeral"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "asset-morph",
@@ -1046,7 +1046,7 @@
           "unbundle"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "conservation-morph-bundle",
@@ -1059,7 +1059,7 @@
       ],
       "useWhen": "The whole 'ten ones become one roped ten, that still IS ten ones' regrouping beat as ONE registered unit. Composes AssetMorph (the gathered parametric from BECOMES the held asset, FX-masked) + the held IconAsset + ConservationBundle (the x-ray peek): drive peekProgress 0..1 from the conservation cue and the held bundle crossfades down while the wrap ghosts to reveal the count ones living inside, then re-solidifies. Caller supplies from/asset/centerX/centerY (bbox-matched, like AssetMorph) and the count/colors of the inner ones; morphAtFrame + peekProgress are cue-relative.",
       "avoidWhen": "Bundling with NO conservation peek (use AssetMorph alone), or a peek with no preceding morph (use ConservationBundle alone). Multiplicity where each inner one needs its own live highlight during the held phase — assets can't per-index highlight; keep that parametric. The gather-before / fan-after motion stays on the caller's parametric from — this owns only the masked swap + the asset↔x-ray crossfade.",
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "dialogue-exchange",
@@ -1082,7 +1082,7 @@
           "point-other"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "glyph-stroke-writer",
@@ -1121,7 +1121,7 @@
           "solid"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "ordered-row-spotlight",
@@ -1143,7 +1143,7 @@
           "rtl"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "part-whole-composer",
@@ -1166,7 +1166,7 @@
           "enumerate"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "pictograph-evolution",
@@ -1188,7 +1188,7 @@
           "crossfade"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     },
     {
       "id": "vocab-flashcard",
@@ -1210,7 +1210,7 @@
           "label-after"
         ]
       },
-      "status": "experimental"
+      "status": "stable"
     }
   ]
 }
