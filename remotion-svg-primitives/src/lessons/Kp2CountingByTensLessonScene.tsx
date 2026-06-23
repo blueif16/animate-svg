@@ -950,7 +950,7 @@ export const Kp2CountingByTensLessonScene: React.FC<{
           {twoBadgeA > 0 && frame >= twoTens.startFrame && bundleAX !== null ? (
             <g
               opacity={twoBadgeA}
-              {...measureProps(frame >= threeTens.startFrame ? "badge-three-a" : "badge-two-a")}
+              {...measureProps("badge-a")}
             >
               <CountStepIndicator
                 background={colors.white}
@@ -968,7 +968,7 @@ export const Kp2CountingByTensLessonScene: React.FC<{
           {twoBadgeB > 0 && bundleBX !== null ? (
             <g
               opacity={twoBadgeB}
-              {...measureProps(frame >= threeTens.startFrame ? "badge-three-b" : "badge-two-b")}
+              {...measureProps("badge-b")}
             >
               <CountStepIndicator
                 background={colors.white}
@@ -984,7 +984,7 @@ export const Kp2CountingByTensLessonScene: React.FC<{
           ) : null}
 
           {threeBadgeC > 0 && bundleCX !== null ? (
-            <g opacity={threeBadgeC} {...measureProps("badge-three-c")}>
+            <g opacity={threeBadgeC} {...measureProps("badge-c")}>
               <CountStepIndicator
                 background={colors.white}
                 color={inkColor}
