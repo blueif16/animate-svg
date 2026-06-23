@@ -1,13 +1,13 @@
 // Lesson-agnostic measurement instrumentation for the machine-gated
 // verification pass (docs/proposals/machine-gated-verification.md §2.2–2.3).
 //
-// PURPOSE. The fast `lesson:check` path derives every bbox from layout.ts with
-// LINEAR progress, so it under-estimates any element whose scene easing
-// OVERSHOOTS its endpoint (the migrating whole-card peaks at scale 1.06; every
-// `PopIn motion="bouncy"` entrance peaks ~4.6% over). This module lets the
-// opt-in `--measured` pass capture the TRUE, transform-aware geometry of each
-// load-bearing element at the motion-peak frame, mapped into composition pixel
-// space — exactly the frames the linear envelope mis-measures.
+// PURPOSE. This module is how `lesson:check` learns each load-bearing element's
+// geometry: it captures the TRUE, transform-aware getBBox() at the motion-peak
+// frame, mapped into composition pixel space. The manifest is metadata-only
+// ({id,zone}) — it no longer mirrors the scene's layout math, so the box is read
+// off the render (one source of truth) and easing OVERSHOOT (a bouncy entrance
+// peaks ~4.6% over its endpoint; the migrating card peaks at scale 1.06) is
+// captured exactly instead of being under-estimated by a linear envelope.
 //
 // HOW IT STAYS INERT. Nothing here runs unless `window.__MEASURE__` is set.
 // `window.__MEASURE__` is only ever set by the measured-pass harness

@@ -1,7 +1,10 @@
 #!/usr/bin/env node
-// Opt-in MEASURED verification pass (machine-gated-verification proposal §2–§5).
+// MEASURED verification pass — THE bbox check (machine-gated-verification §2–§5).
 // LESSON-AGNOSTIC: no lesson topic, id, path, or frame literal is hardcoded.
-// Invoked by scripts/lesson-check.mjs --measured AFTER the fast linear pass.
+// Invoked by scripts/lesson-check.mjs. There is no separate "fast linear" pass:
+// the manifest is metadata-only ({id,zone}) and every box comes from the render
+// (getBBox) — one source of geometry truth (layout.ts feeds the scene; the box
+// is read back off the render, never hand-ported into a manifest `bboxAt`).
 //
 // What it does (proposal §2.1, §3, §4):
 //   1. Bundle the Remotion entry once, select the lesson composition.
@@ -16,8 +19,8 @@
 //      overlap gate trustworthy) + LUFS on the master MP4. Eye-judged proxies
 //      (contrast, legibility, motion-too-fast, caption-redundancy) are NOT
 //      gated here — the human is the eye for visual quality.
-//   6. AUGMENT out/<id>/bbox-manifest.json with a new `measured` block —
-//      leaving the existing keyFrames/summary shape untouched (§4.2).
+//   6. WRITE out/<id>/bbox-manifest.json: the `measured` block + a `summary`
+//      with measuredCollisionCount / captionIntrusionCount / gatesFailed.
 //
 // HONEST EXIT: the process exits 1 when a high-confidence GATE fails — any
 // `gatesFailed` entry (bbox-binding bijection or LUFS). A measured overlap is a
@@ -476,7 +479,7 @@ const main = async () => {
     }
     const n = measured.collisionsMeasured.length;
     gateLines.push(
-      `${n === 0 ? "PASS" : "WARN"}: overlap-measured — ${n} measured collision(s) (linear path missed)`,
+      `${n === 0 ? "PASS" : "WARN"}: overlap-measured — ${n} measured collision(s)`,
     );
 
     // caption-intrusion — WARN only (same class as overlap: geometric, with
@@ -631,7 +634,7 @@ const main = async () => {
   for (const line of gateLines) console.log(`  ${line}`);
   console.log(
     `\nmeasured.collisionsMeasured = ${measured.collisionsMeasured.length}` +
-      ` (linear summary.collisionCount = ${manifestJson.summary.collisionCount ?? "?"})`,
+      `, captionIntrusions = ${measured.captionIntrusions.length}`,
   );
   for (const c of measured.collisionsMeasured) {
     console.log(
