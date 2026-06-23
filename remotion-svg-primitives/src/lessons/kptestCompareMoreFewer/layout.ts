@@ -167,6 +167,7 @@ export const MATCH_GHOST_DUR = 20;
 export const SYMBOL_IN_START = 8;
 export const SYMBOL_IN_DUR = 16;
 export const SURPLUS_PULSE_START = 10; // pulse fires near narration onset
+export const SURPLUS_PULSE_DUR = 34; // one pulse-ring envelope (more model + replay)
 export const READALONG_START = 4; // phrase sweep onset (≤0.5s, synced to target lead)
 export const READALONG_PER_BEAT = 15; // frames per phrase token-beat
 
@@ -177,6 +178,7 @@ export const TURN_IN_DUR = 14;
 // fewer-direction / fewer-replay: focus slides surplus→short row; > re-reads 少.
 export const FOCUS_SLIDE_START = 30; // keystone: framing sits between the two says
 export const FOCUS_SLIDE_DUR = 40;
+export const FOCUS_PULSE_DUR = 40; // focus-pulse ring envelope (slides surplus→short row)
 
 // not-by-size: bottom row spreads wide, then re-pairs; still 2 leftover.
 export const SPREAD_START = 8;
