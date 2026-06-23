@@ -38,7 +38,7 @@
     "dev": "remotion studio --port 6173",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc",
+    "lint": "node scripts/check-legacy-boundary.mjs && eslint src && tsc",
     "test:layout": "tsx src/layout/fitToZone.test.ts",
     "lesson:render": "node scripts/render-complete-lesson.mjs",
     "lesson:scaffold": "node scripts/scaffold-lesson.mjs",

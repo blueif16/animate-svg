@@ -41,9 +41,6 @@ const parseArgs = (argv) => {
   return args;
 };
 
-const deriveSilenceOutTs = (alignOutTs) =>
-  alignOutTs ? alignOutTs.replace(/Timing\.ts$/u, "Silences.ts") : undefined;
-
 const mergeConfig = (args) => {
   if (!args.config) {
     return args;
@@ -61,8 +58,6 @@ const mergeConfig = (args) => {
     constPrefix: args.constPrefix ?? config.voice?.constPrefix,
     fps: args.fps ?? config.fps ?? 30,
     recording: args.recording ?? config.voice?.out,
-    silenceOutTs:
-      args.silenceOutTs ?? config.voice?.silenceOutTs ?? deriveSilenceOutTs(alignOutTs),
   };
 };
 
@@ -180,38 +175,14 @@ const main = () => {
       "--align",
     ]);
   }
-  // Silence detection — LEGACY (pre-v4) only. v4 cue-anchored lessons reconcile
-  // from the per-cue clip module (`<camelId>Clips.ts`), not from detected WAV
-  // silences, so this step is skipped when that module exists.
+  // v4 cue-anchored lessons reconcile from the per-cue clip module
+  // (`<camelId>Clips.ts`). The pre-v4 ffmpeg silence-detection step is retired
+  // from the render path (legacy lessons keep their already-generated
+  // `<camelId>Silences.ts` under src/lessons/legacy/generated/; nothing
+  // regenerates them here). `isV4` still gates the v4 audio gate below.
   const clipsModule =
     args.alignOutTs && args.alignOutTs.replace(/Timing\.ts$/u, "Clips.ts");
   const isV4 = clipsModule && fs.existsSync(clipsModule);
-  if (isV4 && args.silenceOutTs) {
-    console.log(
-      `\n== Silence detection skipped (v4 cue-anchored lesson: ${path.basename(clipsModule)} present)`,
-    );
-  } else if (
-    args.recording &&
-    args.silenceOutTs &&
-    args.constPrefix &&
-    fs.existsSync(args.recording)
-  ) {
-    run("Silence detection", "node", [
-      "node_modules/@studio/narration-kit/bin/detect-silences.mjs",
-      "--recording",
-      args.recording,
-      "--out-ts",
-      args.silenceOutTs,
-      "--const-prefix",
-      args.constPrefix,
-      "--fps",
-      String(args.fps),
-    ]);
-  } else if (args.silenceOutTs) {
-    console.log(
-      `\n== Silence detection skipped (missing recording or constPrefix; expected ${args.recording})`,
-    );
-  }
 
   // Deterministic audio gate (v4) — runs right after voice, before render, so a
   // held-vowel drone / untrimmed dead-air is caught by tool in seconds rather
