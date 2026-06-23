@@ -1,7 +1,10 @@
 #!/usr/bin/env node
-// Opt-in MEASURED verification pass (machine-gated-verification proposal §2–§5).
+// MEASURED verification pass — THE bbox check (machine-gated-verification §2–§5).
 // LESSON-AGNOSTIC: no lesson topic, id, path, or frame literal is hardcoded.
-// Invoked by scripts/lesson-check.mjs --measured AFTER the fast linear pass.
+// Invoked by scripts/lesson-check.mjs. There is no separate "fast linear" pass:
+// the manifest is metadata-only ({id,zone}) and every box comes from the render
+// (getBBox) — one source of geometry truth (layout.ts feeds the scene; the box
+// is read back off the render, never hand-ported into a manifest `bboxAt`).
 //
 // What it does (proposal §2.1, §3, §4):
 //   1. Bundle the Remotion entry once, select the lesson composition.
@@ -16,8 +19,8 @@
 //      overlap gate trustworthy) + LUFS on the master MP4. Eye-judged proxies
 //      (contrast, legibility, motion-too-fast, caption-redundancy) are NOT
 //      gated here — the human is the eye for visual quality.
-//   6. AUGMENT out/<id>/bbox-manifest.json with a new `measured` block —
-//      leaving the existing keyFrames/summary shape untouched (§4.2).
+//   6. WRITE out/<id>/bbox-manifest.json: the `measured` block + a `summary`
+//      with measuredCollisionCount / captionIntrusionCount / gatesFailed.
 //
 // HONEST EXIT: the process exits 1 when a high-confidence GATE fails — any
 // `gatesFailed` entry (bbox-binding bijection or LUFS). A measured overlap is a
@@ -124,12 +127,13 @@ const buildAllowedPairSet = (pairs) => {
 };
 
 // ---------------------------------------------------------------------------
-// tsx subprocess: reconciled cues + per-frame manifest bboxes (lesson-agnostic).
+// tsx subprocess: the metadata-only manifest (cues + elements {id,zone} +
+// allowedOverlaps + captionBand). No geometry — boxes come from the render.
 // ---------------------------------------------------------------------------
-const extractMeasured = (camelLessonId, frames) => {
+const extractManifest = (camelLessonId) => {
   const stdout = execFileSync(
     "node_modules/.bin/tsx",
-    ["scripts/_measured-extract.ts", camelLessonId, frames.join(",")],
+    ["scripts/_measured-extract.ts", camelLessonId],
     {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "inherit"],
@@ -256,18 +260,26 @@ const main = async () => {
     perFrameMs: null,
     elements: [],
     collisionsMeasured: [],
+    captionIntrusions: [],
     gates: {},
   };
 
-  // --- Extract reconciled cues + per-frame manifest bboxes (peak frames) -----
-  // First a cheap pull with NO frames to get the cue list, then derive peaks.
-  const cueOnly = extractMeasured(camelId, []);
-  const peakFrames = derivePeakFrames(cueOnly.cues);
+  // --- Extract the metadata-only manifest, then derive the peak frames --------
+  // The manifest carries no geometry, so this is one cheap pull; the sampled
+  // peak frames come from the reconciled cues (derivePeakFrames).
+  const extracted = extractManifest(camelId);
+  const peakFrames = derivePeakFrames(extracted.cues);
   measured.framesSampled = peakFrames;
-  const extracted = extractMeasured(camelId, peakFrames);
   const allowedPairs = buildAllowedPairSet(extracted.allowedOverlaps);
   // Canonical zone-overlap rule, built from the list forwarded by the extractor.
   const isZoneOverlapAllowed = makeZoneOverlapAllowed(extracted.allowedZonePairs);
+  // Caption-intrusion: a teaching element inside the bottom caption ribbon. The
+  // band is the lesson-agnostic CAPTION_BAND (one shared component), forwarded by
+  // the extractor. A teaching element (objects/labels/badges/tally — NOT marks,
+  // which trace over the picture and may run full-bleed) whose measured box
+  // overlaps the band beyond the ratio threshold is the caption-collision defect.
+  const captionBand = extracted.captionBand ?? null;
+  const CAPTION_INTRUSION_ZONES = new Set(["objects", "labels", "badges", "tally"]);
 
   // --- SSR: bundle once, renderStill each peak frame with __measure flag -----
   const outDir = path.resolve(process.cwd(), "out", lessonId);
@@ -276,6 +288,10 @@ const main = async () => {
 
   // measured bbox by frame: { [frame]: { [id]: bbox } }
   const measuredByFrame = {};
+  // measured effective opacity by frame: { [frame]: { [id]: opacity } } — the
+  // measure hook reports each element's true rendered opacity, so the overlap
+  // check skips faded elements without the manifest declaring an opacityAt.
+  const measuredOpacityByFrame = {};
 
   // SSR strategy. Bundle once via @remotion/bundler, then drive renderStill via
   // @remotion/renderer — the only path that exposes onBrowserLog (the geometry
@@ -342,58 +358,50 @@ const main = async () => {
       });
       perFrame.push(Date.now() - t0);
       const byId = {};
+      const opacityById = {};
       // last log wins (the hook logs once per frame after layout commit)
-      for (const m of captured) byId[m.id] = m.bbox;
+      for (const m of captured) {
+        byId[m.id] = m.bbox;
+        opacityById[m.id] = m.opacity ?? 1;
+      }
       measuredByFrame[frame] = byId;
+      measuredOpacityByFrame[frame] = opacityById;
     }
     measured.perFrameMs = perFrame.length
       ? Math.round(perFrame.reduce((a, b) => a + b, 0) / perFrame.length)
       : null;
   }
 
-  // --- Join measured bboxes to manifest, diff, and run overlap math ----------
-  // zone lookup per element id from the manifest snapshots.
+  // --- Run overlap math on the MEASURED boxes --------------------------------
+  // The manifest carries no geometry: every box is the measured getBBox, and the
+  // zone comes from the declared {id,zone} set. An undeclared measured id (a
+  // bijection break, flagged below) falls to "decoration" — but the bijection
+  // gate fails the run, so that never silently exempts a real element.
   const zoneOf = {};
-  for (const frame of peakFrames) {
-    for (const el of extracted.manifestByFrame[frame] || []) {
-      zoneOf[el.id] = el.zone;
-    }
-  }
+  for (const el of extracted.elements || []) zoneOf[el.id] = el.zone;
 
   if (measured.method === "getBBox") {
     for (const frame of peakFrames) {
       const measuredIds = measuredByFrame[frame] || {};
-      const manifestEls = extracted.manifestByFrame[frame] || [];
-      const manifestById = Object.fromEntries(manifestEls.map((e) => [e.id, e]));
+      const measuredOpacityHere = measuredOpacityByFrame[frame] || {};
 
-      // record per-element divergence (manifest LINEAR vs measured TRUE)
+      // record each measured element's true box + effective opacity
       for (const [id, mbbox] of Object.entries(measuredIds)) {
-        const man = manifestById[id];
-        const entry = { id, frame, measuredBbox: mbbox.map((n) => Number(n.toFixed(2))) };
-        if (man) {
-          entry.manifestBbox = man.bbox.map((n) => Number(Number(n).toFixed(2)));
-          entry.divergencePx = {
-            dWidth: Number((mbbox[2] - man.bbox[2]).toFixed(2)),
-            dHeight: Number((mbbox[3] - man.bbox[3]).toFixed(2)),
-          };
-        }
-        measured.elements.push(entry);
+        measured.elements.push({
+          id,
+          frame,
+          measuredBbox: mbbox.map((n) => Number(n.toFixed(2))),
+          opacity: measuredOpacityHere[id] ?? 1,
+        });
       }
 
-      // SAME AABB + ratio overlap math as lesson-manifest.mjs, on MEASURED set.
-      // Use measured bbox when present; fall back to manifest bbox so an element
-      // without a data-mid tag still participates (advisory).
-      const ids = new Set([...Object.keys(measuredIds), ...manifestEls.map((e) => e.id)]);
-      const list = [...ids].map((id) => {
-        const man = manifestById[id];
-        return {
-          id,
-          zone: zoneOf[id] ?? man?.zone ?? "decoration",
-          bbox: measuredIds[id] ?? man?.bbox ?? null,
-          opacity: man ? man.opacity : 1, // measured elements are mounted (opacity≈1)
-          measured: Boolean(measuredIds[id]),
-        };
-      }).filter((e) => e.bbox);
+      // AABB + ratio overlap on the measured set.
+      const list = Object.entries(measuredIds).map(([id, bbox]) => ({
+        id,
+        zone: zoneOf[id] ?? "decoration",
+        bbox,
+        opacity: measuredOpacityHere[id] ?? 1,
+      }));
 
       for (let i = 0; i < list.length; i += 1) {
         for (let j = i + 1; j < list.length; j += 1) {
@@ -415,7 +423,29 @@ const main = async () => {
               zoneA: a.zone,
               zoneB: b.zone,
               ratio: Number(ratio.toFixed(3)),
-              measuredPair: a.measured && b.measured,
+            });
+          }
+        }
+      }
+
+      // caption-intrusion: any teaching element whose MEASURED box reaches into
+      // the bottom caption ribbon. Ratio is over the element's own area (how much
+      // of the element sits in the band).
+      if (captionBand) {
+        for (const e of list) {
+          if (e.opacity <= OPACITY_THRESHOLD) continue;
+          if (!CAPTION_INTRUSION_ZONES.has(e.zone)) continue;
+          const overlap = intersectArea(e.bbox, captionBand);
+          if (overlap <= 0) continue;
+          const area = bboxArea(e.bbox);
+          if (area <= 0) continue;
+          const ratio = overlap / area;
+          if (ratio > OVERLAP_RATIO_THRESHOLD) {
+            measured.captionIntrusions.push({
+              frame,
+              id: e.id,
+              zone: e.zone,
+              ratio: Number(ratio.toFixed(3)),
             });
           }
         }
@@ -423,32 +453,41 @@ const main = async () => {
     }
     const n = measured.collisionsMeasured.length;
     gateLines.push(
-      `${n === 0 ? "PASS" : "WARN"}: overlap-measured — ${n} measured collision(s) (linear path missed)`,
+      `${n === 0 ? "PASS" : "WARN"}: overlap-measured — ${n} measured collision(s)`,
     );
+
+    // caption-intrusion — WARN only (same class as overlap: geometric, with
+    // false-positive sources like a label legitimately near the ribbon when the
+    // caption is suppressed for that beat). The human is the eye; fix-or-justify.
+    if (captionBand) {
+      const ci = measured.captionIntrusions.length;
+      const ids = [...new Set(measured.captionIntrusions.map((c) => c.id))];
+      gateLines.push(
+        `${ci === 0 ? "PASS" : "WARN"}: caption-intrusion — ${ci} teaching element(s) inside the caption ribbon${ci ? ` [${ids.join(", ")}]` : ""}`,
+      );
+    } else {
+      gateLines.push("SKIP: caption-intrusion — no caption band forwarded");
+    }
 
     // --- Gate: bbox-binding — measure-id ≡ manifest-id BIJECTION (both ways) --
     // The join above silently defaults an unknown measured id to zone
-    // "decoration" (collision-exempt) — which HIDES (a) decoration nested inside
-    // a load-bearing group and (b) a scene/manifest id mismatch. A manifest
-    // element that is MOUNTED (opacity > threshold) at a sampled frame yet never
-    // measured is declared-but-untagged. Both void detection. Surface them
-    // loudly (CLAUDE.md "BOUNDING BOX = TRUE FOOTPRINT" bijection law).
+    // "decoration" (collision-exempt) — which HIDES (a) decoration tagged with a
+    // load-bearing measure id and (b) a scene/manifest id mismatch. Conversely a
+    // declared element never measured anywhere is declared-but-untagged (or a tag
+    // typo). Both void detection. The bijection is a SET equality on the FULL
+    // declared element set (every `{id,zone}`) vs every id measured across the
+    // sampled frames — it does NOT depend on a manifest mount window, so it holds
+    // identically for a metadata-only manifest (which has no bboxAt). (CLAUDE.md
+    // "BOUNDING BOX = TRUE FOOTPRINT" bijection law.)
     const measuredIdsAll = new Set();
-    // FULL declared id set (every manifest element, frame-independent) so an
-    // element merely absent from the sampled frames is not a false orphan.
     const manifestIdsAll = new Set((extracted.elements || []).map((e) => e.id));
-    const manifestMountedIds = new Set();
     for (const frame of peakFrames) {
       for (const id of Object.keys(measuredByFrame[frame] || {})) measuredIdsAll.add(id);
-      for (const el of extracted.manifestByFrame[frame] || []) {
-        manifestIdsAll.add(el.id);
-        if ((el.opacity ?? 1) > OPACITY_THRESHOLD) manifestMountedIds.add(el.id);
-      }
     }
     const measuredNotInManifest = [...measuredIdsAll]
       .filter((id) => !manifestIdsAll.has(id))
       .sort();
-    const manifestNeverMeasured = [...manifestMountedIds]
+    const manifestNeverMeasured = [...manifestIdsAll]
       .filter((id) => !measuredIdsAll.has(id))
       .sort();
     const bindBreaks = measuredNotInManifest.length + manifestNeverMeasured.length;
@@ -468,7 +507,7 @@ const main = async () => {
       }
       if (manifestNeverMeasured.length) {
         parts.push(
-          `${manifestNeverMeasured.length} manifest id(s) mounted but never measured — untagged or id-mismatch [${manifestNeverMeasured.join(", ")}]`,
+          `${manifestNeverMeasured.length} declared id(s) never measured — untagged or id-mismatch [${manifestNeverMeasured.join(", ")}]`,
         );
       }
       gateLines.push(`WARN: bbox-binding — ${parts.join("; ")}`);
@@ -545,6 +584,7 @@ const main = async () => {
     }
   }
   manifestJson.summary.measuredCollisionCount = measured.collisionsMeasured.length;
+  manifestJson.summary.captionIntrusionCount = measured.captionIntrusions.length;
   manifestJson.summary.gatesFailed = gatesFailed;
   fs.writeFileSync(bboxPath, JSON.stringify(manifestJson, null, 2));
 
@@ -568,13 +608,18 @@ const main = async () => {
   for (const line of gateLines) console.log(`  ${line}`);
   console.log(
     `\nmeasured.collisionsMeasured = ${measured.collisionsMeasured.length}` +
-      ` (linear summary.collisionCount = ${manifestJson.summary.collisionCount ?? "?"})`,
+      `, captionIntrusions = ${measured.captionIntrusions.length}`,
   );
   for (const c of measured.collisionsMeasured) {
     console.log(
-      `  ! @${c.frame} ${c.a} (${c.zoneA}) ∩ ${c.b} (${c.zoneB})  ratio=${c.ratio}` +
-        `${c.measuredPair ? "" : "  [advisory: one side fell back to manifest bbox]"}`,
+      `  ! @${c.frame} ${c.a} (${c.zoneA}) ∩ ${c.b} (${c.zoneB})  ratio=${c.ratio}`,
     );
+  }
+  if (measured.captionIntrusions.length) {
+    console.log(`\nmeasured.captionIntrusions = ${measured.captionIntrusions.length}`);
+    for (const c of measured.captionIntrusions) {
+      console.log(`  ⚠ @${c.frame} ${c.id} (${c.zone}) intrudes caption ribbon  overlap/area=${c.ratio}`);
+    }
   }
   console.log(`\nAugmented ${path.relative(process.cwd(), bboxPath)} (measured block + summary.measured*)`);
   console.log(

@@ -1,36 +1,29 @@
 // Run via tsx as a subprocess from scripts/lesson-measured.mjs (the same
 // native-TS-stripper workaround the other extractors use). LESSON-AGNOSTIC.
 //
-// Args: <camelLessonId> <framesCsv>
-//   camelLessonId  — e.g. "fenYuHe"
-//   framesCsv      — comma-separated absolute frames the measured pass samples
+// Args: <camelLessonId>
 //
-// stdout JSON:
+// stdout JSON: the metadata-only manifest forwarded for the .mjs measured pass
+// (which runs under plain node and can't import this .ts):
 //   {
 //     lessonId, composition, fps, width, height,
-//     cues:    [{ id, startFrame, endFrame }],            // reconciled timeline
-//     zones:   Partial<Record<ZoneName, Bbox>> | null,
-//     // Per requested frame: the manifest's LINEAR bbox for every mounted
-//     // load-bearing element (so the harness can diff measured-vs-manifest and
-//     // run the SAME AABB overlap math the fast path runs, on the measured set).
-//     manifestByFrame: { [frame]: [{ id, zone, bbox, opacity }] }
+//     cues:             [{ id, startFrame, endFrame, ... }],   // reconciled timeline
+//     zones:            Partial<Record<ZoneName, Bbox>> | null,
+//     allowedOverlaps:  [[idA, idB], ...] | null,              // intentional pairs
+//     allowedZonePairs: string[],                              // ALLOWED_OVERLAP_PAIRS
+//     captionBand:      Bbox,                                  // shared ribbon footprint
+//     elements:         [{ id, zone }],                        // declared load-bearing set
 //   }
 //
-// This reads the SAME manifest module (which reads layout.ts) the fast path
-// reads — no lesson topic, id, or path is hardcoded here.
+// No geometry is forwarded — the measured pass reads every box off the render.
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
 const camelLessonId = process.argv[2];
-const framesCsv = process.argv[3] ?? "";
 if (!camelLessonId) {
-  console.error("usage: _measured-extract.ts <camelLessonId> <framesCsv>");
+  console.error("usage: _measured-extract.ts <camelLessonId>");
   process.exit(1);
 }
-const frames = framesCsv
-  .split(",")
-  .map((s) => Number(s.trim()))
-  .filter((n) => Number.isFinite(n));
 
 const main = async () => {
   const manifestAbs = path.resolve(
@@ -57,16 +50,17 @@ const main = async () => {
   );
   const { ALLOWED_OVERLAP_PAIRS } = await import(pathToFileURL(typesAbs).href);
 
-  const manifestByFrame: Record<number, unknown[]> = {};
-  for (const frame of frames) {
-    const els: unknown[] = [];
-    for (const el of manifest.elements) {
-      const snap = el.bboxAt(frame);
-      if (!snap) continue;
-      els.push({ id: el.id, zone: el.zone, bbox: snap.bbox, opacity: snap.opacity });
-    }
-    manifestByFrame[frame] = els;
-  }
+  // The caption ribbon's footprint is lesson-agnostic (one shared component), so
+  // it lives as ONE constant (src/lesson-media/captionBand.ts) and is forwarded
+  // here — no per-manifest `zones.caption`. The measured pass checks every
+  // teaching element against this band (the caption-collision gate).
+  const captionBandAbs = path.resolve(
+    process.cwd(),
+    "src",
+    "lesson-media",
+    "captionBand.ts",
+  );
+  const { CAPTION_BAND } = await import(pathToFileURL(captionBandAbs).href);
 
   process.stdout.write(
     JSON.stringify({
@@ -94,13 +88,15 @@ const main = async () => {
       // The canonical allowed-zone-pair list from manifestTypes.ts, forwarded so
       // the .mjs measured script has ONE source — it no longer keeps its own copy.
       allowedZonePairs: ALLOWED_OVERLAP_PAIRS,
+      // The lesson-agnostic caption-ribbon footprint (src/lesson-media/captionBand.ts),
+      // forwarded so the .mjs measured pass runs the caption-intrusion check.
+      captionBand: CAPTION_BAND,
       // FULL declared element id+zone set (every element, regardless of whether
       // it is mounted at a sampled frame) — the bbox-binding bijection audit
       // compares measured ids against THIS set, not the per-frame snapshots, so a
       // declared element merely absent from the sampled frames is not a false
       // "orphan tag".
       elements: manifest.elements.map((e: any) => ({ id: e.id, zone: e.zone })),
-      manifestByFrame,
     }),
   );
 };

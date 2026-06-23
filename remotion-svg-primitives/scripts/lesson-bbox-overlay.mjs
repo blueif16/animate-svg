@@ -10,15 +10,17 @@
 // (a pulse ring, glow, sparkle) nested INSIDE a load-bearing element's measured
 // <g> inflates that element's getBBox — so the box no longer matches the thing
 // it claims to bound, and a phantom collision (or a missed one) follows. The
-// only reliable check is to SEE the box on the frame. That is the rule:
-// every still shown for review carries its boxes (CLAUDE.md "Bounding-box
-// discipline").
+// only reliable check is to SEE the box on the frame. That is the rule: every
+// still shown for review carries its boxes (CLAUDE.md "Bounding-box discipline").
 //
 // What it draws, per frame:
-//   • SOLID box  = MEASURED getBBox (the TRUE footprint), colored by zone.
-//   • DASHED box = DECLARED manifest bboxAt() (what the system believes), drawn
-//                  only when it diverges from the measured box (>DIVERGE_PX).
-//   • label      = "id · zone · W×H" so the eye binds box→element→size.
+//   • SOLID box = the MEASURED getBBox (the TRUE footprint), colored by zone.
+//   • label     = "id · zone · W×H" so the eye binds box→element→size.
+//   A measured id that the manifest does NOT declare is drawn red ("· UNDECLARED")
+//   — a bijection break (the measured pass fails the run on it).
+//
+// The manifest is metadata-only ({id,zone}); there is no declared geometry to
+// diverge from — the measured box is the single source of truth.
 //
 // Usage:
 //   node scripts/lesson-bbox-overlay.mjs --config lesson-data/<id>/pipeline.json
@@ -41,10 +43,6 @@ const importFromRoot = async (specifier) => {
   return import(pathToFileURL(resolved).href);
 };
 
-// Divergence (px, either dimension) above which the declared manifest box is
-// also drawn (dashed) so the gap between "believed" and "true" is visible.
-const DIVERGE_PX = 8;
-
 // Zone → outline color. Mirrors the manifest ZoneName union (manifestTypes.ts).
 // Decoration is deliberately gray + thin: it is non-load-bearing and must never
 // be the thing a collision is reported against (see CLAUDE.md).
@@ -57,8 +55,9 @@ const ZONE_COLOR = {
   caption: "#db2777", // pink — caption ribbon
   decoration: "#9ca3af", // gray — non-load-bearing chrome
 };
-const DEFAULT_COLOR = "#ef4444"; // red — unregistered / unknown
-const colorFor = (zone) => ZONE_COLOR[zone] ?? DEFAULT_COLOR;
+const UNDECLARED_COLOR = "#ef4444"; // red — measured but not declared (bijection break)
+const colorFor = (zone, declared) =>
+  declared ? ZONE_COLOR[zone] ?? UNDECLARED_COLOR : UNDECLARED_COLOR;
 
 const parseArgs = (argv) => {
   const args = {};
@@ -77,10 +76,12 @@ const parseArgs = (argv) => {
 
 const toCamel = (kebab) => kebab.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
 
-const extractMeasured = (camelLessonId, frames) => {
+// The metadata-only manifest (cues + declared {id,zone}). No frames arg — there
+// is no per-frame geometry to extract; boxes come from the render below.
+const extractManifest = (camelLessonId) => {
   const stdout = execFileSync(
     "node_modules/.bin/tsx",
-    ["scripts/_measured-extract.ts", camelLessonId, frames.join(",")],
+    ["scripts/_measured-extract.ts", camelLessonId],
     { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], maxBuffer: 64 * 1024 * 1024 },
   );
   return JSON.parse(stdout);
@@ -89,56 +90,34 @@ const extractMeasured = (camelLessonId, frames) => {
 const xmlEscape = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// Build the SVG overlay (same px space as the frame). Solid = measured,
-// dashed = declared-when-divergent. Each box gets a top-left label chip.
+// Build the SVG overlay (same px space as the frame). Solid box per measured
+// element + a "id · zone · W×H" label chip.
 const buildOverlaySvg = (width, height, frame, rows) => {
   const parts = [];
   parts.push(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
   );
-  // Header strip — what the boxes mean.
   parts.push(
     `<rect x="0" y="0" width="${width}" height="26" fill="#111827" opacity="0.82"/>`,
-    `<text x="10" y="18" font-family="sans-serif" font-size="15" fill="#ffffff">frame ${frame}  ·  SOLID = measured true footprint  ·  DASHED = declared manifest box (shown when it diverges &gt;${DIVERGE_PX}px)</text>`,
+    `<text x="10" y="18" font-family="sans-serif" font-size="15" fill="#ffffff">frame ${frame}  ·  SOLID = measured true footprint (by zone)  ·  RED = measured but undeclared (bijection break)</text>`,
   );
   for (const r of rows) {
-    const color = colorFor(r.zone);
-    if (r.declared && r.diverges) {
-      const [x, y, w, h] = r.declared;
-      parts.push(
-        `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="9 6" opacity="0.85"/>`,
-      );
-    }
-    if (r.measured) {
-      const [x, y, w, h] = r.measured;
-      const sw = r.zone === "decoration" ? 2 : 3;
-      parts.push(
-        `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${color}" stroke-width="${sw}"/>`,
-      );
-      const label = `${r.id} · ${r.zone} · ${Math.round(w)}×${Math.round(h)}`;
-      const chipW = label.length * 7.3 + 10;
-      const chipY = y >= 20 ? y - 19 : y + h + 1; // above the box, or below if at top edge
-      parts.push(
-        `<rect x="${x}" y="${chipY}" width="${chipW}" height="18" fill="${color}" opacity="0.92"/>`,
-        `<text x="${x + 5}" y="${chipY + 13}" font-family="sans-serif" font-size="12" fill="#ffffff">${xmlEscape(label)}</text>`,
-      );
-    } else if (r.declared) {
-      // Declared-but-not-measured: the system expects an element here that the
-      // render did not tag (no data-mid) or that is invisible. Mark it.
-      const [x, y, w, h] = r.declared;
-      parts.push(
-        `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="3 4" opacity="0.7"/>`,
-        `<text x="${x + 5}" y="${y + 15}" font-family="sans-serif" font-size="12" fill="${color}">${xmlEscape(r.id)} · declared only</text>`,
-      );
-    }
+    const color = colorFor(r.zone, r.declared);
+    const [x, y, w, h] = r.measured;
+    const sw = r.zone === "decoration" ? 2 : 3;
+    parts.push(
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${color}" stroke-width="${sw}"/>`,
+    );
+    const label = `${r.id} · ${r.declared ? r.zone : "UNDECLARED"} · ${Math.round(w)}×${Math.round(h)}`;
+    const chipW = label.length * 7.3 + 10;
+    const chipY = y >= 20 ? y - 19 : y + h + 1; // above the box, or below if at top edge
+    parts.push(
+      `<rect x="${x}" y="${chipY}" width="${chipW}" height="18" fill="${color}" opacity="0.92"/>`,
+      `<text x="${x + 5}" y="${chipY + 13}" font-family="sans-serif" font-size="12" fill="#ffffff">${xmlEscape(label)}</text>`,
+    );
   }
   parts.push("</svg>");
   return parts.join("");
-};
-
-const diverges = (m, d) => {
-  if (!m || !d) return false;
-  return Math.abs(m[2] - d[2]) > DIVERGE_PX || Math.abs(m[3] - d[3]) > DIVERGE_PX;
 };
 
 const main = async () => {
@@ -151,21 +130,23 @@ const main = async () => {
   const composition = config.composition;
   const entry = config.entry ?? "src/index.ts";
 
+  const extracted = extractManifest(camelId);
+  const width = extracted.width ?? 1280;
+  const height = extracted.height ?? 720;
+  // Declared zone per id (the metadata-only manifest's source of truth).
+  const zoneOf = {};
+  for (const el of extracted.elements ?? []) zoneOf[el.id] = el.zone;
+
   // Frames: explicit --frames, else one representative frame per cue (60%).
   let frames;
   if (args.frames) {
     frames = args.frames.split(",").map((s) => Number(s.trim())).filter(Number.isFinite);
   } else {
-    const cueOnly = extractMeasured(camelId, []);
-    frames = cueOnly.cues
+    frames = extracted.cues
       .map((c) => Math.round(c.startFrame + (c.endFrame - c.startFrame) * 0.6))
       .filter((f) => Number.isFinite(f));
   }
   if (frames.length === 0) throw new Error("no frames to render");
-
-  const extracted = extractMeasured(camelId, frames);
-  const width = extracted.width ?? 1280;
-  const height = extracted.height ?? 720;
 
   const sharpMod = await import("sharp");
   const sharp = sharpMod.default;
@@ -211,23 +192,13 @@ const main = async () => {
     // Measured boxes (last log wins — the hook logs once after layout commit).
     const measuredById = {};
     for (const m of captured) measuredById[m.id] = m.bbox;
-    // Declared boxes + zone from the manifest for this frame.
-    const declaredEls = extracted.manifestByFrame[frame] || [];
-    const declaredById = {};
-    const zoneById = {};
-    for (const el of declaredEls) {
-      declaredById[el.id] = el.bbox;
-      zoneById[el.id] = el.zone;
-    }
 
-    const ids = new Set([...Object.keys(measuredById), ...Object.keys(declaredById)]);
-    const rows = [];
-    for (const id of ids) {
-      const measured = measuredById[id] ?? null;
-      const declared = declaredById[id] ?? null;
-      const zone = zoneById[id] ?? "decoration";
-      rows.push({ id, zone, measured, declared, diverges: diverges(measured, declared) });
-    }
+    const rows = Object.entries(measuredById).map(([id, bbox]) => ({
+      id,
+      zone: zoneOf[id] ?? "decoration",
+      measured: bbox,
+      declared: Object.prototype.hasOwnProperty.call(zoneOf, id),
+    }));
     // Stable draw order: decoration first (under), load-bearing on top.
     rows.sort((a, b) => (a.zone === "decoration" ? -1 : 0) - (b.zone === "decoration" ? -1 : 0));
 
@@ -239,11 +210,10 @@ const main = async () => {
 
     // Per-frame report.
     console.log(`\nframe ${frame}:`);
-    for (const r of rows.sort((a, b) => a.id.localeCompare(b.id))) {
-      const m = r.measured ? `${Math.round(r.measured[2])}×${Math.round(r.measured[3])}` : "—";
-      const d = r.declared ? `${Math.round(r.declared[2])}×${Math.round(r.declared[3])}` : "—";
-      const flag = r.diverges ? `  ⚠ declared≠measured` : "";
-      console.log(`  ${r.id.padEnd(22)} ${String(r.zone).padEnd(11)} measured=${m.padEnd(11)} declared=${d}${flag}`);
+    for (const r of [...rows].sort((a, b) => a.id.localeCompare(b.id))) {
+      const m = `${Math.round(r.measured[2])}×${Math.round(r.measured[3])}`;
+      const flag = r.declared ? "" : "  ⚠ UNDECLARED (bijection break)";
+      console.log(`  ${r.id.padEnd(22)} ${String(r.zone).padEnd(11)} measured=${m}${flag}`);
     }
   }
 

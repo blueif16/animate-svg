@@ -734,7 +734,8 @@ export const KptestGreetingsVerifyLessonScene = () => {
             near the end of the recap as a coral punctuation accent. */}
         {recapActive &&
         frame >= cues["recap-1"].startFrame + RECAP_PULSE_REL_START ? (
-          <g {...measureProps("recap-pulse")}>
+          <g>
+            {/* recap pulse ring — decoration, untagged (no measureProps) */}
             <PulseCircle
               color={colors.coral}
               cx={RECAP_PULSE_CX}

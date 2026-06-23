@@ -42,11 +42,13 @@ const main = () => {
     throw new Error(`pipeline.json missing lessonId: ${args.config}`);
   }
 
-  run("Bbox manifest", "node", [
-    "scripts/lesson-manifest.mjs",
-    "--config",
-    args.config,
-  ]);
+  const outDir = path.resolve(process.cwd(), "out", config.lessonId);
+  const bboxPath = path.join(outDir, "bbox-manifest.json");
+  const sheetPath = path.join(outDir, `${config.lessonId}-contact.png`);
+  const primitivesDir = path.join(outDir, "primitive-checks");
+
+  // Review artifacts first (always produced), then the gate pass last so a
+  // gate-fail exit still leaves the contact sheet + primitive stills to review.
   run("Contact sheet", "node", [
     "scripts/make-contact-sheet.mjs",
     "--config",
@@ -58,33 +60,26 @@ const main = () => {
     args.config,
   ]);
 
-  const outDir = path.resolve(process.cwd(), "out", config.lessonId);
-  const bboxPath = path.join(outDir, "bbox-manifest.json");
-  const sheetPath = path.join(outDir, `${config.lessonId}-contact.png`);
-  const primitivesDir = path.join(outDir, "primitive-checks");
-
-  // Opt-in MEASURED pass — runs AFTER the unchanged fast linear path. Renders
-  // motion-peak frames via SSR, captures real-pixel/getBBox geometry, runs the
-  // overlap + cheap gates, and AUGMENTS bbox-manifest.json with a `measured`
-  // block (machine-gated-verification proposal §5). Default run never invokes
-  // it, so the fast path is byte-identical to before.
-  if (args.measured) {
-    run("Measured pass (--measured)", "node", [
-      "scripts/lesson-measured.mjs",
-      "--config",
-      args.config,
-    ]);
-  }
-
   console.log(`\n${"=".repeat(60)}`);
   console.log(`Lesson QC artifacts for ${config.lessonId}`);
   console.log("=".repeat(60));
-  console.log(`  bbox manifest:    ${path.relative(process.cwd(), bboxPath)}`);
+  console.log(`  bbox manifest:    ${path.relative(process.cwd(), bboxPath)} (.measured block)`);
   console.log(`  contact sheet:    ${path.relative(process.cwd(), sheetPath)}`);
   console.log(`  primitive checks: ${path.relative(process.cwd(), primitivesDir)}`);
-  if (args.measured) {
-    console.log(`  measured block:   ${path.relative(process.cwd(), bboxPath)} → .measured`);
-  }
+
+  // The MEASURED pass IS the bbox check — there is no separate fast linear pass.
+  // The manifest is metadata-only ({id,zone}); geometry comes from the render
+  // (getBBox), one source of truth. It bundles the lesson, SSR-renders the
+  // motion-peak frames, and runs the overlap + bijection + caption + LUFS gates,
+  // writing bbox-manifest.json. Run LAST: it exits 1 on a hard-gate failure
+  // (bbox-binding / LUFS), and that exit propagates through `run` so a failing
+  // lesson cannot read as green. `--measured` is accepted for back-compat but is
+  // now a no-op (this always runs).
+  run("Measured pass", "node", [
+    "scripts/lesson-measured.mjs",
+    "--config",
+    args.config,
+  ]);
 };
 
 try {

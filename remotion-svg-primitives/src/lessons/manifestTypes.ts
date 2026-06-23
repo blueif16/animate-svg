@@ -1,11 +1,12 @@
-// Lesson manifest contract — consumed by `scripts/lesson-manifest.mjs` (bbox
-// collision check) and `scripts/make-contact-sheet.mjs` (frame picker).
+// Lesson manifest contract — METADATA-ONLY (Batch 5 manifest auto-derive).
 //
-// A lesson manifest file is a PURE TS module (no React, no Remotion imports)
-// that exports a `LESSON_MANIFEST: LessonManifest`. Both the lesson scene
-// (.tsx) and the manifest scripts import the same module — the manifest is
-// the single source of truth for what visible elements live at which key
-// frames.
+// A lesson manifest is a PURE TS module that exports `LESSON_MANIFEST`. It
+// declares ONLY which elements are load-bearing and their zone — NOT their
+// geometry. The measured pass (`scripts/lesson-measured.mjs`) reads each box off
+// the rendered scene (getBBox). One source of geometry truth: layout.ts feeds
+// the scene; the box is read back from the render, never mirrored here in a
+// `bboxAt`. Each `{ id, zone }` is tagged once in the scene with
+// measureProps("<id>") — the bijection gate enforces declared ⟺ measured.
 
 import type { AlignedLessonCue } from "@studio/narration-kit";
 
@@ -21,23 +22,11 @@ export type ZoneName =
 // [x, y, width, height] in composition pixel space (top-left origin).
 export type Bbox = readonly [number, number, number, number];
 
-export type ElementSnapshot = {
-  bbox: Bbox;
-  opacity: number;
-};
-
+// A load-bearing element: its id (== the scene's measureProps id) and its zone.
+// No geometry — the measured pass supplies the box from the render.
 export type SceneElement = {
   id: string;
   zone: ZoneName;
-  // Returns null if the element is not mounted / fully invisible at this frame.
-  bboxAt: (frame: number) => ElementSnapshot | null;
-};
-
-export type KeyFrame = {
-  id: string; // stable label like "feels-slow:hold"
-  cueId: string; // which cue this snapshot anchors to
-  offset: number; // frames after cue.startFrame
-  label: string; // what to look for in this frame (human-readable)
 };
 
 export type LessonManifest = {
@@ -47,7 +36,6 @@ export type LessonManifest = {
   width: number;
   height: number;
   cues: readonly AlignedLessonCue[];
-  keyFrames: readonly KeyFrame[];
   elements: readonly SceneElement[];
   zones?: Partial<Record<ZoneName, Bbox>>;
   // Intentional element overlaps, declared per element-id pair with the
@@ -67,11 +55,10 @@ export type LessonManifest = {
 // bearing "decoration" zone overlapping itself — are exempt. The caller is
 // responsible for never comparing an element to itself.
 // THE CANONICAL allowed-zone-pair list. This module is the SINGLE source of
-// truth: the two collision scripts (scripts/lesson-manifest.mjs and
-// scripts/lesson-measured.mjs) run under plain node and cannot import this .ts,
-// so they receive this list FORWARDED through their tsx extractors' stdout
-// (scripts/_manifest-extract.ts / _measured-extract.ts both already import this
-// module). No script keeps its own copy — edit ONLY here.
+// truth: the collision script (scripts/lesson-measured.mjs) runs under plain
+// node and cannot import this .ts, so it receives this list FORWARDED through
+// its tsx extractor's stdout (scripts/_measured-extract.ts imports this module).
+// No script keeps its own copy — edit ONLY here.
 export const ALLOWED_OVERLAP_PAIRS: readonly string[] = [
   "marks:objects",
   "objects:marks",
@@ -118,16 +105,3 @@ export const intersectArea = (a: Bbox, b: Bbox): number => {
 };
 
 export const bboxArea = (b: Bbox): number => b[2] * b[3];
-
-export const resolveKeyFrameAbsolute = (
-  manifest: Pick<LessonManifest, "cues">,
-  keyFrame: KeyFrame,
-): number => {
-  const cue = manifest.cues.find((c) => c.id === keyFrame.cueId);
-  if (!cue) {
-    throw new Error(
-      `Key frame ${keyFrame.id} references unknown cue ${keyFrame.cueId}`,
-    );
-  }
-  return cue.startFrame + keyFrame.offset;
-};

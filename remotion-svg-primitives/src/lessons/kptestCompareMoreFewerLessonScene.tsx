@@ -514,9 +514,9 @@ export const KptestCompareMoreFewerLessonScene: React.FC<{ cues: CueMap }> = ({
           </g>
         ) : null}
 
-        {/* ---- surplus pulse (more model + replay) ---- */}
+        {/* ---- surplus pulse (more model + replay) — decoration, untagged ---- */}
         {pulseCueId ? (
-          <g {...measureProps("surplusPulse")}>
+          <g>
             <PulseCircle
               color={colors.sunshine}
               cx={surplus.x}
@@ -530,9 +530,9 @@ export const KptestCompareMoreFewerLessonScene: React.FC<{ cues: CueMap }> = ({
           </g>
         ) : null}
 
-        {/* ---- keystone focus pulse: slides surplus→short row (fewer) ---- */}
+        {/* ---- keystone focus pulse: slides surplus→short row (fewer) — decoration, untagged ---- */}
         {fewerFocusCueId ? (
-          <g {...measureProps("focusPulse")}>
+          <g>
             <PulseCircle
               color={colors.sunshine}
               cx={focusX}
@@ -568,9 +568,9 @@ export const KptestCompareMoreFewerLessonScene: React.FC<{ cues: CueMap }> = ({
           </g>
         ) : null}
 
-        {/* ---- echo "your turn" affordance (held through the gap) ---- */}
+        {/* ---- echo "your turn" affordance (held through the gap) — decoration, untagged ---- */}
         {echoCueId ? (
-          <g {...measureProps("turnCue")} opacity={turnProgress}>
+          <g opacity={turnProgress}>
             <PointerHandArrow
               direction="up"
               size={84}
@@ -608,9 +608,9 @@ export const KptestCompareMoreFewerLessonScene: React.FC<{ cues: CueMap }> = ({
           </g>
         ) : null}
 
-        {/* ---- recap: ONE live moving highlight over the picture ---- */}
+        {/* ---- recap: ONE live moving highlight over the picture — decoration, untagged ---- */}
         {recapActive ? (
-          <g {...measureProps("recap")}>
+          <g>
             <RecapSpotlight
               currentHighlight={recapHighlight}
               ringCenter={recapRingCenter}
