@@ -66,7 +66,13 @@ export type LessonManifest = {
 // same glyph). Only the explicitly-listed pairs below — plus the non-load-
 // bearing "decoration" zone overlapping itself — are exempt. The caller is
 // responsible for never comparing an element to itself.
-const ALLOWED_OVERLAPS = new Set<string>([
+// THE CANONICAL allowed-zone-pair list. This module is the SINGLE source of
+// truth: the two collision scripts (scripts/lesson-manifest.mjs and
+// scripts/lesson-measured.mjs) run under plain node and cannot import this .ts,
+// so they receive this list FORWARDED through their tsx extractors' stdout
+// (scripts/_manifest-extract.ts / _measured-extract.ts both already import this
+// module). No script keeps its own copy — edit ONLY here.
+export const ALLOWED_OVERLAP_PAIRS: readonly string[] = [
   "marks:objects",
   "objects:marks",
   "marks:badges",
@@ -89,7 +95,9 @@ const ALLOWED_OVERLAPS = new Set<string>([
   // decoration is explicitly non-load-bearing chrome (see ZoneName) — it may
   // overlap itself freely. Every OTHER same-zone pair is now flagged.
   "decoration:decoration",
-]);
+];
+
+const ALLOWED_OVERLAPS = new Set<string>(ALLOWED_OVERLAP_PAIRS);
 
 export const isZoneOverlapAllowed = (a: ZoneName, b: ZoneName): boolean => {
   if (a === "caption" || b === "caption") {

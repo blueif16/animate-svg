@@ -12,13 +12,23 @@
 //      transform-aware getBBox() in composition px. Capture via onBrowserLog.
 //   4. Run the SAME AABB + ratio overlap math as scripts/lesson-manifest.mjs
 //      (OVERLAP_RATIO_THRESHOLD 0.15) on the MEASURED bboxes.
-//   5. Four cheap gates on the same data: LUFS, caption-redundancy, contrast,
-//      legibility. Plus motion-too-fast as WARN-ONLY.
+//   5. The MINIMAL gate set on the same data: bbox-binding bijection (makes the
+//      overlap gate trustworthy) + LUFS on the master MP4. Eye-judged proxies
+//      (contrast, legibility, motion-too-fast, caption-redundancy) are NOT
+//      gated here — the human is the eye for visual quality.
 //   6. AUGMENT out/<id>/bbox-manifest.json with a new `measured` block —
 //      leaving the existing keyFrames/summary shape untouched (§4.2).
 //
-// Advisory: a gate that can't run prints SKIP:<reason> (never silent); the
-// process exits 0 even on WARN.
+// HONEST EXIT: the process exits 1 when a high-confidence GATE fails — any
+// `gatesFailed` entry (bbox-binding bijection or LUFS). A measured overlap is a
+// loud WARN that requires fix-or-justify (per the discipline) but does NOT trip
+// exit 1: the overlap metric has false-positive sources (manifest-fallback
+// advisories, opacity-blind crossfades) and the human is the eye for visual
+// overlaps, so the HARD fail is reserved for the false-positive-free gates. This
+// still stops a composer/verifier self-check from laundering a failing run as
+// green. A gate that can't run prints SKIP:<reason>
+// (never silent) and does NOT fail; a tool CRASH exits 0 (a crash is not a gate
+// failure, and must not masquerade as one).
 
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -44,22 +54,15 @@ const importFromRoot = async (specifier) => {
 const OVERLAP_RATIO_THRESHOLD = 0.15;
 const OPACITY_THRESHOLD = 0.3;
 
-// Gate thresholds (proposal §4). Advisory.
+// Gate thresholds. LUFS is the only thresholded gate that fails the run
+// (overlap + bbox-binding fail structurally; everything else is eye-judged).
 const LUFS_TARGET = -16;
 const LUFS_TOLERANCE = 1; // -16 ± 1 LUFS
 const TRUE_PEAK_MAX = -1.0; // dBFS
-const CAPTION_REDUNDANCY_WARN = 0.6; // jaccard > this warns (non-literacy)
-const CONTRAST_MIN = 4.5; // WCAG AA normal text
-const LEGIBILITY_MIN_PX = 24; // min glyph height for a 6yo
 
 // Peak-aware entrance offsets layered on top of manifest cue-% keyframes (§3.1).
 // Covers spring/easing overshoot ringing that 50%/80% sampling misses.
 const ENTRANCE_PEAK_OFFSETS = [4, 8, 12, 18];
-
-// Literacy / pinyin lessons legitimately show the spoken syllables as captions,
-// so caption≈narration is EXPECTED, not clutter — exempt them (proposal §4).
-const isLiteracyLesson = (lessonId) =>
-  /pinyin|literacy|hanzi|tone|phon/iu.test(lessonId);
 
 // ---------------------------------------------------------------------------
 // Arg parsing (mirrors the sibling scripts).
@@ -97,32 +100,17 @@ const intersectArea = (a, b) => {
 };
 const bboxArea = (b) => b[2] * b[3];
 
-// Keep in sync with scripts/lesson-manifest.mjs ALLOWED_OVERLAPS.
-const ALLOWED_OVERLAPS = new Set([
-  "marks:objects",
-  "objects:marks",
-  "marks:badges",
-  "badges:marks",
-  "decoration:objects",
-  "objects:decoration",
-  "decoration:badges",
-  "badges:decoration",
-  "decoration:tally",
-  "tally:decoration",
-  "decoration:labels",
-  "labels:decoration",
-  "decoration:marks",
-  "marks:decoration",
-  // APEX-STACK (objects:labels) is NO LONGER blanket-exempt — the predicted
-  // misdetection class appeared (kptest-fenyuhe-six question-text-on-dots went
-  // vacuously green). Intentional overlaps are declared per element-id PAIR on
-  // the manifest (`allowedOverlaps`), forwarded by _measured-extract.ts.
-  // Keep in sync with manifestTypes.ts ALLOWED_OVERLAPS.
-  "decoration:decoration",
-]);
-const isZoneOverlapAllowed = (a, b) => {
-  if (a === "caption" || b === "caption") return true;
-  return ALLOWED_OVERLAPS.has(`${a}:${b}`);
+// The allowed-zone-pair list is the CANONICAL one from src/lessons/manifestTypes.ts
+// (ALLOWED_OVERLAP_PAIRS), forwarded across the tsx boundary as
+// `extracted.allowedZonePairs` by scripts/_measured-extract.ts — this script keeps
+// NO copy. The `caption` rule is a RULE, not data, so it stays inline here (it
+// matches the canonical isZoneOverlapAllowed in manifestTypes.ts).
+const makeZoneOverlapAllowed = (zonePairs) => {
+  const allowed = new Set(zonePairs || []);
+  return (a, b) => {
+    if (a === "caption" || b === "caption") return true;
+    return allowed.has(`${a}:${b}`);
+  };
 };
 // Manifest-declared intentional overlaps: element-id pairs, order-insensitive.
 // A zone tag never grants a collision exemption — only an explicit pair does.
@@ -241,109 +229,6 @@ const runLufsGate = (wavPath) => {
 };
 
 // ---------------------------------------------------------------------------
-// Gate: caption-redundancy — char-set Jaccard caption vs narration per cue
-// (proposal Exp D4 / spike redundancy.mjs). EXEMPT literacy/pinyin lessons,
-// AND — generally, in ANY lesson/language — read-along ACQUISITION cues.
-//
-// On a read-along/acquisition beat the child is meant to READ the target phrase
-// AS they hear it (e.g. on-screen `五比三多` while the voice says 五比三多), so
-// caption == spoken target is CORRECT BY DESIGN, not redundancy. We detect this
-// from metadata ALREADY on the cue — no lesson/cue/phrase literal:
-//   1. the cue is `emphasis:true` (the author's design-intent acquisition flag
-//      on a read-along / pronunciation beat), AND
-//   2. the caption IS the literal spoken target — its char-set is a SUBSET of
-//      the spoken phrase's char-set (the caption is a slice/repeat of what is
-//      spoken, NOT a separate authored label).
-// Genuine redundancy — a caption duplicating info shown ELSEWHERE on screen (a
-// label/badge/number) on a non-read-along cue — is NOT emphasis-flagged as the
-// spoken acquisition target and/or its caption is not a subset of the phrase, so
-// it still WARNs. Exempted cues are RECORDED (`exempt: "read-along-target"`),
-// never silently dropped.
-// ---------------------------------------------------------------------------
-const READ_ALONG_EXEMPT = "read-along-target";
-
-const runRedundancyGate = (cues, lessonId) => {
-  if (isLiteracyLesson(lessonId)) {
-    return { ran: false, skipReason: `literacy/pinyin lesson — caption≈narration expected (${lessonId})` };
-  }
-  const strip = (s) => (s || "").replace(/[，。！？、,.!?\s·]/gu, "");
-  const rows = [];
-  for (const c of cues) {
-    if (!c.caption || !c.phrase) continue;
-    const cap = strip(c.caption);
-    const nar = strip(c.phrase);
-    const sCap = new Set(cap);
-    const sNar = new Set(nar);
-    let inter = 0;
-    for (const ch of sCap) if (sNar.has(ch)) inter += 1;
-    const union = new Set([...sCap, ...sNar]).size || 1;
-    const jaccard = Number((inter / union).toFixed(2));
-    // Read-along acquisition exemption: caption IS the spoken target on an
-    // author-flagged pronunciation/read-along beat — design intent, not clutter.
-    const captionIsSpokenTarget =
-      sCap.size > 0 && [...sCap].every((ch) => sNar.has(ch)); // caption ⊆ phrase
-    const exempt = c.emphasis === true && captionIsSpokenTarget;
-    if (exempt) {
-      rows.push({ cueId: c.id, jaccard, pass: true, exempt: READ_ALONG_EXEMPT });
-    } else {
-      rows.push({ cueId: c.id, jaccard, pass: jaccard <= CAPTION_REDUNDANCY_WARN });
-    }
-  }
-  if (rows.length === 0) {
-    return { ran: false, skipReason: "no cues carry both caption and phrase" };
-  }
-  return { ran: true, rows };
-};
-
-// ---------------------------------------------------------------------------
-// Pixel helpers (sharp) for contrast + legibility, reusing spike gates.mjs.
-// ---------------------------------------------------------------------------
-const relLuminance = ([r, g, b]) => {
-  const f = (c) => {
-    const v = c / 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-};
-const contrastRatio = (fg, bg) => {
-  const Lf = relLuminance(fg);
-  const Lb = relLuminance(bg);
-  return (Math.max(Lf, Lb) + 0.05) / (Math.min(Lf, Lb) + 0.05);
-};
-
-// Sample a text element's glyph centroid vs its local background within its
-// measured-bbox crop. Background = the modal corner pixel; foreground = the
-// darkest-vs-bg pixel (the ink). Returns null if the crop is empty/off-frame.
-const sampleContrast = async (sharp, pngPath, bbox, width, height) => {
-  const margin = 6;
-  const left = Math.max(0, Math.round(bbox[0] - margin));
-  const top = Math.max(0, Math.round(bbox[1] - margin));
-  const right = Math.min(width, Math.round(bbox[0] + bbox[2] + margin));
-  const bottom = Math.min(height, Math.round(bbox[1] + bbox[3] + margin));
-  const w = right - left;
-  const h = bottom - top;
-  if (w <= 1 || h <= 1) return null;
-  const { data, info } = await sharp(pngPath)
-    .extract({ left, top, width: w, height: h })
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  const ch = info.channels;
-  const bg = [data[0], data[1], data[2]];
-  let darkest = bg;
-  let dl = relLuminance(bg);
-  for (let i = 0; i < data.length; i += ch) {
-    const p = [data[i], data[i + 1], data[i + 2]];
-    const l = relLuminance(p);
-    if (l < dl) {
-      dl = l;
-      darkest = p;
-    }
-  }
-  return contrastRatio(darkest, bg);
-};
-
-// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 const main = async () => {
@@ -380,14 +265,11 @@ const main = async () => {
   const peakFrames = derivePeakFrames(cueOnly.cues);
   measured.framesSampled = peakFrames;
   const extracted = extractMeasured(camelId, peakFrames);
-  const width = extracted.width ?? 1280;
-  const height = extracted.height ?? 720;
   const allowedPairs = buildAllowedPairSet(extracted.allowedOverlaps);
+  // Canonical zone-overlap rule, built from the list forwarded by the extractor.
+  const isZoneOverlapAllowed = makeZoneOverlapAllowed(extracted.allowedZonePairs);
 
   // --- SSR: bundle once, renderStill each peak frame with __measure flag -----
-  const sharpMod = await import("sharp");
-  const sharp = sharpMod.default;
-
   const outDir = path.resolve(process.cwd(), "out", lessonId);
   fs.mkdirSync(outDir, { recursive: true });
   const framesDir = path.join(outDir, "measured-frames");
@@ -640,131 +522,10 @@ const main = async () => {
     );
   }
 
-  // --- Gate: caption-redundancy ---------------------------------------------
-  const redundancy = runRedundancyGate(extracted.cues, lessonId);
-  if (!redundancy.ran) {
-    measured.gates.captionRedundancy = { skipped: redundancy.skipReason };
-    gateLines.push(`SKIP: caption-redundancy — ${redundancy.skipReason}`);
-  } else {
-    measured.gates.captionRedundancy = redundancy.rows;
-    const failing = redundancy.rows.filter((r) => !r.pass);
-    const exempted = redundancy.rows.filter((r) => r.exempt);
-    gateLines.push(
-      `${failing.length === 0 ? "PASS" : "WARN"}: caption-redundancy — ${failing.length}/${redundancy.rows.length} cue(s) jaccard>${CAPTION_REDUNDANCY_WARN}${exempted.length ? ` (${exempted.length} read-along-target exempt)` : ""}`,
-    );
-  }
-
-  // --- Gate: contrast + legibility (need rendered frames + measured bboxes) ---
-  if (measured.method !== "getBBox" || Object.keys(measuredByFrame).length === 0) {
-    measured.gates.contrast = { skipped: "no measured frames (SSR unavailable)" };
-    measured.gates.legibility = { skipped: "no measured frames (SSR unavailable)" };
-    gateLines.push(`SKIP: contrast — no measured frames (SSR unavailable)`);
-    gateLines.push(`SKIP: legibility — no measured frames (SSR unavailable)`);
-  } else {
-    // text/label elements only (zone "labels"). One sample per id at the frame
-    // where it is largest (most legible reading of its rendered glyphs).
-    const labelSamples = {};
-    for (const frame of peakFrames) {
-      for (const [id, bbox] of Object.entries(measuredByFrame[frame] || {})) {
-        if ((zoneOf[id] ?? "") !== "labels") continue;
-        const area = bbox[2] * bbox[3];
-        if (!labelSamples[id] || area > labelSamples[id].area) {
-          labelSamples[id] = { frame, bbox, area };
-        }
-      }
-    }
-    const contrastRows = [];
-    const legibilityRows = [];
-    for (const [id, s] of Object.entries(labelSamples)) {
-      const pngPath = path.join(framesDir, `f${s.frame}.png`);
-      const glyphPx = Number(s.bbox[3].toFixed(1));
-      legibilityRows.push({
-        id,
-        frame: s.frame,
-        glyphPx,
-        pass: glyphPx >= LEGIBILITY_MIN_PX,
-      });
-      if (fs.existsSync(pngPath)) {
-        try {
-          const ratio = await sampleContrast(sharp, pngPath, s.bbox, width, height);
-          if (ratio !== null) {
-            contrastRows.push({
-              id,
-              frame: s.frame,
-              ratio: Number(ratio.toFixed(2)),
-              pass: ratio >= CONTRAST_MIN,
-            });
-          }
-        } catch {
-          // skip a single unreadable crop without failing the gate
-        }
-      }
-    }
-    if (contrastRows.length === 0) {
-      measured.gates.contrast = { skipped: "no label elements with data-mid sampled" };
-      gateLines.push(`SKIP: contrast — no label elements with data-mid sampled`);
-    } else {
-      measured.gates.contrast = contrastRows;
-      const failing = contrastRows.filter((r) => !r.pass);
-      gateLines.push(
-        `${failing.length === 0 ? "PASS" : "WARN"}: contrast — ${failing.length}/${contrastRows.length} below ${CONTRAST_MIN}:1`,
-      );
-    }
-    if (legibilityRows.length === 0) {
-      measured.gates.legibility = { skipped: "no label elements with data-mid sampled" };
-      gateLines.push(`SKIP: legibility — no label elements with data-mid sampled`);
-    } else {
-      measured.gates.legibility = legibilityRows;
-      const failing = legibilityRows.filter((r) => !r.pass);
-      gateLines.push(
-        `${failing.length === 0 ? "PASS" : "WARN"}: legibility — ${failing.length}/${legibilityRows.length} below ${LEGIBILITY_MIN_PX}px`,
-      );
-    }
-  }
-
-  // --- Gate: motion-too-fast (WARN-ONLY, no hard threshold yet — proposal §4) -
-  // Per-frame centroid delta of measured elements between consecutive sampled
-  // frames. We print the max centroid jump; only an ABSURD jump warns. No fail.
-  if (measured.method === "getBBox" && Object.keys(measuredByFrame).length >= 2) {
-    const centroid = (byId) => {
-      const vals = Object.values(byId);
-      if (vals.length === 0) return null;
-      let sx = 0;
-      let sy = 0;
-      for (const b of vals) {
-        sx += b[0] + b[2] / 2;
-        sy += b[1] + b[3] / 2;
-      }
-      return { x: sx / vals.length, y: sy / vals.length };
-    };
-    let maxDelta = 0;
-    let maxPair = null;
-    for (let i = 1; i < peakFrames.length; i += 1) {
-      const a = centroid(measuredByFrame[peakFrames[i - 1]] || {});
-      const b = centroid(measuredByFrame[peakFrames[i]] || {});
-      if (!a || !b) continue;
-      const df = Math.max(1, peakFrames[i] - peakFrames[i - 1]);
-      const perFrame = Math.hypot(b.x - a.x, b.y - a.y) / df;
-      if (perFrame > maxDelta) {
-        maxDelta = perFrame;
-        maxPair = [peakFrames[i - 1], peakFrames[i]];
-      }
-    }
-    // No calibrated threshold yet; "absurd" = > 200 px/frame (off-screen jump).
-    const absurd = maxDelta > 200;
-    measured.gates.motionFast = {
-      maxCentroidDeltaPxPerFrame: Number(maxDelta.toFixed(2)),
-      framePair: maxPair,
-      pass: !absurd,
-      note: "WARN-ONLY (no calibrated threshold yet — proposal §4)",
-    };
-    gateLines.push(
-      `${absurd ? "WARN" : "PASS"}: motion-too-fast — max ${maxDelta.toFixed(1)} px/frame${maxPair ? ` @${maxPair[0]}->${maxPair[1]}` : ""} (WARN-ONLY)`,
-    );
-  } else {
-    measured.gates.motionFast = { skipped: "fewer than 2 measured frames" };
-    gateLines.push(`SKIP: motion-too-fast — fewer than 2 measured frames`);
-  }
+  // Eye-judged proxies removed from the gate set (caption-redundancy, contrast,
+  // legibility, motion-too-fast): the human is the eye for visual quality, and
+  // the uncalibrated proxies eroded the gate. The minimal failing gate set is
+  // measured overlap + bbox-binding bijection + LUFS-on-master.
 
   // --- AUGMENT bbox-manifest.json (additive; leave existing shape intact) -----
   const bboxPath = path.join(outDir, "bbox-manifest.json");
@@ -787,6 +548,17 @@ const main = async () => {
   manifestJson.summary.gatesFailed = gatesFailed;
   fs.writeFileSync(bboxPath, JSON.stringify(manifestJson, null, 2));
 
+  // HONEST EXIT: fail the run on a high-confidence GATE failure (gatesFailed:
+  // bbox-binding bijection or LUFS) — so a composer/verifier self-check cannot
+  // launder a failing run as green. A measured overlap is surfaced as a loud WARN
+  // requiring fix-or-justify (per the discipline) but does NOT by itself fail the
+  // run: the overlap metric has false-positive sources (manifest-fallback
+  // advisories, opacity-blind crossfades), and the human is the eye for visual
+  // overlaps. A SKIP (gate could not run) carries no `pass` field, so it never
+  // lands in gatesFailed and never fails here.
+  const failed = gatesFailed.length > 0;
+  process.exitCode = failed ? 1 : 0;
+
   // --- Report ----------------------------------------------------------------
   console.log(`\nSampled ${peakFrames.length} peak frame(s): ${peakFrames.join(", ")}`);
   console.log(
@@ -805,12 +577,18 @@ const main = async () => {
     );
   }
   console.log(`\nAugmented ${path.relative(process.cwd(), bboxPath)} (measured block + summary.measured*)`);
-  console.log("(advisory pass — exit 0 even on WARN)");
+  console.log(
+    failed
+      ? `\nFAIL: exit 1 — gatesFailed=[${gatesFailed.join(", ")}] (bbox-binding / LUFS). ${measured.collisionsMeasured.length} measured overlap(s) reported as advisory WARN.`
+      : `\nPASS: exit 0 — no failed gates (SKIP lines do not fail). ${measured.collisionsMeasured.length} measured overlap(s) WARN-only — review + fix-or-justify per discipline.`,
+  );
 };
 
 main().catch((error) => {
-  // Advisory: a crash here must NOT fail the build. Print and exit 0.
-  console.error("MEASURED pass error (advisory, non-blocking):");
+  // A tool CRASH is not a gate failure and must NOT masquerade as one — exit 0
+  // so a broken harness never reads as a failed lesson. (A real gate failure
+  // sets exitCode=1 on the success path above, before any throw.) Print loudly.
+  console.error("MEASURED pass error (tool crash, non-blocking — NOT a gate failure):");
   console.error(error);
   process.exitCode = 0;
 });

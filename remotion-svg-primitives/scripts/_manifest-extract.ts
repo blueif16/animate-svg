@@ -31,7 +31,7 @@ const main = async () => {
   const manifest = mod.LESSON_MANIFEST;
   if (!manifest) throw new Error("Manifest module did not export LESSON_MANIFEST");
   const types = await import(pathToFileURL(typesAbs).href);
-  const { resolveKeyFrameAbsolute } = types;
+  const { resolveKeyFrameAbsolute, ALLOWED_OVERLAP_PAIRS } = types;
 
   const keyFrames = manifest.keyFrames.map((kf: any) => {
     const frame = resolveKeyFrameAbsolute(manifest, kf);
@@ -70,6 +70,10 @@ const main = async () => {
       // Manifest-declared intentional element-id overlap pairs (allowedOverlaps).
       // Zone tags never grant a collision exemption — only these pairs do.
       allowedOverlaps: manifest.allowedOverlaps ?? null,
+      // The canonical allowed-zone-pair list from manifestTypes.ts, forwarded so
+      // the .mjs collision script (plain node, cannot import the .ts) has ONE
+      // source — it no longer keeps its own copy.
+      allowedZonePairs: ALLOWED_OVERLAP_PAIRS,
       keyFrames,
     }),
   );
