@@ -58,76 +58,20 @@ const intersectArea = (a, b) => {
 };
 const bboxArea = (b) => b[2] * b[3];
 
-// STRETCH (prototyped, NOT wired into lesson:check) — audio-breath assertion.
-// Catches the "audio jumps straight to the next sentence / no breath at a cue
-// boundary" class: every INTERNAL cue boundary (start of cue[i>0]) should have
-// a detected silence whose interval contains, or lands within ±N frames of, the
-// boundary frame. A boundary with no nearby silence means the TTS ran two cues
-// together with no breath.
-//
-// This is an AUDIO check, not a bbox check — it really belongs in the voice/ASR
-// wave (Wave 3) right after detect-silences writes <camelId>Silences.ts, or in
-// the Wave 3.5 reconcile that already snaps boundaries to silences
-// (src/lessons/<camelId>LessonTimeline.ts findBoundarySilence). Wiring it into
-// THIS script needs the reconciled cues + the silences array to cross the tsx
-// subprocess boundary; scripts/_manifest-extract.ts (NOT owned by this change)
-// currently emits only keyFrames. TODO(extract-boundary): have
-// _manifest-extract.ts also emit `cues: manifest.cues` and load+emit the
-// `<camelId>Silences` array, then call assertAudioBreaths() below from main().
-//
-// VERIFIED against real fen-yu-he data (9 cues / 24 silences, N=6): 7/8 internal
-// boundaries had a breath; boundary before "ordered-column-complete" @frame 954
-// had NONE — exactly the defect class above.
-const BREATH_TOLERANCE_FRAMES = 6; // ~0.2s @ 30fps
-const assertAudioBreaths = (cues, silences, N = BREATH_TOLERANCE_FRAMES) => {
-  const hasBreath = (boundary) =>
-    silences.some((s) => boundary >= s.startFrame - N && boundary <= s.endFrame + N);
-  const warnings = [];
-  for (let i = 1; i < cues.length; i += 1) {
-    const boundary = cues[i].startFrame;
-    if (!hasBreath(boundary)) {
-      warnings.push({
-        kind: "no-breath",
-        cueId: cues[i].id,
-        boundaryFrame: boundary,
-      });
-    }
-  }
-  return warnings;
-};
-void assertAudioBreaths; // referenced by TODO above; dormant until wired.
-
-// Keep in sync with src/lessons/manifestTypes.ts ALLOWED_OVERLAPS.
-// same-zone (a === b) is NO LONGER blanket-allowed: two DISTINCT load-bearing
-// elements sharing a zone and overlapping are a real defect (crammed columns,
-// twin/duplicate cards, marks colliding). Only the explicit pairs below — plus
-// non-load-bearing "decoration" overlapping itself — are exempt. The caller
-// never compares an element to itself (pair loop starts at j = i + 1).
-const ALLOWED_OVERLAPS = new Set([
-  "marks:objects",
-  "objects:marks",
-  "marks:badges",
-  "badges:marks",
-  "decoration:objects",
-  "objects:decoration",
-  "decoration:badges",
-  "badges:decoration",
-  "decoration:tally",
-  "tally:decoration",
-  "decoration:labels",
-  "labels:decoration",
-  "decoration:marks",
-  "marks:decoration",
-  // APEX-STACK (objects:labels) is NO LONGER blanket-exempt — the predicted
-  // misdetection class appeared (kptest-fenyuhe-six question-text-on-dots went
-  // vacuously green). Intentional overlaps are declared per element-id PAIR on
-  // the manifest (`allowedOverlaps`), forwarded by _manifest-extract.ts.
-  // Keep in sync with manifestTypes.ts + lesson-measured.mjs.
-  "decoration:decoration",
-]);
-const isZoneOverlapAllowed = (a, b) => {
-  if (a === "caption" || b === "caption") return true;
-  return ALLOWED_OVERLAPS.has(`${a}:${b}`);
+// The allowed-zone-pair list is the CANONICAL one from src/lessons/manifestTypes.ts
+// (ALLOWED_OVERLAP_PAIRS), forwarded across the tsx boundary as
+// `extracted.allowedZonePairs` by scripts/_manifest-extract.ts — this script keeps
+// NO copy. same-zone (a === b) is NOT blanket-allowed: two DISTINCT load-bearing
+// elements sharing a zone and overlapping are a real defect; only the listed pairs
+// (plus decoration over itself) are exempt. The caller never compares an element
+// to itself (pair loop starts at j = i + 1). The `caption` rule is a RULE, not
+// data, so it stays inline here and in the canonical isZoneOverlapAllowed.
+const makeZoneOverlapAllowed = (zonePairs) => {
+  const allowed = new Set(zonePairs || []);
+  return (a, b) => {
+    if (a === "caption" || b === "caption") return true;
+    return allowed.has(`${a}:${b}`);
+  };
 };
 // Manifest-declared intentional overlaps: element-id pairs, order-insensitive.
 // A zone tag never grants a collision exemption — only an explicit pair does.
@@ -172,6 +116,8 @@ const main = () => {
   const captionBand = extracted.zones?.caption ?? null;
   const CAPTION_INTRUSION_ZONES = new Set(["objects", "labels", "badges", "tally"]);
   const allowedPairs = buildAllowedPairSet(extracted.allowedOverlaps);
+  // Canonical zone-overlap rule, built from the list forwarded by the extractor.
+  const isZoneOverlapAllowed = makeZoneOverlapAllowed(extracted.allowedZonePairs);
 
   const reportKeyFrames = [];
   let totalCollisions = 0;
