@@ -13,7 +13,7 @@ import {
 } from "../lesson-media/components";
 import { spansToWindows } from "../lesson-media/audioMix";
 import type { LessonComposition } from "./lessonRegistryTypes";
-import { Kp2CountingByTensLessonScene } from "./kp2CountingByTensLessonScene";
+import { Kp2CountingByTensLessonScene } from "./Kp2CountingByTensLessonScene";
 import {
   kp2CountingByTensCues,
   kp2CountingByTensDuration,
