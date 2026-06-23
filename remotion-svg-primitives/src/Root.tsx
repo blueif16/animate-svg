@@ -103,7 +103,6 @@ import {
   CompleteKp1FenYuHeIntroLesson,
   CompleteKp1HelloGreetingsLesson,
   CompleteKp2CountingByTensLesson,
-  CompleteKp2v2CountingByTensLesson,
   CompleteMakeTenLesson,
   CompletePinyinToneLesson,
   CompleteTenOnesMakeOneTenLesson,
@@ -137,8 +136,6 @@ import {
   completeKp1HelloGreetingsLessonDuration,
   completeKp2CountingByTensLessonDefaultProps,
   completeKp2CountingByTensLessonDuration,
-  completeKp2v2CountingByTensLessonDefaultProps,
-  completeKp2v2CountingByTensLessonDuration,
   completeMakeTenLessonDefaultProps,
   completeMakeTenLessonDuration,
   completePinyinToneLessonDefaultProps,
@@ -293,13 +290,6 @@ export const RemotionRoot: React.FC = () => {
         component={CompleteKp2CountingByTensLesson}
         durationInFrames={completeKp2CountingByTensLessonDuration}
         defaultProps={completeKp2CountingByTensLessonDefaultProps}
-        {...compositionDefaults}
-      />
-      <Composition
-        id="CompleteKp2v2CountingByTensLesson"
-        component={CompleteKp2v2CountingByTensLesson}
-        durationInFrames={completeKp2v2CountingByTensLessonDuration}
-        defaultProps={completeKp2v2CountingByTensLessonDefaultProps}
         {...compositionDefaults}
       />
       <Composition

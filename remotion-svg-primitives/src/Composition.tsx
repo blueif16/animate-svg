@@ -75,67 +75,65 @@ export {
 } from "./scenes/HybridSketchMotionDemo";
 export { PathFollowDemo } from "./scenes/PathFollowDemo";
 export { StrokeTraceDemo } from "./scenes/StrokeTraceDemo";
+// LEGACY (pre-v4) lessons — quarantined under ./lessons/legacy/ (see
+// scripts/check-legacy-boundary.mjs). These remain browsable Studio fixtures;
+// the v4 path never imports them.
 export {
   CompleteComparisonLesson,
   completeComparisonLessonDefaultProps,
-} from "./lessons/CompleteComparisonLesson";
-export { completeComparisonLessonDuration } from "./lessons/comparisonLessonTimeline";
+} from "./lessons/legacy/CompleteComparisonLesson";
+export { completeComparisonLessonDuration } from "./lessons/legacy/comparisonLessonTimeline";
 export {
   CompleteKp2CountingByTensLesson,
   completeKp2CountingByTensLessonDefaultProps,
 } from "./lessons/CompleteKp2CountingByTensLesson";
 export { completeKp2CountingByTensLessonDuration } from "./lessons/kp2CountingByTensLessonTimeline";
 export {
-  CompleteKp2v2CountingByTensLesson,
-  completeKp2v2CountingByTensLessonDefaultProps,
-} from "./lessons/CompleteKp2v2CountingByTensLesson";
-export { completeKp2v2CountingByTensLessonDuration } from "./lessons/kp2v2CountingByTensLessonTimeline";
-export {
   CompleteMakeTenLesson,
   completeMakeTenLessonDefaultProps,
-} from "./lessons/CompleteMakeTenLesson";
-export { completeMakeTenLessonDuration } from "./lessons/makeTenLessonTimeline";
+} from "./lessons/legacy/CompleteMakeTenLesson";
+export { completeMakeTenLessonDuration } from "./lessons/legacy/makeTenLessonTimeline";
 export {
   CompleteTenOnesMakeOneTenLesson,
   completeTenOnesMakeOneTenLessonDefaultProps,
-} from "./lessons/CompleteTenOnesMakeOneTenLesson";
-export { completeTenOnesMakeOneTenLessonDuration } from "./lessons/tenOnesMakeOneTenLessonTimeline";
+} from "./lessons/legacy/CompleteTenOnesMakeOneTenLesson";
+export { completeTenOnesMakeOneTenLessonDuration } from "./lessons/legacy/tenOnesMakeOneTenLessonTimeline";
 export {
   PRIMITIVE_CHECK_DURATION as primitiveCheckTenOnesMakeOneTenDuration,
   PrimitiveCheckTenOnesMakeOneTenBundleWrap,
   PrimitiveCheckTenOnesMakeOneTenStickRow,
-} from "./lessons/tenOnesMakeOneTen/primitiveChecks";
+} from "./lessons/legacy/tenOnesMakeOneTen/primitiveChecks";
 export {
   CompleteFenYuHeLesson,
   completeFenYuHeLessonDefaultProps,
   completeFenYuHeLessonDuration,
-} from "./lessons/CompleteFenYuHeLesson";
+} from "./lessons/legacy/CompleteFenYuHeLesson";
 export {
   CompleteKp1FenYuHeIntroLesson,
   completeKp1FenYuHeIntroLessonDefaultProps,
   completeKp1FenYuHeIntroLessonDuration,
-} from "./lessons/CompleteKp1FenYuHeIntroLesson";
+} from "./lessons/legacy/CompleteKp1FenYuHeIntroLesson";
 export {
   CompleteKp1HelloGreetingsLesson,
   completeKp1HelloGreetingsLessonDefaultProps,
   completeKp1HelloGreetingsLessonDuration,
-} from "./lessons/CompleteKp1HelloGreetingsLesson";
+} from "./lessons/legacy/CompleteKp1HelloGreetingsLesson";
 export {
   PRIMITIVE_CHECK_FEN_HE_DURATION as primitiveCheckKp1FenHeDuration,
   PrimitiveCheckKp1FenHeDiagramHardest,
   PrimitiveCheckKp1FenHeDiagramMigration,
   PrimitiveCheckKp1FenHeDiagramMultiplicity,
-} from "./lessons/kp1FenYuHeIntro/primitiveChecks";
+} from "./lessons/legacy/kp1FenYuHeIntro/primitiveChecks";
 export {
   PRIMITIVE_CHECK_KP1_HELLO_DURATION as primitiveCheckKp1HelloDuration,
   PrimitiveCheckKp1HelloGreetingsHardest,
   PrimitiveCheckKp1HelloGreetingsMultiplicity,
-} from "./lessons/kp1HelloGreetings/primitiveChecks";
+} from "./lessons/legacy/kp1HelloGreetings/primitiveChecks";
 export {
   CompletePinyinToneLesson,
   completePinyinToneLessonDefaultProps,
-} from "./lessons/CompletePinyinToneLesson";
-export { completePinyinToneLessonDuration } from "./lessons/pinyinToneLessonTimeline";
+} from "./lessons/legacy/CompletePinyinToneLesson";
+export { completePinyinToneLessonDuration } from "./lessons/legacy/pinyinToneLessonTimeline";
 export {
   FishCountingLesson,
   HanziMatchLesson,
