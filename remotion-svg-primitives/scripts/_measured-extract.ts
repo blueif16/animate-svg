@@ -46,6 +46,17 @@ const main = async () => {
     throw new Error("Manifest module did not export LESSON_MANIFEST");
   }
 
+  // The canonical allowed-zone-pair list lives in manifestTypes.ts; import it
+  // here (under tsx) and forward it so the .mjs measured script has ONE source
+  // and no longer keeps its own copy.
+  const typesAbs = path.resolve(
+    process.cwd(),
+    "src",
+    "lessons",
+    "manifestTypes.ts",
+  );
+  const { ALLOWED_OVERLAP_PAIRS } = await import(pathToFileURL(typesAbs).href);
+
   const manifestByFrame: Record<number, unknown[]> = {};
   for (const frame of frames) {
     const els: unknown[] = [];
@@ -64,23 +75,25 @@ const main = async () => {
       fps: manifest.fps,
       width: manifest.width,
       height: manifest.height,
+      // Reconciled cue window + author metadata (caption/phrase/emphasis). The
+      // caption-redundancy gate that consumed caption/phrase/emphasis was cut
+      // (the human is the eye); these fields are still forwarded for any future
+      // consumer and stay part of the stdout contract.
       cues: manifest.cues.map((c: any) => ({
         id: c.id,
         startFrame: c.startFrame,
         endFrame: c.endFrame,
-        // narration onset/end (frozen ASR) so caption-redundancy can pair
-        // caption vs phrase per cue; present on AlignedLessonCue.
         caption: c.caption ?? null,
         phrase: c.phrase ?? null,
-        // design-intent acquisition flag (set by the author on a read-along /
-        // pronunciation beat); lets caption-redundancy exempt a read-along
-        // target (caption == the spoken phrase BY DESIGN) from the WARN.
         emphasis: c.emphasis ?? false,
       })),
       zones: manifest.zones ?? null,
       // Manifest-declared intentional element-id overlap pairs (allowedOverlaps).
       // Zone tags never grant a collision exemption — only these pairs do.
       allowedOverlaps: manifest.allowedOverlaps ?? null,
+      // The canonical allowed-zone-pair list from manifestTypes.ts, forwarded so
+      // the .mjs measured script has ONE source — it no longer keeps its own copy.
+      allowedZonePairs: ALLOWED_OVERLAP_PAIRS,
       // FULL declared element id+zone set (every element, regardless of whether
       // it is mounted at a sampled frame) — the bbox-binding bijection audit
       // compares measured ids against THIS set, not the per-frame snapshots, so a
