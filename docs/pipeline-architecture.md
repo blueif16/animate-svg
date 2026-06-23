@@ -23,7 +23,7 @@ The cue's length is decided **after** Wave 3a generates voice, not before. The d
 The cue length is then:
 
 ```
-cueSeconds = max(narrationSeconds, visualMotionSeconds) + tailSeconds
+cueFrames = max(narrationFrames + gapFrames, visualMotionFrames) + tailFrames    // v4 cue-anchored; see changelog v4
 ```
 
 Where `tailSeconds` is a small buffer (≤ 0.3s) so the cue doesn't slam straight into the next. Captions read this window; the audio sits inside it; the visual motion plays through it.
@@ -66,8 +66,9 @@ Wave 2a  Visual design       ║   Wave 2b  Audio + captions (SERIAL after 2a)
          No frame numbers.    ║
 
 Wave 3a  Voice + ASR
-         Output: generated/<X>Timing.ts with raw aligned cues.
-         These are the CANONICAL audio cue durations.
+         Output: generated/<X>Clips.ts — per-cue TRIMMED clips with EXACT
+         narrationFrames + typed gap (the canonical audio truth).
+         <X>Timing.ts (ASR) is QA-only — its frames are not used for timing.
          Frozen from this point. Never regenerated.
 
 Wave 3b  Primitive gap-scan + builder    (parallel with 3a)
@@ -76,7 +77,7 @@ Wave 3.5 Cue timeline reconcile          (orchestrator-owned)
          Reads: visual-design.md (visualMotionSeconds per cue) +
                 Wave 3a timing module (narrationSeconds per cue).
          For each cue:
-           cueSeconds = max(narrationSeconds, visualMotionSeconds) + tail
+           cueFrames = max(narrationFrames + gapFrames, visualMotionFrames) + tail   (via reconcileClipTimeline)
          Output: lesson-data/<id>/cue-timeline.json — single source of truth.
          Currently embedded directly into <X>LessonTimeline.ts as the
          exported `<X>Cues` array.
@@ -88,8 +89,11 @@ Wave 4a  Composer
          inside each cue's window. If it doesn't, composer trims non-load-
          bearing flourishes (sparkle, dot-dismiss) FIRST; never re-pads.
          Caption layer reads the same cue boundaries.
-         Audio layer plays the WAV as one continuous Sequence — works
-         correctly because visuals now match the audio.
+         Audio layer mounts each cue's OWN measured clip in its own
+         <Sequence from={cue.startFrame}> (the timeline's <X>VoiceClips array).
+         There is NO single continuous WAV — a clip can never cross a cue
+         boundary, so the continuous-WAV drift is structurally impossible
+         (changelog v4).
 
 Wave 4b  Sketch overlay layer            (parallel with 4a)
 
@@ -182,7 +186,7 @@ The `reason` is metadata: the synthesis step ignores it (it only needs `seconds`
 
 Intentional silence reaches the timeline two ways, both reasoned, neither padding:
 
-1. **A baked WAV gap** (`cue.gap`) — silence that must sit *inside the audio stream* (a wait-time after a spoken prompt, a beat between sentences). The voice generator splices `gap.seconds` of local silence after that cue's clip; `bin/detect-silences.mjs` finds it; the per-lesson reconcile (`reconcileCueTimeline`) absorbs it into the cue window via `audioSpanFrames` — **no reconcile-math change**. This is the seam that makes "audio is the skeleton" (§2, §5) and intentional silence coexist: the silence is *in* the skeleton.
+1. **A typed timeline HOLD** (`cue.gap`) — the clip plays at the cue start, then the window holds open for `gap.seconds` with NO audio scheduled across it (truly free — not even `Buffer.alloc`). `reconcileClipTimeline` adds `gapFrames` into the cue window via the `max(narrationFrames + gapFrames, motionFrames)` formula. (Pre-v4 this was a baked WAV gap found by `detect-silences`; that path is deleted from new lessons — changelog v4.)
 2. **A motion-driven hold** (`visualMotionSeconds > narrationSeconds`, §2) — silence that exists because the *picture* needs the time. Reconcile already gives the cue `max(motion, audio)`; the voice simply finishes before the cue does and the visual holds.
 
 Both keep the **one-timeline invariant** (§1): the silence lives in the shared cue window, so audio, visuals, and captions never disagree about it. The thing §6 forbade — a *second*, composer-private timeline of padding — stays forbidden.

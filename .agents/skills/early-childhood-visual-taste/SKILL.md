@@ -34,10 +34,7 @@ Hard rule: **at most 4 meaningful colors per scene**, plus cream as background. 
 
 - Sans-serif, rounded, friendly. Use `fontFamily` constant from `src/shape-primitives/shared.tsx`.
 - No decorative or display typefaces. The text serves the math; it doesn't compete with the visuals.
-- Minimum sizes (per `kids-eye` §1):
-  - primary labels (一个十, 十个一 = 一个十): ≥ 48 px
-  - badges, count steps: ≥ 36 px
-  - caption ribbon: ≥ 56 px (it's load-bearing for accessibility)
+- Minimum sizes — the floors live in `kids-eye` §1 (anchored to `src/theme.ts` `sizing`), NOT here. Do not restate a px number that can drift from them; read the floor from kids-eye §1 and pick the matching `sizing` token (`minFontPx` body floor, `captionFontPx` primary/caption floor, `typeScale.*` ramp). Primary labels and captions clear `captionFontPx`; badges/count steps clear `minFontPx`; nothing renders below `minFontPx`.
 
 ## Motion vocabulary
 
@@ -59,7 +56,7 @@ Reserve emphasis (sparkle, scale pulse, color flash, `motion="bouncy"`) for ONE 
 
 - One ink color: `textNavy`. No other colors on sketch marks.
 - Stroke: 4 px nominal, opacity 0.92, subtle hand-jitter (±1.5 px), round caps.
-- One mark per cue maximum. Most cues should have zero marks — restraint clarifies; clutter confuses.
+- Most cues should have ZERO marks — restraint clarifies, clutter confuses. The mark-budget ceiling is owned by `sketch-explainer-layer` (total ≤ floor(cueCount × 0.6)); honor that, do not restate a separate per-cue number here.
 - Marks anchor to zones (per `kids-eye` §1.5). Marks may TRACE OVER zone-objects (e.g. wrap-arc following a tie path) but never SIT INSIDE zone-labels or duplicate what a label says.
 - **Optional `boil` for marks that linger** — `<TeacherMark boil={{ magnitude: 1, holdFrames: 4 }}>` makes a long-held mark wobble subtly so it reads as a teacher's hand, not a frozen overlay. Decorative-only, opt-in, at most one or two per video. Full reach guide: `CAPABILITIES.md#sketch-boil`. See also `sketch-explainer-layer` §1.1.
 

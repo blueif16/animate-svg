@@ -22,7 +22,7 @@ between-states:  <what visually moves / changes / persists across cues>
 reading-order:   <eye lands on A, then B, then C — name elements per cue>
 decoration-budget:  <max 2 stacked surfaces, max N meaningful colors>
 text-budget:     <for each on-screen string: is it already implied by geometry / sequence / color / adjacency? if yes, drop NOW>
-occupancy:       <which axis is binding; SHOW the arithmetic at the fullest cue — content ÷ its OWN axis length (a horizontal row is ÷ the 1920 width, NEVER ÷ the 1080 short-side); teaching content occupies ≥ ~50% of the non-binding axis; if the binding axis is itself < ~50%, the object floats in an empty frame — grow it or widen the metaphor>
+occupancy:       <which axis is binding; SHOW the arithmetic at the fullest cue — content ÷ its OWN axis length (a horizontal row is ÷ the canvas WIDTH, a vertical extent ÷ the SHORT-SIDE; NEVER divide a width by the short-side); use the kids-eye §1 composition (1280×720 per src/theme.ts `video`) as the denominator; teaching content occupies ≥ ~50% of the non-binding axis; if the binding axis is itself < ~50%, the object floats in an empty frame — grow it or widen the metaphor>
 fit-check:       <densest cue FITS its ASSIGNED zone (not the canvas): N·unitSize+(N−1)·gap ≤ zone.w AND row x-extent ⊂ [zone.x, zone.x+zone.w] (vert. likewise vs zone.h); every co-present pair's gap ≥ separation-gap-min. Name the zone each number is measured against. See §4.>
 identity-invariant: <what stays the same primitive across the transformation>
 object-count:    <per cue: the number of teaching units present in each zone (e.g. dots: 6, cards: 2). The composer feeds (this count + the kids-eye §1.5 zone) to fitUnitsToZone to COMPUTE unit size + positions — so sizes are never hand-picked. State it per cue wherever a count changes; "0" for a cue with no countable. See CAPABILITIES.md#auto-size-to-zone.>
@@ -49,7 +49,7 @@ between-states:  the same 10 sticks live the whole video, only their layout chan
 reading-order:   sticks → counting badges → tally → bundling motion → rope + bundle → label "一个十" → comparison → takeaway
 decoration-budget:  1 cream background + 1 caption ribbon = 2 surfaces total. Stick orange, rope coral, ink navy, highlight sunshine = 4 meaningful colors.
 text-budget:     "一个十" (load-bearing — names the new unit), "10 步" / "1 步" (load-bearing — the contrast), takeaway "十个一 = 一个十" (load-bearing — the moral), captions (load-bearing — accessibility). No chrome labels.
-occupancy:       horizontal axis is binding (sticks → bundle moves horizontally); teaching unit (one stick) at 130 px = 12% of 1080 short-side, hits target. Bundle uses ~720 px width, ~67% of horizontal axis at the climax.
+occupancy:       horizontal axis is binding (sticks → bundle moves horizontally); teaching unit (one stick) at ~96 px ≈ 13% of the 720 short-side, hits the kids-eye §1 target. Bundle uses ~720 px width, ~56% of the 1280-wide axis at the climax.
 identity-invariant: every stick is a SmallStick at the same orange tone for the entire video, whether scattered, in a row, in a bundle, or dimmed in the comparison. No color changes across the transformation.
 object-count:    zone-objects holds 10 sticks every cue (scatter → row → bundle is a relayout, not a recount); 1 bundle after the tie. The composer sizes them via fitUnitsToZone(zone-objects, 10).
 ```
@@ -84,19 +84,19 @@ Forbidden:
 
 ## 4. Occupancy: the canvas is a budget, not a stage
 
-The 1920×1080 canvas is a budget that must be spent on the teaching object, not a stage with a tiny figure floating in the middle.
+The 1280×720 canvas (kids-eye §1 / src/theme.ts `video`) is a budget that must be spent on the teaching object, not a stage with a tiny figure floating in the middle.
 
-A scene that draws a 200 px bundle in the center of a 1920 px wide canvas with the rest empty is committing the same sin as a decorative container — the surrounding whitespace earned nothing. It reads as "the scene is too small for its canvas."
+A scene that draws a 200 px bundle in the center of a 1280 px wide canvas with the rest empty is committing the same sin as a decorative container — the surrounding whitespace earned nothing. It reads as "the scene is too small for its canvas."
 
 ### Rules
 
 - The teaching unit (a stick, the bundle) must size itself per the `kids-eye` §1 minimums and **grow** until it hits a real constraint — design-rhythm spacing to its neighbor, the metaphor's geometry, or the binding-axis bound.
-- Audit occupancy IN THE CONTRACT (front-loaded, §9), with the px arithmetic shown — measure each axis against ITS OWN length (a horizontal row's occupancy is width ÷ 1920, NOT ÷ the 1080 short-side; the wrong denominator inflates a 48%-empty frame into a fake "86%"). On the **non-binding axis** the teaching content must occupy ≥ ~50%; a thin centered band with cream margins on the binding axis is whitespace acting as decoration — redesign or widen the metaphor, never defer it to a post-render audit.
+- Audit occupancy IN THE CONTRACT (front-loaded, §9), with the px arithmetic shown — measure each axis against ITS OWN length (a horizontal row's occupancy is width ÷ the canvas WIDTH, NOT ÷ the short-side; the wrong denominator inflates an empty frame into a fake high %). On the **non-binding axis** the teaching content must occupy ≥ ~50%; a thin centered band with cream margins on the binding axis is whitespace acting as decoration — redesign or widen the metaphor, never defer it to a post-render audit.
 - **FIT is checked against the ZONE; EMPTINESS against the axis — two different denominators, never confuse them.** The ≥50% emptiness rule above divides by the AXIS length. The OVERFLOW / fit rule divides by the content's **assigned ZONE box**: at the densest cue, `N·unitSize + (N−1)·gap ≤ zone.w`, and the placed row's x-extent must fall inside `[zone.x, zone.x + zone.w]` (vertical likewise vs `zone.h`). Quoting a span as a % of the full canvas while the content lives in a *narrower* zone is the classic miss — e.g. 10 sticks at 1170 px read as "91% of the 1280 canvas" yet overflow a 1040 px `zone-stage` by 130 px. **Always name the container each occupancy number is measured against**; an occupancy % whose denominator is not the zone that holds the content is void. And every **co-present** pair's gap must be ≥ the §1 `separation-gap-min` — DERIVE the zone boxes FROM that floor; never declare a zone gap that undercuts it (a 40 px gap under a 43 px floor is a self-contradiction). Self-check before you ship the Contract: for the densest cue, does `N·unit + (N−1)·gap` actually fit `zone.w`, and is every co-present gap ≥ the floor? If either fails, the geometry is wrong — fix the zone boxes, do not narrate it.
 
 ### When the canvas aspect fights the metaphor
 
-If your metaphor forces a single tall bundle in a wide 1920×1080 canvas with the rest blank, your metaphor and the aspect are mismatched. **Don't pad the metaphor with chrome to absorb the misfit.** Either widen the metaphor (e.g. add a paired tally that justifies the width) or pick a different metaphor.
+If your metaphor forces a single tall bundle in a wide 1280×720 canvas with the rest blank, your metaphor and the aspect are mismatched. **Don't pad the metaphor with chrome to absorb the misfit.** Either widen the metaphor (e.g. add a paired tally that justifies the width) or pick a different metaphor.
 
 ## 5. Semantic Groups Dominate Visual Groups
 

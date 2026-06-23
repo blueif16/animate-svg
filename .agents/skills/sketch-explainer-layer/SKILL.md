@@ -12,7 +12,7 @@ Add hand-drawn teacher explanation cues without overwhelming the lesson.
 - `lesson-data/<id>/brief.md`
 - `lesson-data/<id>/storyboard.md` (sketch-overlay-need column per cue)
 - `lesson-data/<id>/visual-design.md` (Visual Contract, zones — your marks must respect zone-marks rules from `kids-eye` §1.5)
-- `src/lessons/generated/<camelId>Timing.ts` (ASR-aligned cue boundaries — REQUIRED, no stub)
+- `src/lessons/<camelId>LessonTimeline.ts` (the RECONCILED cue boundaries — Wave 3.5; the single source of truth the composer also reads). The cue-relative offsets you author resolve against `cues[cueId].startFrame` from THIS module. (`<X>Timing.ts` is ASR-QA-only in v4 — never read it for cue timing.)
 - `kids-eye` SKILL.md
 - `visual-discipline` SKILL.md
 
@@ -34,7 +34,7 @@ The composer translates `{ cueId, drawOnRelativeStart, ... }` → real frames at
 
 ## Restraint principle (from `kids-eye` §2)
 
-A teacher mark must clarify or celebrate; otherwise it does not exist. Most cues should have ZERO marks. A 9-cue video with 5 marks total is already at the high end. A 9-cue video with 9 marks is decoration.
+A teacher mark must clarify or celebrate; otherwise it does not exist. Most cues should have ZERO marks. **This skill owns the mark budget: total marks across the video ≤ floor(cueCount × 0.6)** (a 9-cue video at 5 is already the high end; at 9 it is decoration) — there is no separate per-cue cap.
 
 Before adding a mark, complete the sentence:
 
