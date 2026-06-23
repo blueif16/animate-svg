@@ -1,36 +1,29 @@
 // Run via tsx as a subprocess from scripts/lesson-measured.mjs (the same
 // native-TS-stripper workaround the other extractors use). LESSON-AGNOSTIC.
 //
-// Args: <camelLessonId> <framesCsv>
-//   camelLessonId  — e.g. "fenYuHe"
-//   framesCsv      — comma-separated absolute frames the measured pass samples
+// Args: <camelLessonId>
 //
-// stdout JSON:
+// stdout JSON: the metadata-only manifest forwarded for the .mjs measured pass
+// (which runs under plain node and can't import this .ts):
 //   {
 //     lessonId, composition, fps, width, height,
-//     cues:    [{ id, startFrame, endFrame }],            // reconciled timeline
-//     zones:   Partial<Record<ZoneName, Bbox>> | null,
-//     // Per requested frame: the manifest's LINEAR bbox for every mounted
-//     // load-bearing element (so the harness can diff measured-vs-manifest and
-//     // run the SAME AABB overlap math the fast path runs, on the measured set).
-//     manifestByFrame: { [frame]: [{ id, zone, bbox, opacity }] }
+//     cues:             [{ id, startFrame, endFrame, ... }],   // reconciled timeline
+//     zones:            Partial<Record<ZoneName, Bbox>> | null,
+//     allowedOverlaps:  [[idA, idB], ...] | null,              // intentional pairs
+//     allowedZonePairs: string[],                              // ALLOWED_OVERLAP_PAIRS
+//     captionBand:      Bbox,                                  // shared ribbon footprint
+//     elements:         [{ id, zone }],                        // declared load-bearing set
 //   }
 //
-// This reads the SAME manifest module (which reads layout.ts) the fast path
-// reads — no lesson topic, id, or path is hardcoded here.
+// No geometry is forwarded — the measured pass reads every box off the render.
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
 const camelLessonId = process.argv[2];
-const framesCsv = process.argv[3] ?? "";
 if (!camelLessonId) {
-  console.error("usage: _measured-extract.ts <camelLessonId> <framesCsv>");
+  console.error("usage: _measured-extract.ts <camelLessonId>");
   process.exit(1);
 }
-const frames = framesCsv
-  .split(",")
-  .map((s) => Number(s.trim()))
-  .filter((n) => Number.isFinite(n));
 
 const main = async () => {
   const manifestAbs = path.resolve(
@@ -69,22 +62,6 @@ const main = async () => {
   );
   const { CAPTION_BAND } = await import(pathToFileURL(captionBandAbs).href);
 
-  // A metadata-only manifest declares `{ id, zone }` with NO `bboxAt` — the
-  // measured pass derives the true box from the rendered scene, so there is no
-  // linear box to forward. manifestByFrame stays empty for such a lesson; the
-  // element id+zone still reach the harness via the `elements` array below.
-  const manifestByFrame: Record<number, unknown[]> = {};
-  for (const frame of frames) {
-    const els: unknown[] = [];
-    for (const el of manifest.elements) {
-      if (typeof el.bboxAt !== "function") continue;
-      const snap = el.bboxAt(frame);
-      if (!snap) continue;
-      els.push({ id: el.id, zone: el.zone, bbox: snap.bbox, opacity: snap.opacity });
-    }
-    manifestByFrame[frame] = els;
-  }
-
   process.stdout.write(
     JSON.stringify({
       lessonId: manifest.lessonId,
@@ -120,7 +97,6 @@ const main = async () => {
       // declared element merely absent from the sampled frames is not a false
       // "orphan tag".
       elements: manifest.elements.map((e: any) => ({ id: e.id, zone: e.zone })),
-      manifestByFrame,
     }),
   );
 };
