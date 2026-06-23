@@ -256,6 +256,7 @@ const main = async () => {
     perFrameMs: null,
     elements: [],
     collisionsMeasured: [],
+    captionIntrusions: [],
     gates: {},
   };
 
@@ -268,6 +269,13 @@ const main = async () => {
   const allowedPairs = buildAllowedPairSet(extracted.allowedOverlaps);
   // Canonical zone-overlap rule, built from the list forwarded by the extractor.
   const isZoneOverlapAllowed = makeZoneOverlapAllowed(extracted.allowedZonePairs);
+  // Caption-intrusion: a teaching element inside the bottom caption ribbon. The
+  // band is the lesson-agnostic CAPTION_BAND (one shared component), forwarded by
+  // the extractor. A teaching element (objects/labels/badges/tally — NOT marks,
+  // which trace over the picture and may run full-bleed) whose measured box
+  // overlaps the band beyond the ratio threshold is the caption-collision defect.
+  const captionBand = extracted.captionBand ?? null;
+  const CAPTION_INTRUSION_ZONES = new Set(["objects", "labels", "badges", "tally"]);
 
   // --- SSR: bundle once, renderStill each peak frame with __measure flag -----
   const outDir = path.resolve(process.cwd(), "out", lessonId);
@@ -441,11 +449,48 @@ const main = async () => {
           }
         }
       }
+
+      // caption-intrusion: any teaching element whose MEASURED box reaches into
+      // the bottom caption ribbon. Ratio is over the element's own area (how much
+      // of the element sits in the band).
+      if (captionBand) {
+        for (const e of list) {
+          if (e.opacity <= OPACITY_THRESHOLD) continue;
+          if (!CAPTION_INTRUSION_ZONES.has(e.zone)) continue;
+          const overlap = intersectArea(e.bbox, captionBand);
+          if (overlap <= 0) continue;
+          const area = bboxArea(e.bbox);
+          if (area <= 0) continue;
+          const ratio = overlap / area;
+          if (ratio > OVERLAP_RATIO_THRESHOLD) {
+            measured.captionIntrusions.push({
+              frame,
+              id: e.id,
+              zone: e.zone,
+              ratio: Number(ratio.toFixed(3)),
+              measured: e.measured,
+            });
+          }
+        }
+      }
     }
     const n = measured.collisionsMeasured.length;
     gateLines.push(
       `${n === 0 ? "PASS" : "WARN"}: overlap-measured — ${n} measured collision(s) (linear path missed)`,
     );
+
+    // caption-intrusion — WARN only (same class as overlap: geometric, with
+    // false-positive sources like a label legitimately near the ribbon when the
+    // caption is suppressed for that beat). The human is the eye; fix-or-justify.
+    if (captionBand) {
+      const ci = measured.captionIntrusions.length;
+      const ids = [...new Set(measured.captionIntrusions.map((c) => c.id))];
+      gateLines.push(
+        `${ci === 0 ? "PASS" : "WARN"}: caption-intrusion — ${ci} teaching element(s) inside the caption ribbon${ci ? ` [${ids.join(", ")}]` : ""}`,
+      );
+    } else {
+      gateLines.push("SKIP: caption-intrusion — no caption band forwarded");
+    }
 
     // --- Gate: bbox-binding — measure-id ≡ manifest-id BIJECTION (both ways) --
     // The join above silently defaults an unknown measured id to zone
@@ -562,6 +607,7 @@ const main = async () => {
     }
   }
   manifestJson.summary.measuredCollisionCount = measured.collisionsMeasured.length;
+  manifestJson.summary.captionIntrusionCount = measured.captionIntrusions.length;
   manifestJson.summary.gatesFailed = gatesFailed;
   fs.writeFileSync(bboxPath, JSON.stringify(manifestJson, null, 2));
 
@@ -592,6 +638,12 @@ const main = async () => {
       `  ! @${c.frame} ${c.a} (${c.zoneA}) ∩ ${c.b} (${c.zoneB})  ratio=${c.ratio}` +
         `${c.measuredPair ? "" : "  [advisory: one side fell back to manifest bbox]"}`,
     );
+  }
+  if (measured.captionIntrusions.length) {
+    console.log(`\nmeasured.captionIntrusions = ${measured.captionIntrusions.length}`);
+    for (const c of measured.captionIntrusions) {
+      console.log(`  ⚠ @${c.frame} ${c.id} (${c.zone}) intrudes caption ribbon  overlap/area=${c.ratio}`);
+    }
   }
   console.log(`\nAugmented ${path.relative(process.cwd(), bboxPath)} (measured block + summary.measured*)`);
   console.log(

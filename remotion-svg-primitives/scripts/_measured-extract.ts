@@ -57,6 +57,18 @@ const main = async () => {
   );
   const { ALLOWED_OVERLAP_PAIRS } = await import(pathToFileURL(typesAbs).href);
 
+  // The caption ribbon's footprint is lesson-agnostic (one shared component), so
+  // it lives as ONE constant (src/lesson-media/captionBand.ts) and is forwarded
+  // here — no per-manifest `zones.caption`. The measured pass checks every
+  // teaching element against this band (the caption-collision gate).
+  const captionBandAbs = path.resolve(
+    process.cwd(),
+    "src",
+    "lesson-media",
+    "captionBand.ts",
+  );
+  const { CAPTION_BAND } = await import(pathToFileURL(captionBandAbs).href);
+
   // A metadata-only manifest declares `{ id, zone }` with NO `bboxAt` — the
   // measured pass derives the true box from the rendered scene, so there is no
   // linear box to forward. manifestByFrame stays empty for such a lesson; the
@@ -99,6 +111,9 @@ const main = async () => {
       // The canonical allowed-zone-pair list from manifestTypes.ts, forwarded so
       // the .mjs measured script has ONE source — it no longer keeps its own copy.
       allowedZonePairs: ALLOWED_OVERLAP_PAIRS,
+      // The lesson-agnostic caption-ribbon footprint (src/lesson-media/captionBand.ts),
+      // forwarded so the .mjs measured pass runs the caption-intrusion check.
+      captionBand: CAPTION_BAND,
       // FULL declared element id+zone set (every element, regardless of whether
       // it is mounted at a sampled frame) — the bbox-binding bijection audit
       // compares measured ids against THIS set, not the per-frame snapshots, so a
