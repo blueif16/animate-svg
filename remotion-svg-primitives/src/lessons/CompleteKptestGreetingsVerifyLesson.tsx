@@ -14,6 +14,7 @@ import { LessonCaptionLayer } from "../lesson-media/LessonCaptionLayer";
 import { LessonSfxLayer, type SfxEvent } from "../lesson-media/LessonSfxLayer";
 import { spansToWindows } from "../lesson-media/audioMix";
 import { mediaSrc } from "../lesson-media/mediaSrc";
+import type { LessonComposition } from "./lessonRegistryTypes";
 import { KptestGreetingsVerifyLessonScene } from "./kptestGreetingsVerifyLessonScene";
 import {
   EXCHANGE_REL_START,
@@ -126,4 +127,12 @@ export const CompleteKptestGreetingsVerifyLesson = ({
       ) : null}
     </AbsoluteFill>
   );
+};
+
+// Registration: exports `lessonComposition` for auto-discovery by `lessons:registry`.
+export const lessonComposition: LessonComposition = {
+  id: "CompleteKptestGreetingsVerifyLesson",
+  component: CompleteKptestGreetingsVerifyLesson,
+  durationInFrames: completeKptestGreetingsVerifyLessonDuration,
+  defaultProps: completeKptestGreetingsVerifyLessonDefaultProps,
 };
