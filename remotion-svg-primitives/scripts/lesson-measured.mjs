@@ -276,6 +276,10 @@ const main = async () => {
 
   // measured bbox by frame: { [frame]: { [id]: bbox } }
   const measuredByFrame = {};
+  // measured effective opacity by frame: { [frame]: { [id]: opacity } } — the
+  // measure hook reports each element's true rendered opacity, so the overlap
+  // check skips faded elements without the manifest declaring an opacityAt.
+  const measuredOpacityByFrame = {};
 
   // SSR strategy. Bundle once via @remotion/bundler, then drive renderStill via
   // @remotion/renderer — the only path that exposes onBrowserLog (the geometry
@@ -342,9 +346,14 @@ const main = async () => {
       });
       perFrame.push(Date.now() - t0);
       const byId = {};
+      const opacityById = {};
       // last log wins (the hook logs once per frame after layout commit)
-      for (const m of captured) byId[m.id] = m.bbox;
+      for (const m of captured) {
+        byId[m.id] = m.bbox;
+        opacityById[m.id] = m.opacity ?? 1;
+      }
       measuredByFrame[frame] = byId;
+      measuredOpacityByFrame[frame] = opacityById;
     }
     measured.perFrameMs = perFrame.length
       ? Math.round(perFrame.reduce((a, b) => a + b, 0) / perFrame.length)
@@ -352,8 +361,11 @@ const main = async () => {
   }
 
   // --- Join measured bboxes to manifest, diff, and run overlap math ----------
-  // zone lookup per element id from the manifest snapshots.
+  // zone lookup per element id. The declared `elements` array (id+zone) is the
+  // authoritative source and is always present (metadata-only manifests have no
+  // bboxAt snapshots); the per-frame snapshots only refine it for bboxAt lessons.
   const zoneOf = {};
+  for (const el of extracted.elements || []) zoneOf[el.id] = el.zone;
   for (const frame of peakFrames) {
     for (const el of extracted.manifestByFrame[frame] || []) {
       zoneOf[el.id] = el.zone;
@@ -367,9 +379,15 @@ const main = async () => {
       const manifestById = Object.fromEntries(manifestEls.map((e) => [e.id, e]));
 
       // record per-element divergence (manifest LINEAR vs measured TRUE)
+      const measuredOpacityHere = measuredOpacityByFrame[frame] || {};
       for (const [id, mbbox] of Object.entries(measuredIds)) {
         const man = manifestById[id];
-        const entry = { id, frame, measuredBbox: mbbox.map((n) => Number(n.toFixed(2))) };
+        const entry = {
+          id,
+          frame,
+          measuredBbox: mbbox.map((n) => Number(n.toFixed(2))),
+          opacity: measuredOpacityHere[id] ?? 1,
+        };
         if (man) {
           entry.manifestBbox = man.bbox.map((n) => Number(Number(n).toFixed(2)));
           entry.divergencePx = {
@@ -386,12 +404,15 @@ const main = async () => {
       const ids = new Set([...Object.keys(measuredIds), ...manifestEls.map((e) => e.id)]);
       const list = [...ids].map((id) => {
         const man = manifestById[id];
+        const isMeasured = Boolean(measuredIds[id]);
         return {
           id,
           zone: zoneOf[id] ?? man?.zone ?? "decoration",
           bbox: measuredIds[id] ?? man?.bbox ?? null,
-          opacity: man ? man.opacity : 1, // measured elements are mounted (opacity≈1)
-          measured: Boolean(measuredIds[id]),
+          // Measured opacity is the truth (effective, ancestor-aware); fall back
+          // to the manifest's only when an element has no measured box.
+          opacity: isMeasured ? (measuredOpacityHere[id] ?? 1) : man ? man.opacity : 1,
+          measured: isMeasured,
         };
       }).filter((e) => e.bbox);
 
@@ -428,27 +449,23 @@ const main = async () => {
 
     // --- Gate: bbox-binding — measure-id ≡ manifest-id BIJECTION (both ways) --
     // The join above silently defaults an unknown measured id to zone
-    // "decoration" (collision-exempt) — which HIDES (a) decoration nested inside
-    // a load-bearing group and (b) a scene/manifest id mismatch. A manifest
-    // element that is MOUNTED (opacity > threshold) at a sampled frame yet never
-    // measured is declared-but-untagged. Both void detection. Surface them
-    // loudly (CLAUDE.md "BOUNDING BOX = TRUE FOOTPRINT" bijection law).
+    // "decoration" (collision-exempt) — which HIDES (a) decoration tagged with a
+    // load-bearing measure id and (b) a scene/manifest id mismatch. Conversely a
+    // declared element never measured anywhere is declared-but-untagged (or a tag
+    // typo). Both void detection. The bijection is a SET equality on the FULL
+    // declared element set (every `{id,zone}`) vs every id measured across the
+    // sampled frames — it does NOT depend on a manifest mount window, so it holds
+    // identically for a metadata-only manifest (which has no bboxAt). (CLAUDE.md
+    // "BOUNDING BOX = TRUE FOOTPRINT" bijection law.)
     const measuredIdsAll = new Set();
-    // FULL declared id set (every manifest element, frame-independent) so an
-    // element merely absent from the sampled frames is not a false orphan.
     const manifestIdsAll = new Set((extracted.elements || []).map((e) => e.id));
-    const manifestMountedIds = new Set();
     for (const frame of peakFrames) {
       for (const id of Object.keys(measuredByFrame[frame] || {})) measuredIdsAll.add(id);
-      for (const el of extracted.manifestByFrame[frame] || []) {
-        manifestIdsAll.add(el.id);
-        if ((el.opacity ?? 1) > OPACITY_THRESHOLD) manifestMountedIds.add(el.id);
-      }
     }
     const measuredNotInManifest = [...measuredIdsAll]
       .filter((id) => !manifestIdsAll.has(id))
       .sort();
-    const manifestNeverMeasured = [...manifestMountedIds]
+    const manifestNeverMeasured = [...manifestIdsAll]
       .filter((id) => !measuredIdsAll.has(id))
       .sort();
     const bindBreaks = measuredNotInManifest.length + manifestNeverMeasured.length;
@@ -468,7 +485,7 @@ const main = async () => {
       }
       if (manifestNeverMeasured.length) {
         parts.push(
-          `${manifestNeverMeasured.length} manifest id(s) mounted but never measured — untagged or id-mismatch [${manifestNeverMeasured.join(", ")}]`,
+          `${manifestNeverMeasured.length} declared id(s) never measured — untagged or id-mismatch [${manifestNeverMeasured.join(", ")}]`,
         );
       }
       gateLines.push(`WARN: bbox-binding — ${parts.join("; ")}`);

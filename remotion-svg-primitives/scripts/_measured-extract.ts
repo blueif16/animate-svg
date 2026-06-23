@@ -57,10 +57,15 @@ const main = async () => {
   );
   const { ALLOWED_OVERLAP_PAIRS } = await import(pathToFileURL(typesAbs).href);
 
+  // A metadata-only manifest declares `{ id, zone }` with NO `bboxAt` — the
+  // measured pass derives the true box from the rendered scene, so there is no
+  // linear box to forward. manifestByFrame stays empty for such a lesson; the
+  // element id+zone still reach the harness via the `elements` array below.
   const manifestByFrame: Record<number, unknown[]> = {};
   for (const frame of frames) {
     const els: unknown[] = [];
     for (const el of manifest.elements) {
+      if (typeof el.bboxAt !== "function") continue;
       const snap = el.bboxAt(frame);
       if (!snap) continue;
       els.push({ id: el.id, zone: el.zone, bbox: snap.bbox, opacity: snap.opacity });

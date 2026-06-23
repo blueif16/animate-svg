@@ -46,6 +46,10 @@ export type MeasuredElement = {
   id: string;
   // [x, y, width, height] in composition pixel space (top-left origin).
   bbox: [number, number, number, number];
+  // Effective rendered opacity (product of this element's and every ancestor's
+  // computed opacity). The overlap check skips faded-out elements without the
+  // manifest having to mirror an `opacityAt` — the measured pass is the truth.
+  opacity: number;
 };
 
 // The single console line the harness greps out of onBrowserLog. A unique
@@ -109,6 +113,23 @@ const toCompositionPoint = (
   };
 };
 
+// Effective visual opacity: the product of this element's computed opacity and
+// every ancestor's, up to the document root. Lets the measured overlap check
+// skip an element that is faded out (entrance/exit) without the manifest having
+// to declare an `opacityAt` — a measured box belongs to a visible element only.
+const effectiveOpacity = (el: Element): number => {
+  let node: Element | null = el;
+  let opacity = 1;
+  while (node) {
+    const value = Number(window.getComputedStyle(node).opacity);
+    if (Number.isFinite(value)) {
+      opacity *= value;
+    }
+    node = node.parentElement;
+  }
+  return opacity;
+};
+
 const measureAll = (): MeasuredElement[] => {
   const out: MeasuredElement[] = [];
   const tagged = document.querySelectorAll<SVGGraphicsElement>("[data-mid]");
@@ -155,6 +176,7 @@ const measureAll = (): MeasuredElement[] => {
         Number((maxX - minX).toFixed(2)),
         Number((maxY - minY).toFixed(2)),
       ],
+      opacity: Number(effectiveOpacity(el).toFixed(3)),
     });
   }
   return out;

@@ -29,8 +29,11 @@ export type ElementSnapshot = {
 export type SceneElement = {
   id: string;
   zone: ZoneName;
+  // OPTIONAL (legacy). Hand-ported layout math mirroring the scene's geometry.
+  // The measured pass derives the TRUE box from the rendered scene (getBBox), so
+  // a metadata-only manifest omits this — `{ id, zone }` is the whole element.
   // Returns null if the element is not mounted / fully invisible at this frame.
-  bboxAt: (frame: number) => ElementSnapshot | null;
+  bboxAt?: (frame: number) => ElementSnapshot | null;
 };
 
 export type KeyFrame = {
@@ -47,7 +50,10 @@ export type LessonManifest = {
   width: number;
   height: number;
   cues: readonly AlignedLessonCue[];
-  keyFrames: readonly KeyFrame[];
+  // OPTIONAL (legacy). Hand-picked sample frames for the fast linear pass. The
+  // measured pass derives its own peak frames from the cues, so a metadata-only
+  // manifest omits this.
+  keyFrames?: readonly KeyFrame[];
   elements: readonly SceneElement[];
   zones?: Partial<Record<ZoneName, Bbox>>;
   // Intentional element overlaps, declared per element-id pair with the
