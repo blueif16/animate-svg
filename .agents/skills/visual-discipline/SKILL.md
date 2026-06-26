@@ -132,7 +132,7 @@ Every visible string must carry information not already shown.
 
 Two strings saying the same thing in different formatting is the most common kid-component sin.
 
-**Never duplicate the same information WITHIN a single component or card.** A number card shows its value once; a labeled tile does not repeat its label as caption; a focus card carries one piece of information, not the same fact twice. Decide the ONE thing each element communicates — redundant on-card text/number is noise, not reinforcement (Mayer redundancy/coherence). Example: a `<NumberCard value={5}>` already shows "5" — do not stack a "= 5" caption beneath it.
+**Never duplicate the same information WITHIN a single component or card.** A number card shows its value once; a labeled tile does not repeat its label as caption; a focus card carries one piece of information, not the same fact twice. Decide the ONE thing each element communicates — redundant on-card text/number is noise, not reinforcement (Mayer redundancy/coherence). Example: a `<NumberCard value={5}>` already shows "5" — do not stack a "= 5" caption beneath it. **The same law holds across the whole screen, not just within a card: no on-screen text — a title or large label especially — restates the spoken caption line.** The spoken line lives only in the ribbon (the verbatim voice); on-screen text ADDS (names a new unit, points at a thing), it never echoes the caption. A big label repeating what the voice just said is the duplication sin at scene scale — cut it, or shrink it to a small pointed annotation (kids-eye §1.5).
 
 ## 8. Render and Self-Critique (mandatory for composer)
 
@@ -188,7 +188,7 @@ Iterating against the entire MP4 every round multiplies cost without changing de
 - **Frame literals.** Any number in scene code that isn't `cues[id].startFrame + offset` is a coordinate-space bug. Refuse.
 - **Decoration "for emphasis."** A glow, a pulse, a sparkle on every cue. Reserve motion for the element that just changed. The climax gets ONE sparkle; the rest of the video earns its emphasis through composition, not effects.
 - **Re-rendering the teaching unit per cue.** The 10 sticks live the whole video as one StickGroup instance. Destroying and recreating them per cue breaks continuity.
-- **Caption-ribbon shrinks to fit estimated narration.** Captions sized to declared text-budget, not to fit a guess at how long Gemini will speak.
+- **Treating the caption ribbon as a resizable / suppressible surface.** The ribbon is an INDEPENDENT channel: it ALWAYS shows the verbatim voice, in full, through the whole cue window — sized to the voice, never shrunk to a text-budget guess and never suppressed to make room for a label. Lay every other element out *around* it; the band is a reserved no-go (kids-eye §1.5).
 - **Three nested gradients / surfaces.** Two stacked surfaces is the budget.
 
 ## 11. Final rule
