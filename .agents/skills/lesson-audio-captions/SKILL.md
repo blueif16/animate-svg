@@ -97,6 +97,8 @@ If a mitigation is rejected (e.g., pedagogy requires the bare term), document th
 
 Each cue carries one caption. Caption text is the spoken narration verbatim, broken at natural phrase boundaries if longer than ~14 chars. Captions display through the entire cue window (start to end), not just the narration window — they linger ≤0.3s past audio end as Wave 3.5's tail kicks in. Composer wires this via the caption layer reading the cue boundaries.
 
+**The caption is the INDEPENDENT voice channel: it is ALWAYS the full spoken line** — never shortened to keywords, never suppressed to make room for an on-screen label. `emphasis` only highlights words inside the ribbon; it never replaces the text. On-screen keywords are a SEPARATE thing the scene draws (small pointed annotations — kids-eye §1.5); the `caption` field here stays the verbatim voice.
+
 ## Reinforcement & replay (pedagogy §8)
 
 If `pedagogy.md`/`storyboard.md` mark a cue as reinforcement, the narration realizes it — that is real teaching content, not filler:

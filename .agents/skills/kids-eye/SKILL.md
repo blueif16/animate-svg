@@ -59,6 +59,8 @@ What this enforces:
 
 Overlap of a label and its referent (`一个十` rendered ON the bundle) is not a layout bug; it is a missing zone declaration.
 
+**The caption band is a reserved no-go; the rest of the frame is the safe area.** `zone-caption` — the bottom ribbon, whose footprint + padding is `CAPTION_BAND` in `src/lesson-media/captionBand.ts` — belongs to the verbatim-voice ribbon ALONE. No title, label, badge, tally, keyword, or syllable may enter it; the measured gate flags any teaching element that does. Everything else lives in the **safe area = the frame minus that band**. There is NO fixed "keyword zone" — a rigid top strip is the wrong instinct. Keywords are **small pointed annotations**: a short word plus an arrow at the specific element it names, placed wherever that element lives in the safe area — never a large block, and never a restatement of the caption (that is the cross-screen duplication sin, visual-discipline §7).
+
 ## 1.6. A component reads at a focal size — verify it at true size
 
 The §1 floor is enforced in the SCENE, but it starts at the component. Each component has a **DETERMINED DEFAULT size** (the defaults of its `size`/`width`/`height` props); a lesson usually uses that default and only overrides to fit a tight zone. So "good size in mind" is a property you build INTO the default — author it so the component reads as a **focal element at its typical multiplicity** and clears the §1 floors, NOT a tiny per-instance unit. No lesson or viewer tool can add good size later.
