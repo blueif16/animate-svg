@@ -27,7 +27,13 @@
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
-    "returnMode": "optional"
+    "returnMode": "required"
+  },
+  "hooks": {
+    "promote": [
+      { "from": "@return:camelLessonId", "to": "camelLessonId" },
+      { "from": "@return:composition", "to": "composition" }
+    ]
   },
   "checks": {
     "post": [
@@ -43,11 +49,13 @@
     "properties": {
       "node": { "type": "string" },
       "status": { "type": "string", "enum": ["ok", "gap", "blocked"] },
+      "camelLessonId": { "type": "string" },
+      "composition": { "type": "string" },
       "outputArtifacts": { "type": "array", "items": { "type": "string" } },
       "summary": { "type": "string" },
       "issues": { "type": "array", "items": { "type": "string" } },
       "pipelineFindings": { "type": "array", "items": { "type": "string" } }
     },
-    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
+    "required": ["node", "status", "camelLessonId", "composition", "outputArtifacts", "summary", "pipelineFindings"]
   }
 }

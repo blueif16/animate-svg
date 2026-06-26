@@ -24,16 +24,16 @@
   ],
   "contract": {
     "artifacts": [
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.composition}}.tsx",
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}LessonScene.tsx",
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}/layout.ts",
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}/manifest.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/layout.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/manifest.ts",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
     ],
     "owns": [
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.composition}}.tsx",
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}LessonScene.tsx",
-      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}/*",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/*",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w4a-composer.md"
     ],
@@ -69,19 +69,19 @@
     "post": [
       {
         "kind": "non-empty",
-        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.composition}}.tsx"
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx"
       },
       {
         "kind": "non-empty",
-        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}LessonScene.tsx"
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx"
       },
       {
         "kind": "non-empty",
-        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}/layout.ts"
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/layout.ts"
       },
       {
         "kind": "non-empty",
-        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}/manifest.ts"
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/manifest.ts"
       },
       {
         "kind": "json-parses",

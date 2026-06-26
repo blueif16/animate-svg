@@ -12,6 +12,6 @@ RETURN the structured result. Put what should be IMPROVED about THIS node (the w
 
 W4b — SKETCH OVERLAY (∥ composer). Specify the hand-drawn teacher-mark overlays in CUE-RELATIVE frames (never master-timeline absolutes). Restraint is the rule — marks point at the load-bearing moment, nothing decorative.
 SKILLS: {{WORKSPACE}}/.agents/skills/sketch-explainer-layer/SKILL.md
-INPUT: the reconciled {{arg.camelLessonId}}Cues in {{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{arg.camelLessonId}}LessonTimeline.ts ; {{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md ; {{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md (mark the discovery).
+INPUT: the reconciled {{state.camelLessonId}}Cues in {{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts ; {{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md ; {{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md (mark the discovery).
 OUTPUT: {{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/sketch-overlay.md — per-mark spec in cue-relative frames (use <TeacherMark> + boil from {{WORKSPACE}}/.agents/CAPABILITIES.md).
 OUTPUT CONTRACT — you are DONE only when EVERY file below exists and is non-empty at EXACTLY its path. Write NOTHING outside the owned paths (never another lesson's files). If you cannot produce them, set status="blocked" and say why — do NOT exit clean (an empty or wrong-path artifact set is a FAILURE, not an ok).
