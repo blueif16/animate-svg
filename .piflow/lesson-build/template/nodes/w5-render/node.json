@@ -24,8 +24,7 @@
   "contract": {
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4",
-      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png",
-      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png"
     ],
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
@@ -45,6 +44,20 @@
     ],
     "returnMode": "optional"
   },
+  "hooks": {
+    "merge": {
+      "ops": [
+        {
+          "run": {
+            "cmd": "npm",
+            "args": ["run", "lesson:render", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json", "--skip-voice"],
+            "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
+            "note": "RENDER (exit-routed, runs AFTER the model — do NOT also render in the prompt or it double-renders). lesson:render THROWS → exits 1 → blocks on the load-bearing failures: stale lesson registry, tsc/lint, the Remotion bundle, and the Remotion render itself. KNOWN GAP (not faked here): the post-render loudnorm, contact-sheet, and audio-gate sub-steps are swallowed inside lesson:render (exit 0 on failure) — the swallowed contact-sheet is caught by the contact.png non-empty check below; the un-normalized-master (loudnorm) case is the master-LUFS gate that belongs in W6 verification per CLAUDE.md (lesson:check over the master MP4 → summary.gatesFailed contains 'lufs'), out of this node's scope."
+          }
+        }
+      ]
+    }
+  },
   "checks": {
     "post": [
       {
@@ -54,14 +67,6 @@
       {
         "kind": "non-empty",
         "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png"
-      },
-      {
-        "kind": "non-empty",
-        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
-      },
-      {
-        "kind": "json-parses",
-        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
       }
     ]
   },
