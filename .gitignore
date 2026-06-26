@@ -29,3 +29,6 @@ _prior-runs/
 # Editor/pipeline backup snapshots + one-off throwaway scripts.
 *.backup
 remotion-svg-primitives/compute_timeline.js
+
+# piflow: commit the authored template, ignore generated per-run instances
+.piflow/*/runs/

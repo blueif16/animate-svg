@@ -1,0 +1,51 @@
+{
+  "id": "w3c-sound-asset",
+  "phase": "assets",
+  "deps": [
+    "w2b-audio-captions",
+    "w2c-sound-design"
+  ],
+  "prompt": { "file": "prompt.md" },
+  "tools": {
+    "allow": [
+      "read",
+      "write",
+      "edit",
+      "submit_result"
+    ],
+    "deny": []
+  },
+  "inject": [
+    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"
+  ],
+  "contract": {
+    "artifacts": [
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/sound-asset.md"
+    ],
+    "owns": [
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/sound-asset.md"
+    ],
+    "readScope": [
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/.agents",
+      "/Users/tk/Desktop/shared-sound/public/audio",
+      "/Users/tk/Desktop/vlog_test/pipeline"
+    ],
+    "returnMode": "optional"
+  },
+  "checks": {
+    "post": []
+  },
+  "policy": { "fail": "block" },
+  "return": { "type": "object", "additionalProperties": false,
+    "properties": {
+      "node": { "type": "string" },
+      "status": { "type": "string", "enum": ["ok", "gap", "blocked"] },
+      "outputArtifacts": { "type": "array", "items": { "type": "string" } },
+      "summary": { "type": "string" },
+      "issues": { "type": "array", "items": { "type": "string" } },
+      "pipelineFindings": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"] }
+}
