@@ -417,11 +417,12 @@ const main = async () => {
     "@remotion/renderer"
   );
 
-  console.log("== Bundling (cached)...");
+  console.log("== Bundling...");
   const tBundle = Date.now();
   const serveUrl = await bundle({
     entryPoint: path.resolve(process.cwd(), entry),
-    // Bundler picks up the same webpack config as `remotion still`.
+    // Disable webpack's shared persistent cache — parallel-fleet safe (see render-complete-lesson.mjs).
+    enableCaching: false,
   });
   console.log(`   bundled in ${((Date.now() - tBundle) / 1000).toFixed(1)}s`);
 

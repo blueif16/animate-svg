@@ -69,6 +69,8 @@ const main = async () => {
   const renderer = await importFromRoot("@remotion/renderer");
   const serveUrl = await bundler.bundle({
     entryPoint: path.resolve(process.cwd(), args.entry),
+    // Disable webpack's shared persistent cache — parallel-fleet safe (see render-complete-lesson.mjs).
+    enableCaching: false,
   });
   const comps = await renderer.getCompositions(serveUrl);
   const matches = comps.filter((c) => c.id.startsWith(prefix));

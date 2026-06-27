@@ -142,17 +142,18 @@ const probe = (output) => {
   console.log(result.stdout.trim());
 };
 
-// Bundle + render the lesson MP4 through the @remotion/bundler +
-// @remotion/renderer NODE API — NOT the `remotion bundle`/`remotion render`
-// CLI. The CLI path uses webpack's shared persistent cache
-// (node_modules/.cache/webpack); written concurrently by the fleet's OTHER
-// webpack invocations (lesson-measured, lesson:check) it deserializes an
-// undefined buffer and crashes wasm-hash (wasm-hash.js:151 "reading 'length'")
-// regardless of Node version. The programmatic bundle() uses a fresh temp
-// bundle dir and never touches that shared cache — every other pipeline script
-// (lesson-measured, make-contact-sheet, lesson-bbox-overlay,
-// lesson-primitive-checks) already renders this way; this brings the full
-// render into line with them so NOTHING in the pipeline reads the shared cache.
+// Bundle + render the lesson MP4 through the @remotion/bundler + @remotion/renderer
+// NODE API. enableCaching:false is LOAD-BEARING — Remotion defaults it true, writing
+// webpack's PERSISTENT cache to the shared node_modules/.cache/webpack. The parallel
+// fleet (this render + lesson-measured/lesson:check + animatic/bbox/primitive-checks)
+// concurrently (de)serializes that ONE dir; a torn read feeds wasm-hash an undefined
+// buffer and the build crashes (wasm-hash.js:151 "reading 'length'"), killing the
+// process so Remotion's own corruption-recovery can't catch it. Disabling the cache
+// (per-process, nothing on disk to race) prevents the crash class outright. NOTE: it
+// must be the enableCaching option, NOT webpackOverride — Remotion re-forces `cache`
+// AFTER the override (shared-bundler-config computeHashAndFinalConfig). Clearing the
+// cache before each render would be WORSE: one lesson's rm wipes another's mid-build.
+// EVERY bundle() site in the pipeline passes enableCaching:false for the same reason.
 const renderLessonMedia = async ({ entry, composition, output }) => {
   const { bundle } = await import("@remotion/bundler");
   const { selectComposition, renderMedia } = await import("@remotion/renderer");
@@ -165,6 +166,7 @@ const renderLessonMedia = async ({ entry, composition, output }) => {
     serveUrl = await bundle({
       entryPoint: path.resolve(process.cwd(), entry),
       webpackOverride: enableTailwind,
+      enableCaching: false,
     });
   } finally {
     stepTimings.push({ step: "Bundle", ms: Date.now() - tBundle });
