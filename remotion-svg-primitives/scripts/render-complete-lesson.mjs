@@ -142,7 +142,57 @@ const probe = (output) => {
   console.log(result.stdout.trim());
 };
 
-const main = () => {
+// Bundle + render the lesson MP4 through the @remotion/bundler +
+// @remotion/renderer NODE API — NOT the `remotion bundle`/`remotion render`
+// CLI. The CLI path uses webpack's shared persistent cache
+// (node_modules/.cache/webpack); written concurrently by the fleet's OTHER
+// webpack invocations (lesson-measured, lesson:check) it deserializes an
+// undefined buffer and crashes wasm-hash (wasm-hash.js:151 "reading 'length'")
+// regardless of Node version. The programmatic bundle() uses a fresh temp
+// bundle dir and never touches that shared cache — every other pipeline script
+// (lesson-measured, make-contact-sheet, lesson-bbox-overlay,
+// lesson-primitive-checks) already renders this way; this brings the full
+// render into line with them so NOTHING in the pipeline reads the shared cache.
+const renderLessonMedia = async ({ entry, composition, output }) => {
+  const { bundle } = await import("@remotion/bundler");
+  const { selectComposition, renderMedia } = await import("@remotion/renderer");
+  const { enableTailwind } = await import("@remotion/tailwind-v4");
+
+  const tBundle = Date.now();
+  console.log("\n== Bundle");
+  let serveUrl;
+  try {
+    serveUrl = await bundle({
+      entryPoint: path.resolve(process.cwd(), entry),
+      webpackOverride: enableTailwind,
+    });
+  } finally {
+    stepTimings.push({ step: "Bundle", ms: Date.now() - tBundle });
+  }
+
+  const tRender = Date.now();
+  console.log("\n== Render MP4");
+  try {
+    const comp = await selectComposition({
+      serveUrl,
+      id: composition,
+      inputProps: {},
+    });
+    await renderMedia({
+      serveUrl,
+      composition: comp,
+      codec: "h264",
+      outputLocation: output,
+      inputProps: {},
+      imageFormat: "jpeg", // mirrors remotion.config.ts setVideoImageFormat
+      overwrite: true, // mirrors remotion.config.ts setOverwriteOutput
+    });
+  } finally {
+    stepTimings.push({ step: "Render MP4", ms: Date.now() - tRender });
+  }
+};
+
+const main = async () => {
   const parsed = parseArgs(process.argv.slice(2));
   const args = mergeConfig(parsed);
   requireFields(args, ["composition", "entry", "output"]);
@@ -207,17 +257,11 @@ const main = () => {
   if (!args.skipLint) {
     run("Typecheck + lint", "npm", ["run", "lint"]);
   }
-  if (!args.skipBuild) {
-    run("Bundle", "npm", ["run", "build"]);
-  }
-
-  run("Render MP4", "npx", [
-    "remotion",
-    "render",
-    args.entry,
-    args.composition,
+  await renderLessonMedia({
+    entry: args.entry,
+    composition: args.composition,
     output,
-  ]);
+  });
   probe(output);
 
   // Master loudness — normalize the mix to -16 LUFS / -1 dBTP via a TRUE
@@ -312,9 +356,7 @@ const main = () => {
   console.log(`\nDone: ${output}`);
 };
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});
