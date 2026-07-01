@@ -32,3 +32,7 @@ remotion-svg-primitives/compute_timeline.js
 
 # piflow: commit the authored template, ignore generated per-run instances
 .piflow/*/runs/
+.tasks/HANDOFF-*.md
+# piflow SDK per-node prompt/tool staging dir (runner.ts stages _pi/<id>/; no
+# cleanup; the SDK's own repo ignores /_pi/ too) — generated, never committed.
+/_pi/
