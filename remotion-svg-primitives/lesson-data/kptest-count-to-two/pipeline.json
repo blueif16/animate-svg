@@ -1,0 +1,16 @@
+{
+  "lessonId": "kptest-count-to-two",
+  "fps": 30,
+  "entry": "src/index.ts",
+  "composition": "CompleteKptestCountToTwoLesson",
+  "cuePlan": "lesson-data/kptest-count-to-two/script-cues.json",
+  "output": "out/kptest-count-to-two/kptest-count-to-two.mp4",
+  "voice": {
+    "extends": "lesson-data/_shared/voice.json",
+    "out": "public/audio/kptest-count-to-two-voice.wav",
+    "metaOut": "out/kptest-count-to-two/gemini-voice.json",
+    "alignOutJson": "out/kptest-count-to-two/asr-alignment.json",
+    "alignOutTs": "src/lessons/generated/kptestCountToTwoTiming.ts",
+    "constPrefix": "kptestCountToTwo"
+  }
+}
