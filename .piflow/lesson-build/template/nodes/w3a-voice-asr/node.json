@@ -24,6 +24,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/public/audio/{{arg.lessonId}}-voice.wav",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/gemini-voice.json",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/asr-alignment.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/audio-gate.json",
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/generated/{{state.camelLessonId}}Timing.ts",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w3a-voice-asr.md"
@@ -41,7 +42,11 @@
       "{{WORKSPACE}}/.agents"
     ],
     "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
-    "execReads": ["{{WORKSPACE}}/../shared-narration"],
+    "execReads": [
+      "{{WORKSPACE}}/../shared-narration",
+      "{{WORKSPACE}}/../Omniscience/agent/.venv",
+      "{{WORKSPACE}}/../Omniscience/agent/models/voice/asr"
+    ],
     "returnMode": "optional"
   },
   "checks": {
