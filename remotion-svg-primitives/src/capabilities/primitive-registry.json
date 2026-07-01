@@ -57,6 +57,17 @@
     },
     {
       "kind": "counting",
+      "id": "cardinal-consolidation",
+      "component": "CardinalConsolidation",
+      "source": "src/shape-primitives/counting.tsx",
+      "intent": "Reach for this to teach CARDINALITY — the last number said when counting names HOW MANY there are altogether: show per-item count tags (one per counted object) consolidating into a single cardinal-total glyph that stands for the whole set, with the same glyph instances travelling (no cross-fade).",
+      "useWhen": "Renders N per-item count tags below + one total-glyph anchor above, with N converging guide lines that stroke-on via `progress`; the per-item cards recede and the total settle-pops in. `renderNumbers={false}` + `getCardinalConsolidationAnchors(width, count)` lets the composer place its OWN NumberCards so the same React instances travel (identity preserved).",
+      "avoidWhen": "Not for a part-whole ADDITION bond (whole = part + part) — use `fen-he-diagram`; not for marking a single Nth POSITION (序数) — use `ordered-row-spotlight`; not for a running count total — use `step-tally` / `count-step-indicator`.",
+      "variants": {},
+      "status": "stable"
+    },
+    {
+      "kind": "counting",
       "id": "comparison-symbol",
       "component": "ComparisonSymbol",
       "source": "src/shape-primitives/counting.tsx",
