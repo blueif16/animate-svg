@@ -17,9 +17,6 @@
     ],
     "deny": []
   },
-  "inject": [
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md"
-  ],
   "contract": {
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts",
@@ -43,20 +40,21 @@
     ],
     "returnMode": "optional"
   },
-  "hooks": {
-    "merge": {
-      "ops": [
-        {
-          "run": {
-            "cmd": "npm",
-            "args": ["run", "lesson:animatic", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
-            "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
-            "note": "RECONCILE GATE (exit-routed, runs AFTER the model authors LessonTimeline.ts). lesson:animatic IMPORTS the emitted timeline and asserts every cue's clip sits inside its reconciled window (clipStart>=startFrame && clipEnd<=endFrame); it exits 1 — and this node blocks — on a real reconcile break: a clip overrunning its window, a cue dropped from VISUAL_MOTION_SECONDS (the kit throws on the missing key, the import fails), or a degenerate all-zero timeline (clips overrun 0-length windows). This is the deterministic backstop behind the model's self-authored module."
-          }
-        }
-      ]
+  "op": [
+    {
+      "when": "pre",
+      "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md"]
+    },
+    {
+      "when": "post",
+      "run": {
+        "cmd": "npm",
+        "args": ["run", "lesson:animatic", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
     }
-  },
+  ],
   "checks": {
     "post": [
       { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts" },

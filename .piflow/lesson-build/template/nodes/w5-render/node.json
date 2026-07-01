@@ -5,22 +5,7 @@
     "w4a-composer",
     "w4b-sketch"
   ],
-  "prompt": {
-    "file": "prompt.md"
-  },
-  "tools": {
-    "allow": [
-      "read",
-      "write",
-      "edit",
-      "bash",
-      "submit_result"
-    ],
-    "deny": []
-  },
-  "inject": [
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"
-  ],
+  "programmatic": true,
   "contract": {
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4",
@@ -28,7 +13,7 @@
     ],
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
-      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w5-render.md"
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs"
     ],
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/src",
@@ -41,23 +26,19 @@
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
-    ],
-    "returnMode": "optional"
+    ]
   },
-  "hooks": {
-    "merge": {
-      "ops": [
-        {
-          "run": {
-            "cmd": "npm",
-            "args": ["run", "lesson:render", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json", "--skip-voice"],
-            "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
-            "note": "RENDER (exit-routed, runs AFTER the model — do NOT also render in the prompt or it double-renders). lesson:render THROWS → exits 1 → blocks on the load-bearing failures: stale lesson registry, tsc/lint, the Remotion bundle, and the Remotion render itself. KNOWN GAP (not faked here): the post-render loudnorm, contact-sheet, and audio-gate sub-steps are swallowed inside lesson:render (exit 0 on failure) — the swallowed contact-sheet is caught by the contact.png non-empty check below; the un-normalized-master (loudnorm) case is the master-LUFS gate that belongs in W6 verification per CLAUDE.md (lesson:check over the master MP4 → summary.gatesFailed contains 'lufs'), out of this node's scope."
-          }
-        }
-      ]
+  "op": [
+    {
+      "when": "post",
+      "run": {
+        "cmd": "npm",
+        "args": ["run", "lesson:render", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json", "--skip-voice"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
     }
-  },
+  ],
   "checks": {
     "post": [
       {
@@ -72,18 +53,5 @@
   },
   "policy": {
     "fail": "block"
-  },
-  "return": {
-    "type": "object",
-    "additionalProperties": false,
-    "properties": {
-      "node": { "type": "string" },
-      "status": { "type": "string", "enum": ["ok", "gap", "blocked"] },
-      "outputArtifacts": { "type": "array", "items": { "type": "string" } },
-      "summary": { "type": "string" },
-      "issues": { "type": "array", "items": { "type": "string" } },
-      "pipelineFindings": { "type": "array", "items": { "type": "string" } }
-    },
-    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
   }
 }

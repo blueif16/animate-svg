@@ -17,11 +17,6 @@
     ],
     "deny": []
   },
-  "inject": [
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/storyboard.md",
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md",
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"
-  ],
   "contract": {
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx",
@@ -47,24 +42,27 @@
       "{{WORKSPACE}}/remotion-svg-primitives/remotion.config.ts",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
-      "{{WORKSPACE}}/.agents"
+      "{{WORKSPACE}}/.agents",
+      "{{WORKSPACE}}/../shared-narration",
+      "{{WORKSPACE}}/../shared-sound",
+      "{{WORKSPACE}}/../shared-3d"
     ],
     "returnMode": "optional"
   },
-  "hooks": {
-    "merge": {
-      "ops": [
-        {
-          "run": {
-            "cmd": "npm",
-            "args": ["run", "lesson:check", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
-            "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
-            "note": "COMPOSER SELF-GATE (exit-routed, runs AFTER the model finishes the scene). Re-runs lesson:check against the FINAL scene so the gated bbox-manifest.json is FRESH — a self-reported 'ok' left with defects is caught. lesson:check exits 1 (and blocks) on the HARD gates: the declared<=>measured bbox-binding bijection and the LUFS gate. The OVERLAP (measuredCollisionCount) and caption-intrusion (captionIntrusionCount) defects are WARN-only / exit-0 in the script, and a crash also forces exit 0 — so those are enforced by the checks.post content gates below. Without them an element overlap, a caption intrusion, or a gate-that-never-ran would all ship GREEN."
-          }
-        }
-      ]
+  "op": [
+    { "when": "pre", "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/storyboard.md"] },
+    { "when": "pre", "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md"] },
+    { "when": "pre", "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"] },
+    {
+      "when": "post",
+      "run": {
+        "cmd": "node",
+        "args": ["scripts/lesson-measured.mjs", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
     }
-  },
+  ],
   "checks": {
     "post": [
       {

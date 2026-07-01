@@ -4,7 +4,6 @@
   "deps": [],
   "prompt": { "file": "prompt.md" },
   "tools": { "allow": ["read", "write", "edit", "bash", "submit_result"], "deny": [] },
-  "inject": [],
   "contract": {
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/brief.md",
@@ -29,12 +28,10 @@
     ],
     "returnMode": "required"
   },
-  "hooks": {
-    "promote": [
-      { "from": "@return:camelLessonId", "to": "camelLessonId" },
-      { "from": "@return:composition", "to": "composition" }
-    ]
-  },
+  "op": [
+    { "when": "post", "transform": { "kind": "promote", "from": "@return:camelLessonId", "to": "camelLessonId" } },
+    { "when": "post", "transform": { "kind": "promote", "from": "@return:composition", "to": "composition" } }
+  ],
   "checks": {
     "post": [
       { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/brief.md" },
