@@ -40,6 +40,8 @@
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
+    "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
+    "execReads": ["{{WORKSPACE}}/../shared-narration"],
     "returnMode": "optional"
   },
   "checks": {
