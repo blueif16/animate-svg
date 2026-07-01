@@ -147,6 +147,7 @@ console.log("Bundling preview entry…");
 const serveUrl = await bundle({
   entryPoint: ENTRY,
   webpackOverride: (config) => enableTailwind(config),
+  enableCaching: false, // disable webpack's shared persistent cache — parallel-fleet safe (see render-complete-lesson.mjs)
   // quiet: keep the machine calm; default onProgress prints a lot.
   onProgress: () => {},
 });

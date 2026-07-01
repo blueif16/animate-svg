@@ -1,6 +1,7 @@
 export {
   AnswerTile,
   BundleWrap,
+  CardinalConsolidation,
   ComparisonSymbol,
   ConservationBundle,
   CountStepIndicator,
@@ -20,6 +21,7 @@ export {
   StickGroup,
   TenFrameRod,
   UnitBlock,
+  getCardinalConsolidationAnchors,
   getFenHeDiagramAnchors,
   getStickPlacement,
 } from "./counting";
@@ -27,6 +29,9 @@ export type {
   AnswerTileProps,
   BundleWrapProps,
   BundleWrapStyle,
+  CardinalConsolidationAnchors,
+  CardinalConsolidationProps,
+  CardinalConsolidationValue,
   ComparisonSymbolProps,
   ComparisonSymbolStyle,
   ComparisonSymbolValue,

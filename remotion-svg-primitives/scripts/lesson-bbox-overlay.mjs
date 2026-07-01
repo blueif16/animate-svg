@@ -157,7 +157,8 @@ const main = async () => {
   console.log(`BBOX OVERLAY — ${lessonId}  ·  frames ${frames.join(", ")}`);
   console.log("=".repeat(60));
 
-  const serveUrl = await bundler.bundle({ entryPoint: path.resolve(process.cwd(), entry) });
+  // enableCaching:false — disable webpack's shared persistent cache (parallel-fleet safe; see render-complete-lesson.mjs).
+  const serveUrl = await bundler.bundle({ entryPoint: path.resolve(process.cwd(), entry), enableCaching: false });
   const comp = await renderer.selectComposition({
     serveUrl,
     id: composition,

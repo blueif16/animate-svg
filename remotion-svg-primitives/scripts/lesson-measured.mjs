@@ -315,6 +315,8 @@ const main = async () => {
     try {
       serveUrl = await bundler.bundle({
         entryPoint: path.resolve(process.cwd(), entry),
+        // Disable webpack's shared persistent cache — parallel-fleet safe (see render-complete-lesson.mjs).
+        enableCaching: false,
       });
     } catch (error) {
       bundler = null;

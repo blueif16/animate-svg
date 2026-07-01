@@ -1,0 +1,124 @@
+{
+  "id": "w4a-composer",
+  "phase": "compose",
+  "deps": [
+    "w3-5-reconcile"
+  ],
+  "prompt": {
+    "file": "prompt.md"
+  },
+  "tools": {
+    "allow": [
+      "read",
+      "write",
+      "edit",
+      "bash",
+      "submit_result"
+    ],
+    "deny": []
+  },
+  "contract": {
+    "artifacts": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/layout.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/manifest.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
+    ],
+    "owns": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/*",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w4a-composer.md"
+    ],
+    "readScope": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src",
+      "{{WORKSPACE}}/remotion-svg-primitives/public",
+      "{{WORKSPACE}}/remotion-svg-primitives/scripts",
+      "{{WORKSPACE}}/remotion-svg-primitives/package.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/tsconfig.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/eslint.config.mjs",
+      "{{WORKSPACE}}/remotion-svg-primitives/remotion.config.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/.agents",
+      "{{WORKSPACE}}/../shared-narration",
+      "{{WORKSPACE}}/../shared-sound",
+      "{{WORKSPACE}}/../shared-3d"
+    ],
+    "returnMode": "optional"
+  },
+  "op": [
+    { "when": "pre", "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/storyboard.md"] },
+    { "when": "pre", "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md"] },
+    { "when": "pre", "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"] },
+    {
+      "when": "post",
+      "run": {
+        "cmd": "node",
+        "args": ["scripts/lesson-measured.mjs", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
+    }
+  ],
+  "checks": {
+    "post": [
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx"
+      },
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx"
+      },
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/layout.ts"
+      },
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/manifest.ts"
+      },
+      {
+        "kind": "json-parses",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
+      },
+      {
+        "kind": "regex-present",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
+        "param": "\"method\"\\s*:\\s*\"getBBox\"",
+        "severity": "fail"
+      },
+      {
+        "kind": "regex-present",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
+        "param": "\"measuredCollisionCount\"\\s*:\\s*0\\b",
+        "severity": "fail"
+      },
+      {
+        "kind": "regex-present",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
+        "param": "\"captionIntrusionCount\"\\s*:\\s*0\\b",
+        "severity": "fail"
+      }
+    ]
+  },
+  "policy": {
+    "fail": "block"
+  },
+  "return": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "node": { "type": "string" },
+      "status": { "type": "string", "enum": ["ok", "gap", "blocked"] },
+      "outputArtifacts": { "type": "array", "items": { "type": "string" } },
+      "summary": { "type": "string" },
+      "issues": { "type": "array", "items": { "type": "string" } },
+      "pipelineFindings": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
+  }
+}

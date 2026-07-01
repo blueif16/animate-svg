@@ -1,0 +1,18 @@
+{
+  "lessonId": "kptest-count-to-two",
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": {
+    "sting": "mandarin-accent"
+  },
+  "outro": {
+    "resolve": true
+  },
+  "sfx": [
+    { "cue": "announce-topic", "event": "transition", "sound": "whoosh", "note": "title clears → two apples enter; the one handoff from topic-card to objects" },
+    { "cue": "cue-1-count", "event": "popin", "sound": "pop", "perStep": true, "note": "each apple lands via PopIn motion=snap; one pop per apple as its count word lands" },
+    { "cue": "cue-1-count", "event": "count", "sound": "tick", "perStep": true, "risingPitch": true, "note": "ordinal tag attaches in sync with each spoken count word 一→二; risingPitch = auditory magnitude across the counted set [ASSUMED]" },
+    { "cue": "cue-2-cardinality", "event": "transition", "sound": "whoosh", "note": "the two per-object tags migrate/merge into one group \"2\" (fen-he anchor migration); the consolidation move" },
+    { "cue": "cue-2-cardinality", "event": "reward", "sound": "ta-da", "note": "THE one success beat — the bouncy-settle climax reveal of the single group \"2\" that names the whole (cardinality); ta-da at most once per lesson" }
+  ]
+}

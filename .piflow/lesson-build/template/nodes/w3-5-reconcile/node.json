@@ -1,0 +1,76 @@
+{
+  "id": "w3-5-reconcile",
+  "phase": "reconcile",
+  "deps": [
+    "w3a-voice-asr",
+    "w3b-primitive-build",
+    "w3c-sound-asset"
+  ],
+  "prompt": { "file": "prompt.md" },
+  "tools": {
+    "allow": [
+      "read",
+      "write",
+      "edit",
+      "bash",
+      "submit_result"
+    ],
+    "deny": []
+  },
+  "contract": {
+    "artifacts": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w3-5-reconcile.md"
+    ],
+    "owns": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w3-5-reconcile.md"
+    ],
+    "readScope": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src",
+      "{{WORKSPACE}}/remotion-svg-primitives/public",
+      "{{WORKSPACE}}/remotion-svg-primitives/scripts",
+      "{{WORKSPACE}}/remotion-svg-primitives/package.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/tsconfig.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/eslint.config.mjs",
+      "{{WORKSPACE}}/remotion-svg-primitives/remotion.config.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/.agents"
+    ],
+    "returnMode": "optional"
+  },
+  "op": [
+    {
+      "when": "pre",
+      "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md"]
+    },
+    {
+      "when": "post",
+      "run": {
+        "cmd": "npm",
+        "args": ["run", "lesson:animatic", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
+    }
+  ],
+  "checks": {
+    "post": [
+      { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts" },
+      { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "reconcileClipTimeline\\s*\\(", "severity": "fail" },
+      { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "PADDED_CUE_DURATIONS_FRAMES|detectSilenc|Silences|ASR_CORRECTIONS", "severity": "fail" }
+    ]
+  },
+  "policy": { "fail": "block" },
+  "return": { "type": "object", "additionalProperties": false,
+    "properties": {
+      "node": { "type": "string" },
+      "status": { "type": "string", "enum": ["ok", "gap", "blocked"] },
+      "outputArtifacts": { "type": "array", "items": { "type": "string" } },
+      "summary": { "type": "string" },
+      "issues": { "type": "array", "items": { "type": "string" } },
+      "pipelineFindings": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"] }
+}

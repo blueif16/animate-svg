@@ -1,0 +1,57 @@
+{
+  "id": "w5-render",
+  "phase": "render",
+  "deps": [
+    "w4a-composer",
+    "w4b-sketch"
+  ],
+  "programmatic": true,
+  "contract": {
+    "artifacts": [
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png"
+    ],
+    "owns": [
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs"
+    ],
+    "readScope": [
+      "{{WORKSPACE}}/remotion-svg-primitives/src",
+      "{{WORKSPACE}}/remotion-svg-primitives/public",
+      "{{WORKSPACE}}/remotion-svg-primitives/scripts",
+      "{{WORKSPACE}}/remotion-svg-primitives/package.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/tsconfig.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/eslint.config.mjs",
+      "{{WORKSPACE}}/remotion-svg-primitives/remotion.config.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/.agents"
+    ]
+  },
+  "op": [
+    {
+      "when": "post",
+      "run": {
+        "cmd": "npm",
+        "args": ["run", "lesson:render", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json", "--skip-voice"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
+    }
+  ],
+  "checks": {
+    "post": [
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4"
+      },
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png"
+      }
+    ]
+  },
+  "policy": {
+    "fail": "block"
+  }
+}
