@@ -439,9 +439,12 @@ export const OrderedRowSpotlight: React.FC<OrderedRowSpotlightProps> = ({
 
       {/* Running tally of the count-walk — the cardinal count SO FAR. Sits in
           the TOP band, opposite the finger, so it never collides with the
-          below-row ordinal token. */}
+          below-row ordinal token. `maxSteps={n}` reserves the pill's width
+          for the row's final count from frame 0 — the walk climbing past a
+          digit boundary (9→10) must never resize the pill mid-cue. */}
       {walkActive ? (
         <StepTally
+          maxSteps={n}
           progress={interpolate(local, [0, D * 0.5], [0, 1], CLAMP)}
           size={62}
           steps={currentPos}
