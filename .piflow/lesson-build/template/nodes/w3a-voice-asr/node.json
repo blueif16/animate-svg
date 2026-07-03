@@ -7,10 +7,6 @@
   ],
   "prompt": { "file": "prompt.md" },
   "tools": { "allow": ["read", "write", "edit", "bash", "submit_result"], "deny": [] },
-  "inject": [
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json",
-    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"
-  ],
   "contract": {
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/generated/{{state.camelLessonId}}Clips.ts",
@@ -49,6 +45,24 @@
     ],
     "returnMode": "optional"
   },
+  "op": [
+    {
+      "when": "pre",
+      "reads": [
+        "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json",
+        "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"
+      ]
+    },
+    {
+      "when": "post",
+      "run": {
+        "cmd": "npm",
+        "args": ["run", "lesson:freeze-check", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
+    }
+  ],
   "checks": {
     "post": [
       { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/generated/{{state.camelLessonId}}Clips.ts" },
