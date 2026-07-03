@@ -603,6 +603,7 @@ export const RewardProgressToken = ({
           fontFamily={fontFamily}
           fontSize={variant === "star" ? 22 : 24}
           fontWeight={900}
+          style={{ fontVariantNumeric: "tabular-nums" }}
           textAnchor="middle"
           y={variant === "star" ? 3 : 2}
         >
