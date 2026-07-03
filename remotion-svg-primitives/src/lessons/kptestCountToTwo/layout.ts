@@ -12,39 +12,72 @@
 // reward tone + same size across the whole video. The 1st apple after C2
 // looks identical to the 2nd apple after C3.
 
-import { video } from "../../theme";
+import { fitUnitsToZone } from "../../layout";
+import { CAPTION_BAND } from "../../lesson-media/captionBand";
+import { sizing, video } from "../../theme";
 
 // Canvas
 export const CANVAS_WIDTH = video.width; // 1280
 export const CANVAS_HEIGHT = video.height; // 720
 
-// Apple + cardinal sizes.
-// NOTE: visual-design §1 specifies APPLE_SIZE=220 (focal at 30% of 720). The
-// actual `CountableObject variant=fruit` rendered bbox is ~1.10×size in HEIGHT
-// (fruit extends y=-60 to y=55 + shadow ellipse overhang y=45..54), so size 220
-// produced a 243-tall apple that intrudes both the caption band (top y≈522 from
-// src/lesson-media/captionBand.ts) AND zone-objects (visual-design y=420..620
-// height 200). The visual-design's zone-caption y=620..720 was idealized — the
-// real CaptionLayer footprint starts at y≈522 with SAFE_PADDING=24 grown up.
-// APPLE_SIZE=115 (16% of 720, above the 58 px floor + above the 12-15% target)
-// gives an apple bbox ≈127×131 that fits cleanly:
-//   apple top  → y≈381 (≥ 43 px gap from tag bottom y=337)
-//   apple btm  → y≈508 (≥ 14 px clearance above caption band top y=522)
-// Recorded as a pipeline finding (visual-design zone sizes vs. implementation).
-export const APPLE_SIZE = 115;
-export const APPLE_GAP = 100; // gap between the two apples (centers → 215 px apart)
-export const APPLE_ROW_HALF_WIDTH = (2 * APPLE_SIZE + APPLE_GAP) / 2; // 165 px
-
-// Apple centers (identity-invariant pair, both at the same y).
-// Centered on canvas x: 2 apples + 1 gap = 2·115 + 100 = 330 px → half = 165
-export const APPLE_1_CX = CANVAS_WIDTH / 2 - APPLE_ROW_HALF_WIDTH + APPLE_SIZE / 2; // 532
-export const APPLE_2_CX = CANVAS_WIDTH / 2 + APPLE_ROW_HALF_WIDTH - APPLE_SIZE / 2; // 748
-export const APPLE_CY = 445; // bbox y ≈ 381..509 (zone-objects adjusted to y≈370..520)
-
-// Per-apple tag positions (zone-counts, adjusted to clear apple top + cardinal btm)
+// Per-apple tag geometry (zone-counts) — hoisted above the apple block because
+// the apple auto-size zone below is bounded by the tag row's bottom edge.
+// TAG_1_CX/TAG_2_CX still mirror the apple centers; they're defined after the
+// apples (below), once APPLE_1_CX/APPLE_2_CX exist.
 export const TAG_SIZE = 64; // diameter of CountStepIndicator badge
 export const TAG_1_CY = 305; // tag bbox y = 273..337
 export const TAG_2_CY = 305;
+
+// Apple sizing — AUTO-SIZED TO ZONE (`fitUnitsToZone`), not hand-picked.
+//
+// Prior art (see git history / research/_vendor-scan/_our-codebase.md C5): this
+// constant used to be a hand-picked APPLE_SIZE=115, arrived at via a documented
+// trial-and-error render narrative (visual-design's APPLE_SIZE=220 intruded the
+// caption band + zone-objects; 115 was found by hand to clear both). That
+// narrative is exactly what `fitUnitsToZone` computes deterministically: given
+// a zone + a count, it solves the largest unit that clears the kids-eye floor
+// AND fits the zone, so the scene's on-canvas size and the bbox manifest's
+// collision box agree BY CONSTRUCTION (docs/proposals/auto-size-to-zone.md).
+//
+// The zone's vertical band is derived from real geometry, never a fresh magic
+// number: top clears the per-apple tag row's bottom edge
+// (TAG_1_CY + TAG_SIZE/2 + sizing.separationGapMin — the exact "43px gap from
+// tag bottom y=337" the old comment hand-computed); bottom clears the ACTUAL
+// shared caption-ribbon footprint (`CAPTION_BAND` from
+// src/lesson-media/captionBand.ts — not a hand-copied "522") minus a small
+// clearance. Width is a symmetric safe-area margin (vendor L4: ≥80px side
+// inset) so the pair centers on the canvas.
+const APPLE_ZONE_MARGIN_X = 100; // safe-area side margin (research L4: ≥80px)
+const APPLE_ZONE_BOTTOM_CLEARANCE = 14; // clearance above the caption band
+const APPLE_ZONE_TOP = TAG_1_CY + TAG_SIZE / 2 + sizing.separationGapMin; // 380
+const APPLE_ZONE = {
+  x: APPLE_ZONE_MARGIN_X,
+  y: APPLE_ZONE_TOP,
+  width: CANVAS_WIDTH - 2 * APPLE_ZONE_MARGIN_X,
+  height: CAPTION_BAND[1] - APPLE_ZONE_BOTTOM_CLEARANCE - APPLE_ZONE_TOP, // ≈128
+};
+// PIPELINE FINDING: fitUnitsToZone(APPLE_ZONE, 2) resolves unit=96 (the
+// kids-eye teachingUnit.target — the zone comfortably fits the target size, no
+// shrink needed), a computed value that happens to be SMALLER than the old
+// hand-picked 115 — expected: 115 was never derived from the floor/target
+// convention every other lesson's countable units use (kptestFenyuheSix's
+// DOTS_FIT resolves to the same 96 target). If APPLE_ZONE ever shrinks (e.g. a
+// taller cardinal pushes TAG_1_CY down), `fits:false` + `overflowReason` name
+// the exact density problem instead of silently rendering sub-floor — see
+// APPLE_FIT.fits.
+export const APPLE_FIT = fitUnitsToZone(APPLE_ZONE, 2);
+
+export const APPLE_SIZE = APPLE_FIT.unit; // 96 (was hand-picked 115)
+export const APPLE_GAP = APPLE_FIT.gap; // 43 = sizing.separationGapMin (was hand-picked 100)
+export const APPLE_ROW_HALF_WIDTH = (2 * APPLE_SIZE + APPLE_GAP) / 2;
+
+// Apple centers (identity-invariant pair, both at the same y) — the fit's
+// resolved positions, centered on APPLE_ZONE (which is itself centered on the
+// canvas), so both land ~ the same place the old hand-picked constants did.
+export const APPLE_1_CX = APPLE_FIT.positions[0].x; // ≈570.5 (was hand-picked 532)
+export const APPLE_2_CX = APPLE_FIT.positions[1].x; // ≈709.5 (was hand-picked 748)
+export const APPLE_CY = APPLE_FIT.positions[0].y; // 444 (was hand-picked 445)
+
 export const TAG_1_CX = APPLE_1_CX;
 export const TAG_2_CX = APPLE_2_CX;
 
