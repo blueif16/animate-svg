@@ -119,6 +119,23 @@ A cue may carry a `gap` ({seconds, reason}) — a stretch where the voice is del
 - **`reason: "animation-hold"`** — let the focal visual *breathe* and complete; this is the picture teaching. Use the moving-hold wrap (rule #6) so a static stretch isn't dead-still.
 - All gap frames are cue-relative (`cues['echo-hello'].startFrame + offset`) — zero literals, as everywhere.
 
+### Caption presence tracks speech, not the cue window (gap dropout + onset-fade anchor)
+
+The mechanically-generated `<camelId>LessonCaptionCues` (Wave 3.5, via the kit's `cueToCaption`) sets every caption's `toFrame` to `cue.endFrame` UNCONDITIONALLY — the FULL cue window, including any typed `gap` hold. Wired straight into `<LessonCaptionLayer>`, a cue with a `learner-response` gap (e.g. 4s / `gapFrames: 120`) keeps its ribbon on screen through the entire silent wait — the child reads words nobody is currently saying. **Caption presence must track actual speech, never the cue boundary:**
+
+- Whenever `cues[id].gapFrames > 0` (read off the reconciled `<camelId>Cues` — every `PlacedCue` carries `narrationEndFrame`/`gapFrames`/`holdFrames`), build your OWN captions array for `<LessonCaptionLayer captions={...}>` that clamps THAT cue's `toFrame` to `cues[id].narrationEndFrame` — never pass the mechanical `<camelId>LessonCaptionCues` straight through when any cue has a gap. This is a composer-owned derived array over an already-generated timeline, not a Wave 3.5 or kit edit.
+- **End-anchor the entrance fade at the speech onset.** `@studio/narration-kit`'s `CaptionLayer` cross-fades each cue over a fixed window CENTERED on `fromFrame` (`FADE_FRAMES = 6`) — full opacity lands `FADE_FRAMES/2` frames AFTER the nominal start, so the ribbon is still visibly fading in while the child already hears the word. Feed the caption's `fromFrame` as `cues[id].narrationStartFrame - FADE_FRAMES/2` (3 frames early at 30fps) instead of the raw onset frame, so the crossfade COMPLETES exactly when speech begins rather than trailing behind it — the same "anchor the fade's END at the onset" discipline the field applies to per-token karaoke highlights (`research/remotion-vendor-best-practices-2026-07-03.md` §3 S4).
+
+Both derivations sit at the composer's own wiring site in `Complete<PascalId>Lesson.tsx`, over arrays the generated timeline already exports — the timeline module itself stays untouched (Wave 3.5 is mechanical, never yours to hand-edit).
+
+## Transition-overlap accounting (pre-emptive)
+
+We do not use `@remotion/transitions` today — this law is pre-emptive so the day we DO adopt cross-cue transitions, the reconcile math never silently desyncs the (already-frozen) audio from a shortened picture.
+
+- **Every cross-cue transition's overlap MUST feed back into the Wave 3.5 reconcile sum.** With N overlapping transitions of `overlap` frames each: `Total = Σ(cue durations) − Σ(transition overlaps)`. Skipping this shortens the VISIBLE timeline while each cue's per-cue voice clip keeps its original mount frame — picture and voice drift apart by exactly the summed overlap.
+- **A spring-driven transition's duration is QUERIED, never guessed.** Call `measureSpring({fps, config})` (or the transition's own `timing.getDurationInFrames({fps})`) for the actual frame count a spring config resolves to, and feed THAT number into the sum above — a hand-typed duration constant living next to a spring config is the same class of bug as a hardcoded frame literal: the two WILL drift the moment either changes independently.
+- Doc-only until a lesson actually adopts a transition — there is no code to wire yet. When one first does, the composer queries the duration and updates the reconcile inputs itself; it never hand-types a number beside the spring config it's supposed to describe.
+
 ## Named motion vocabulary
 
 Every easing curve and spring config in scene code comes from `src/motion-primitives/curves.ts` — see `CAPABILITIES.md#motion-vocabulary` for the full reach guide. Raw `Easing.bezier(...)` numbers or inline `{ damping, stiffness, mass }` literals in a `LessonScene.tsx` are a smell — name it.

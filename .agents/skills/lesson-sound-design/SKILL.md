@@ -54,6 +54,23 @@ Map only MOTIVATED beats, using the fixed vocabulary (`pop` / `chime` / `whoosh`
 - **`ta-da` at most ONCE per lesson**, on the single success beat.
 - **`risingPitch: true`** (with `perStep`) ascends pitch across a counted set — auditory magnitude. This is evidence-INFORMED, not proven for counting specifically; use it, flag it `[ASSUMED]` in your log, and expect Wave 6 to sanity-check it.
 
+### Numeric mix bands (law)
+
+The composer/kit (`@studio/sound-kit`) apply these as mechanical gain/frame constants — published here so your density and reward choices are grounded in the real mix, not adjectives. A motivated SFX still gets these exact numbers; density discipline above is what keeps them from stacking into noise, not the numbers alone.
+
+| Band | Value | Why (one line) |
+|---|---|---|
+| Voice (narration) | 1.0 | The lesson IS the voice — every other layer is measured relative to it, never the reverse. |
+| SFX one-shot | 0.4–0.8 | Loud enough to register as a motivated event; never loud enough to compete with the voice it must sit under. |
+| Bed, under voice | 0.1–0.2 | High enough that the gap between utterances never reads as a dropped track; low enough that the melody stays unidentifiable under narration (the `toneSafe` guard depends on this floor holding). |
+| SFX lead time | −5 frames before its beat | A one-shot's perceptual transient peaks a few frames after its own onset; leading the beat by 5 frames puts the PEAK on the beat, not the strike. |
+| Duck ramp (down/up) | 8–15 frames | Under 8 frames a duck reads as an audible click; over 15 it reads as sluggish against a beat the child is watching land in real time. |
+| Short-gap fallback | rise to the MIDPOINT, never full un-duck | When two narration windows sit closer together than a full ramp-down-then-up needs, forcing a full rise only to re-duck a few frames later is an audible pop; rising partway marks the pause as real without the pop. |
+
+These are MIX numbers (gain + frame constants) — they never enter `audio-cues.json` (still SEMANTIC, still frame-free); the composer/kit read them from the kit's own `audioMix.ts`/`sfx.ts`, never from your JSON.
+
+**Known kit gap (read-only audit — not yours to fix).** The shipped `DEFAULT_MIX_CONFIG` bed-under-voice level (`bedUnducked 0.13 × duckFactor 0.45 ≈ 0.06`, `@studio/sound-kit/src/audioMix.ts:56-63`) undershoots the 0.1–0.2 floor above, and `bedVolume` (`audioMix.ts:116-147`) has no explicit short-gap midpoint fallback — it composes each window's ramp multiplicatively with no gap-length check, which CAN dip below the ducked floor for closely-spaced narration windows instead of rising to a midpoint. Filed as a pipelineFinding for the kit owner (never patch `@studio/sound-kit` from this repo); if a rendered bed reads buried under voice, this is why.
+
 ## NEVER
 - Write a frame number, offset, or duration into `audio-cues.json` (frames are the composer's; the schema has no frame field).
 - Invent a new bed/SFX/sting asset or edit any code/WAV — naming a gap is the Wave 3c lane's job, building it is author-time.
