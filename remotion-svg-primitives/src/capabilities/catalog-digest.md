@@ -6,7 +6,7 @@
 >
 > Source of truth for SHAPE: `src/capabilities/schema.ts`. Source of truth for WHAT EXISTS: the component barrels + `EASE`/`SPRING` keys. This menu is generated — never hand-edited.
 
-**Coverage:** 70/70 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
+**Coverage:** 71/71 catalog entries have hand-authored prose. Undocumented entries exist and are gated, but their menu text is pending.
 
 ## ATOM — teaching primitives
 
@@ -17,6 +17,7 @@ _The prop-driven shapes the child reasons about (count/progress/state drive them
 | id | component | intent — pick on this | variants | use when (confirm) | avoid → use instead |
 | --- | --- | --- | --- | --- | --- |
 | `answer-tile` | `AnswerTile` | Reach for this to offer a choice the child taps to answer, showing correct/wrong/selected/focused state on a number, word, or icon. | — | A tappable answer card holding a number, text, or icon child plus an optional small label, with correct/wrong/selected/focused states and a state badge. | Not for a bare digit shown for reading with no answer-choice framing; use `number-card`. |
+| `cardinal-consolidation` | `CardinalConsolidation` | Reach for this to teach CARDINALITY — the last number said when counting names HOW MANY there are altogether: show per-item count tags (one per counted object) consolidating into a single cardinal-to… | — | Renders N per-item count tags below + one total-glyph anchor above, with N converging guide lines that stroke-on via `progress`; the per-item cards recede and the total settle-pops in. | Not for a part-whole ADDITION bond (whole = part + part) — use `fen-he-diagram`; not for marking a single Nth POSITION (序数) — use `ordered-row-spotlight`; not for a running count… |
 | `comparison-symbol` | `ComparisonSymbol` | Show >, <, or = between two quantities to compare them, optionally as a hungry-mouth glyph or hidden behind a ? until revealed. | symbol: < \| = \| >; style: formal \| mouth | Places a comparison glyph between two sets with formal or mouth style; revealed=false hides it behind a dashed ? card until the reveal beat. | Not for the = inside a built-out number sentence; use `equation-strip`'s operator tile. |
 | `conservation-bundle` | `ConservationBundle` | Prove a bundled ten still holds ten ones — fade the wrap to a ghost and reveal the inner sticks — to defuse the 'a ten is just one thing now' misconception. | — | xrayProgress fades the wrap band to a faint outline and reveals the count inner sticks living inside, with optional highlight on the ones. | Not for ten ones BECOMING one ten (the wrap drawing on); use `asset-morph` for the FX-masked swap. |
 | `countable-object` | `CountableObject` | Show one cute countable thing (fish, star, fruit) to populate a counting or comparison set, with selected/dimmed states. | variant: animal \| banana \| block \| fish \| fruit \| star | A single themed countable in one of six variants with an optional name label; size scales it and selected/dimmed mark its state in a set. | Not for abstract place-value units or sticks; use `unit-block` or `small-stick`. |

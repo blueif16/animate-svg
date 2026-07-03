@@ -1,0 +1,133 @@
+{
+  "id": "lesson-build",
+  "meta": {
+    "name": "lesson-build",
+    "description": "FULL early-childhood SVG-lesson build workflow — the single self-contained loop CLAUDE.md mandates, parameterized by ONE lesson (args.lessonId + optional brief) and runnable in parallel across many lessons (the orchestrator spawns one run per lesson and only observes). It realizes the CLAUDE.md wave order natively: Setup(scaffold) → W0 pedagogy gate → W1 storyboard → W2a visual-design (SERIAL) → {W2b audio/captions ∥ W2c sound-design} → {W3a voice+ASR ∥ W3b primitive gap-scan/build ∥ W3c sound-asset gap-scan} → W3.5 cue-timeline reconcile (mechanical) → {W4a composer ∥ W4b sketch} → W5 render+loudnorm → W6 verification. THE LAWS (CLAUDE.md \"Discipline\"): the CUE is the unit of coordination — its ONE window is set by W3.5 reconcile = max(narrationFrames, visualMotionFrames)+tail, and audio+visuals+captions all read it (never re-introduce PADDED_CUE_DURATIONS_FRAMES); NARRATION audio is FROZEN after W3a (music+SFX is a 2nd track added at W4 that consumes the timeline and changes no cue length); MEASURE-don't-assume (the composer never runs before real voice timing + reconcile exist); ZERO frame literals and ZERO raw motion literals in scene code (every frame = cues[id].startFrame+offset; every curve = EASE.*/SPRING.*); primitives are REUSED by default and W3 owns primitive aesthetic quality. ENTRY-POINT LEVER: args.startAt resumes mid-pipeline (default \"setup\"); preflight verifies the upstream artifacts a mid-start depends on. Each node returns {node,status,outputArtifacts,summary,issues,pipelineFindings} and writes lesson-data/<id>/_logs/<wave>.md; the run aggregates them — the union of pipelineFindings is the workflow-improvement backlog. Improve a wave by editing its SKILL; improve the chain by editing this file. DO NOT confuse this DRAFT with a tested workflow — validate node-by-node before trusting an unattended run."
+  },
+  "stages": [
+    [
+      "setup-scaffold"
+    ],
+    [
+      "w0-pedagogy"
+    ],
+    [
+      "w1-storyboard"
+    ],
+    [
+      "w2a-visual-design"
+    ],
+    [
+      "w2b-audio-captions",
+      "w2c-sound-design"
+    ],
+    [
+      "w3a-voice-asr",
+      "w3b-primitive-build",
+      "w3c-sound-asset"
+    ],
+    [
+      "w3-5-reconcile"
+    ],
+    [
+      "w4a-composer",
+      "w4b-sketch"
+    ],
+    [
+      "w5-render"
+    ],
+    [
+      "w6-verification"
+    ]
+  ],
+  "nodes": {
+    "setup-scaffold": {
+      "phase": "setup",
+      "deps": []
+    },
+    "w0-pedagogy": {
+      "phase": "pedagogy",
+      "deps": [
+        "setup-scaffold"
+      ]
+    },
+    "w1-storyboard": {
+      "phase": "storyboard",
+      "deps": [
+        "w0-pedagogy"
+      ]
+    },
+    "w2a-visual-design": {
+      "phase": "design",
+      "deps": [
+        "w1-storyboard"
+      ]
+    },
+    "w2b-audio-captions": {
+      "phase": "design",
+      "deps": [
+        "w2a-visual-design"
+      ]
+    },
+    "w2c-sound-design": {
+      "phase": "design",
+      "deps": [
+        "w2a-visual-design"
+      ]
+    },
+    "w3-5-reconcile": {
+      "phase": "reconcile",
+      "deps": [
+        "w3a-voice-asr",
+        "w3b-primitive-build",
+        "w3c-sound-asset"
+      ]
+    },
+    "w3a-voice-asr": {
+      "phase": "assets",
+      "deps": [
+        "w2b-audio-captions",
+        "w2c-sound-design"
+      ]
+    },
+    "w3b-primitive-build": {
+      "phase": "assets",
+      "deps": [
+        "w2b-audio-captions",
+        "w2c-sound-design"
+      ]
+    },
+    "w3c-sound-asset": {
+      "phase": "assets",
+      "deps": [
+        "w2b-audio-captions",
+        "w2c-sound-design"
+      ]
+    },
+    "w4a-composer": {
+      "phase": "compose",
+      "deps": [
+        "w3-5-reconcile"
+      ]
+    },
+    "w4b-sketch": {
+      "phase": "compose",
+      "deps": [
+        "w3-5-reconcile"
+      ]
+    },
+    "w5-render": {
+      "phase": "render",
+      "deps": [
+        "w4a-composer",
+        "w4b-sketch"
+      ]
+    },
+    "w6-verification": {
+      "phase": "verify",
+      "deps": [
+        "w5-render"
+      ]
+    }
+  }
+}

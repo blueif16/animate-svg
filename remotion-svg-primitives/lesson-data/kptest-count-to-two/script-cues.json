@@ -1,0 +1,32 @@
+{
+  "lessonId": "kptest-count-to-two",
+  "voice": "Aoede",
+  "rate": "0.30 s/char (Mandarin, calibrated)",
+  "cues": [
+    {
+      "id": "announce-topic",
+      "role": "announce-topic",
+      "narration": "我们一起数到二吧。",
+      "phrase": "我们一起数到二吧",
+      "caption": "我们一起数到二吧。"
+    },
+    {
+      "id": "cue-1-count",
+      "role": "count-on",
+      "narration": "你看，一个苹果来了——一；再来一个苹果——二。",
+      "phrase": "你看 一个苹果来了 一 再来一个苹果 二",
+      "caption": "你看，一个苹果来了——一；再来一个苹果——二。",
+      "asrRisk": {
+        "level": "low",
+        "note": "bare single-char count words 二 at cue-end before 。; 一 twice (one tone-shifted in 一个, one as count). Low risk (clean high-frequency count words, not homophone-hazard). Mitigation applied: —— boundary before each count word, ； beat break, 。 close. Kept bare per §7 count-match (required); proposed fix = none (documented ignore)."
+      }
+    },
+    {
+      "id": "cue-2-cardinality",
+      "role": "reveal",
+      "narration": "看一看这一群，一共有几个呢？——一共二个呀。",
+      "phrase": "看一看这一群 一共有几个呢 一共二个呀",
+      "caption": "看一看这一群，一共有几个呢？——一共二个呀。"
+    }
+  ]
+}

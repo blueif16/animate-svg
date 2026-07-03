@@ -95,6 +95,22 @@ export const myLessonDuration = reconciled.durationFrames;
 
 **Audio wiring:** pass `<X>VoiceClips` straight into `<LessonAudioLayer voiceClips={...}>` (the kit mounts one `<Sequence from={clip.fromFrame}>` per clip). NEVER wire a single `teacherAudioSrc`/continuous WAV. Derive the bed-duck windows from the clip spans (`spansToWindows(voiceClips.map(c => [c.fromFrame, c.fromFrame + c.durationInFrames]))`).
 
+**The kit import is `@studio/narration-kit` — copy this block, do NOT go looking for it.** Every audio layer + reconcile/window helper the composer mounts is a NAMED export of the SAME package:
+
+```ts
+import {
+  LessonAudioLayer,    // per-cue voice clips → one <Sequence from={clip.fromFrame}> each
+  LessonBgmLayer,      // mechanical music bed (key + duck windows)
+  LessonSfxLayer,      // composer-owned SFX events at motion frames
+  spansToWindows,      // clip spans → bed-duck windows
+  reconcileClipTimeline, // Wave 3.5 reconcile (already used in the timeline module)
+} from "@studio/narration-kit";
+```
+
+(`LessonCaptionLayer` is also from this package. Music keys from `audio-cues.json` pass through verbatim — the kit resolves them; you NEVER touch the `.wav`.)
+
+**LAW — a path you need is GIVEN, never hunted.** Every import path, package name, primitive location, and asset key the composer needs is stated in THIS skill or in `src/capabilities/catalog-digest.md`. You MUST NOT `cat`/`grep`/`ls`/`find`/explore the disk (and NEVER `node_modules` or `@studio/*`) to DISCOVER where something lives — the answer is here, and disk-scanning for it is wasted effort that under `--sandbox` also EPERMs. If a path you genuinely need is named NOWHERE in this skill or the catalog-digest, that is a SKILL GAP: record it as a `pipelineFinding` (name the missing path), proceed from the best in-skill default, and do NOT spelunk for it.
+
 ### Honor intentional silence — the gap reason
 
 A cue may carry a `gap` ({seconds, reason}) — a stretch where the voice is deliberately empty (`docs/pipeline-architecture.md` §10). The silence is already in the WAV and in the cue window; the composer's job is to make that window **read as intentional, never as a frozen dead frame**:

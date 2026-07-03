@@ -1,0 +1,50 @@
+{
+  "id": "w2c-sound-design",
+  "phase": "design",
+  "deps": [
+    "w2a-visual-design"
+  ],
+  "prompt": { "file": "prompt.md" },
+  "tools": { "allow": ["read", "write", "edit", "submit_result"], "deny": [] },
+  "inject": [
+    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/brief.md",
+    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md",
+    "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md"
+  ],
+  "contract": {
+    "artifacts": [
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"
+    ],
+    "owns": [
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w2c-sound-design.md"
+    ],
+    "readScope": [
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/.agents",
+      "/Users/tk/Desktop/shared-sound/public/audio"
+    ],
+    "returnMode": "optional"
+  },
+  "checks": {
+    "post": [
+      { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json" },
+      { "kind": "json-parses", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json" }
+    ]
+  },
+  "policy": { "fail": "block" },
+  "return": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "node": { "type": "string" },
+      "status": { "type": "string", "enum": ["ok", "gap", "blocked"] },
+      "outputArtifacts": { "type": "array", "items": { "type": "string" } },
+      "summary": { "type": "string" },
+      "issues": { "type": "array", "items": { "type": "string" } },
+      "pipelineFindings": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
+  }
+}

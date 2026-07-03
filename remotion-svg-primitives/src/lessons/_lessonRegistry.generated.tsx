@@ -3,12 +3,14 @@
 // Add a lesson by exporting that descriptor from its own file; never edit this file or Root.tsx.
 import type { LessonComposition } from "./lessonRegistryTypes";
 import { lessonComposition as completeKptestCompareMoreFewerLessonComposition } from "./CompleteKptestCompareMoreFewerLesson";
+import { lessonComposition as completeKptestCountToTwoLessonComposition } from "./CompleteKptestCountToTwoLesson";
 import { lessonComposition as completeKptestFenyuheSixLessonComposition } from "./CompleteKptestFenyuheSixLesson";
 import { lessonComposition as completeKptestFirstSecondThirdLessonComposition } from "./CompleteKptestFirstSecondThirdLesson";
 import { lessonComposition as completeKptestGreetingsVerifyLessonComposition } from "./CompleteKptestGreetingsVerifyLesson";
 
 export const AUTO_LESSON_COMPOSITIONS: LessonComposition[] = [
   completeKptestCompareMoreFewerLessonComposition,
+  completeKptestCountToTwoLessonComposition,
   completeKptestFenyuheSixLessonComposition,
   completeKptestFirstSecondThirdLessonComposition,
   completeKptestGreetingsVerifyLessonComposition,

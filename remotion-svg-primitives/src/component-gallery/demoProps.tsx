@@ -3,6 +3,7 @@ import {
   AnimatedStrokePath,
   AnswerTile,
   BundleWrap,
+  CardinalConsolidation,
   ComparisonSymbol,
   ConservationBundle,
   CountStepIndicator,
@@ -275,6 +276,26 @@ export const demoProps: Record<string, GalleryDemo> = {
   },
   "fen-he-diagram": {
     render: () => <FenHeDiagram whole={5} parts={[2, 3]} progress={1} diagramWidth={220} />,
+    tall: true,
+  },
+  "cardinal-consolidation": {
+    // Cardinality reveal: two per-item count tags (1,2) consolidate into one
+    // total glyph "2" — the last count word becomes THE number for the whole.
+    render: () => (
+      <Strip
+        gap={260}
+        items={[
+          {
+            caption: "converging (progress .8)",
+            node: <CardinalConsolidation itemCount={2} total={2} progress={0.8} diagramWidth={220} />,
+          },
+          {
+            caption: "resolved (progress 1)",
+            node: <CardinalConsolidation itemCount={2} total={2} progress={1} diagramWidth={220} />,
+          },
+        ]}
+      />
+    ),
     tall: true,
   },
   "label-callout": {

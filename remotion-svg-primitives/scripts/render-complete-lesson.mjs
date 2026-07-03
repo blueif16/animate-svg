@@ -142,7 +142,59 @@ const probe = (output) => {
   console.log(result.stdout.trim());
 };
 
-const main = () => {
+// Bundle + render the lesson MP4 through the @remotion/bundler + @remotion/renderer
+// NODE API. enableCaching:false is LOAD-BEARING — Remotion defaults it true, writing
+// webpack's PERSISTENT cache to the shared node_modules/.cache/webpack. The parallel
+// fleet (this render + lesson-measured/lesson:check + animatic/bbox/primitive-checks)
+// concurrently (de)serializes that ONE dir; a torn read feeds wasm-hash an undefined
+// buffer and the build crashes (wasm-hash.js:151 "reading 'length'"), killing the
+// process so Remotion's own corruption-recovery can't catch it. Disabling the cache
+// (per-process, nothing on disk to race) prevents the crash class outright. NOTE: it
+// must be the enableCaching option, NOT webpackOverride — Remotion re-forces `cache`
+// AFTER the override (shared-bundler-config computeHashAndFinalConfig). Clearing the
+// cache before each render would be WORSE: one lesson's rm wipes another's mid-build.
+// EVERY bundle() site in the pipeline passes enableCaching:false for the same reason.
+const renderLessonMedia = async ({ entry, composition, output }) => {
+  const { bundle } = await import("@remotion/bundler");
+  const { selectComposition, renderMedia } = await import("@remotion/renderer");
+  const { enableTailwind } = await import("@remotion/tailwind-v4");
+
+  const tBundle = Date.now();
+  console.log("\n== Bundle");
+  let serveUrl;
+  try {
+    serveUrl = await bundle({
+      entryPoint: path.resolve(process.cwd(), entry),
+      webpackOverride: enableTailwind,
+      enableCaching: false,
+    });
+  } finally {
+    stepTimings.push({ step: "Bundle", ms: Date.now() - tBundle });
+  }
+
+  const tRender = Date.now();
+  console.log("\n== Render MP4");
+  try {
+    const comp = await selectComposition({
+      serveUrl,
+      id: composition,
+      inputProps: {},
+    });
+    await renderMedia({
+      serveUrl,
+      composition: comp,
+      codec: "h264",
+      outputLocation: output,
+      inputProps: {},
+      imageFormat: "jpeg", // mirrors remotion.config.ts setVideoImageFormat
+      overwrite: true, // mirrors remotion.config.ts setOverwriteOutput
+    });
+  } finally {
+    stepTimings.push({ step: "Render MP4", ms: Date.now() - tRender });
+  }
+};
+
+const main = async () => {
   const parsed = parseArgs(process.argv.slice(2));
   const args = mergeConfig(parsed);
   requireFields(args, ["composition", "entry", "output"]);
@@ -207,17 +259,11 @@ const main = () => {
   if (!args.skipLint) {
     run("Typecheck + lint", "npm", ["run", "lint"]);
   }
-  if (!args.skipBuild) {
-    run("Bundle", "npm", ["run", "build"]);
-  }
-
-  run("Render MP4", "npx", [
-    "remotion",
-    "render",
-    args.entry,
-    args.composition,
+  await renderLessonMedia({
+    entry: args.entry,
+    composition: args.composition,
     output,
-  ]);
+  });
   probe(output);
 
   // Master loudness — normalize the mix to -16 LUFS / -1 dBTP via a TRUE
@@ -312,9 +358,7 @@ const main = () => {
   console.log(`\nDone: ${output}`);
 };
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});

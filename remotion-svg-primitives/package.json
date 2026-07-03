@@ -9,9 +9,11 @@
     "node": ">=20 <24"
   },
   "dependencies": {
+    "@google/genai": "^1.44.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@remotion/cli": "4.0.462",
+    "@remotion/layout-utils": "4.0.462",
     "@remotion/tailwind-v4": "4.0.462",
     "@remotion/three": "4.0.462",
     "@studio/narration-kit": "file:../../shared-narration",

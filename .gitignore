@@ -29,3 +29,16 @@ _prior-runs/
 # Editor/pipeline backup snapshots + one-off throwaway scripts.
 *.backup
 remotion-svg-primitives/compute_timeline.js
+
+# piflow: commit the authored template, ignore generated per-run instances
+.piflow/*/runs/
+.tasks/HANDOFF-*.md
+# piflow SDK per-node prompt/tool staging dir (runner.ts stages _pi/<id>/; no
+# cleanup; the SDK's own repo ignores /_pi/ too) — generated, never committed.
+/_pi/
+
+# Vendor reference library — shallow clones of external Remotion repos for
+# best-practice study (see vendor/README.md, which stays tracked). Re-clone
+# per the README; never commit third-party trees.
+vendor/*
+!vendor/README.md
