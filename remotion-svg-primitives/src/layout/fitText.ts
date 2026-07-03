@@ -17,10 +17,16 @@
 //       sentence as one unbreakable word (the named remotion scan C3 failure)
 //       and never wraps.
 //   (c) FONT-LOADED gate. Measurement only runs after the font is provably
-//       loaded — `useFontGate()` blocks the render (delayRender → resolve on
-//       document.fonts.ready → continueRender), and `measureWithFont` passes
-//       `validateFontIsLoaded: true` so a fallback-font measurement THROWS
-//       instead of returning wrong numbers (vendor L2 recipe).
+//       loaded — `useFontGate()` holds a `delayRender` handle and releases it on
+//       `document.fonts.ready`, so a measure taken before the fonts load (which
+//       would silently use fallback metrics) can never be captured in a rendered
+//       frame (vendor L2 recipe). `measureWithFont` also EXPOSES layout-utils'
+//       `validateFontIsLoaded` differential assertion (a second measure with the
+//       fallback font that THROWS on identical boxes), but it is OPT-IN and OFF
+//       by default: for our mixed Latin+CJK system-font STACK it false-positives
+//       (a CJK string's declared and fallback family both resolve to the same
+//       system CJK fallback → identical boxes → wrong throw). Enable it only for
+//       a single dedicated web font that must load. `useFontGate` is the gate.
 //
 // SPLIT BY CONCERN: the wrap/clamp CORE is PURE and takes an injected
 // `measure(text, fontSize)` — testable with no DOM (see fitText.test.ts). The
@@ -334,16 +340,23 @@ export type FontStyle = {
   fontFamily: string;
   fontWeight?: number | string;
   letterSpacing?: string;
-  /** Differential fallback-font assertion (vendor L2). Default true. */
+  /**
+   * Opt-in differential fallback-font assertion (vendor L2). Default FALSE.
+   * Layout-utils measures a second time with the fallback font and THROWS on
+   * identical boxes (>4 unique chars). For a mixed Latin+CJK SYSTEM stack this
+   * false-positives — a CJK string's declared family and the null fallback both
+   * resolve to the same system CJK font, so the boxes match and it wrongly
+   * throws. Enable ONLY for a single dedicated web font. The load gate is
+   * `useFontGate`, not this assertion.
+   */
   validateFontIsLoaded?: boolean;
 };
 
 /**
  * Build a {@link MeasureFn} bound to @remotion/layout-utils `measureText` with a
- * shared font style. `validateFontIsLoaded` defaults to TRUE: layout-utils
- * measures a second time with the fallback font and THROWS if the boxes are
- * pixel-identical (>4 unique chars) — the font-loaded assertion of vendor L2.
- * Only callable in the browser (Remotion render / studio / gallery).
+ * shared font style. `validateFontIsLoaded` defaults to FALSE (see FontStyle —
+ * it false-positives on a mixed CJK system stack); `useFontGate` is the load
+ * gate. Only callable in the browser (Remotion render / studio / gallery).
  */
 export const measureWithFont =
   (style: FontStyle): MeasureFn =>
@@ -354,7 +367,7 @@ export const measureWithFont =
       fontFamily: style.fontFamily,
       fontWeight: style.fontWeight,
       letterSpacing: style.letterSpacing,
-      validateFontIsLoaded: style.validateFontIsLoaded ?? true,
+      validateFontIsLoaded: style.validateFontIsLoaded ?? false,
     }).width;
 
 /**
