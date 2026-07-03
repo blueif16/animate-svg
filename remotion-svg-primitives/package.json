@@ -40,6 +40,7 @@
     "upgrade": "remotion upgrade",
     "lint": "node scripts/check-legacy-boundary.mjs && eslint src && tsc",
     "test:layout": "tsx src/layout/fitToZone.test.ts",
+    "test:terminal-value": "tsx src/shape-primitives/terminalValueLayout.test.tsx",
     "lesson:render": "node scripts/render-complete-lesson.mjs",
     "lesson:scaffold": "node scripts/scaffold-lesson.mjs",
     "lesson:voice": "node node_modules/@studio/narration-kit/bin/generate-voice.mjs --align",
