@@ -3084,3 +3084,243 @@ export const CountingBeadDevice = ({
     </PlacedGroup>
   );
 };
+// =========================================================================
+// CardinalConsolidation — a many-count-tags → one-cardinal-total diagram.
+//
+// The cardinality teaching primitive: N per-item count tags (one per counted
+// object) consolidate INTO a single cardinal-total glyph that names the WHOLE
+// set — "the last number you say is how many there are altogether." The
+// per-item tags sit in a row BELOW; N converging guide lines rise to ONE
+// total-glyph anchor ABOVE-center. As `progress` runs 0→1 the lines draw on
+// (the convergence gesture), the per-item tags recede, and the single total
+// resolves (a settle pop) — so the child sees the count WORDS become THE ONE
+// NUMBER for the whole group, NOT addition, NOT a part-whole bond.
+//
+// Distinct from FenHeDiagram: fen-he models whole = part + part (addition /
+// 分合式) with one whole on top and two parts below. CardinalConsolidation
+// models count-tags → cardinal-total (cardinality): there is NO addition, the
+// parts are NOT addends, and the count of per-item tags is the COUNT (N), not
+// a 2-part split. Reusing fen-he for cardinality would assert the false
+// equation whole = parts summed (e.g. 2 = 1 + 2); this primitive exists to
+// NOT do that.
+//
+// Two modes, mirroring FenHeDiagram so identity is preserved:
+//  - `renderNumbers={true}` (default) — primitive renders its own NumberCards
+//    at the per-item slots AND the total anchor. Use for self-contained recap
+//    / gallery / read cues.
+//  - `renderNumbers={false}` — primitive draws ONLY the N converging lines
+//    (no numerals). The composer places EXTERNAL NumberCard instances at the
+//    anchors returned by `getCardinalConsolidationAnchors(width, count)` and
+//    interpolates each per-item tag's x/y TOWARD the total anchor — same React
+//    instance travels, no fade-out/fade-in cross-fade (the load-bearing
+//    identity-preservation mechanism for the consolidation cue). The total
+//    glyph is the per-item tag itself enlarged + repositioned, not fresh ink.
+// =========================================================================
+
+export type CardinalConsolidationAnchors = {
+  /** Per-item count-tag slot centres, in LOCAL coords, symmetric about x=0,
+   *  ordered left→right. Length === `count`. */
+  itemAnchors: { x: number; y: number }[];
+  /** The cardinal-total-glyph anchor (above-center). */
+  total: { x: number; y: number };
+};
+
+export type CardinalConsolidationValue = number | string;
+
+/**
+ * Returns the per-item tag slot centres and the single total-glyph anchor for
+ * a CardinalConsolidation of `width` (outer bbox) and N `count` per-item
+ * tags, in the primitive's LOCAL coordinate space (origin at the group's
+ * transform). The N item slots form a row below, symmetric about x=0; the
+ * total sits above-center. The composer interpolates external migrating
+ * NumberCards from their per-item cue-1 positions to the total anchor here —
+ * exactly as `getFenHeDiagramAnchors` does for the fen-he migration.
+ *
+ * `width` is the OUTER bounding box of the diagram — the item NumberCards
+ * (sized internally from `width`) sit so the OUTER edges of the row align
+ * with ±width/2, so two diagrams placed `width + gap` apart never overlap.
+ */
+export const getCardinalConsolidationAnchors = (
+  width = 220,
+  count = 2,
+  // Vertical reach of the converging lines as a fraction of `width`. Default
+  // 0.62 (the convergence reads as a "comes up to the total" gesture, not a
+  // flat fan). A SMALLER ratio makes the diagram vertically SHORTER without
+  // changing card size.
+  verticalReachRatio = 0.62,
+): CardinalConsolidationAnchors => {
+  const n = Math.max(1, Math.floor(count));
+  const cardWidth = width * 0.34;
+  const cardGap = Math.max(cardWidth * 0.55, width * 0.06);
+  const rowWidth = n * cardWidth + (n - 1) * cardGap;
+  // If the natural row would exceed the outer width, compress the gap so the
+  // row's outer edge still lines up with ±width/2 (never overflow the bbox).
+  const clampedRowWidth = Math.min(rowWidth, width);
+  const clampedGap =
+    clampedRowWidth < rowWidth
+      ? (clampedRowWidth - n * cardWidth) / Math.max(1, n - 1)
+      : cardGap;
+  const verticalReach = width * verticalReachRatio;
+  const itemY = verticalReach / 2;
+  const totalY = -verticalReach / 2;
+  const rowLeft = -clampedRowWidth / 2 + cardWidth / 2;
+  const itemAnchors = Array.from({ length: n }, (_, i) => ({
+    x: rowLeft + i * (cardWidth + clampedGap),
+    y: itemY,
+  }));
+  return { itemAnchors, total: { x: 0, y: totalY } };
+};
+
+export type CardinalConsolidationProps = PrimitiveGroupProps &
+  PlacementProps & {
+    /** Diagram width in local SVG units. Default 220. The vertical reach
+     *  scales from this. */
+    diagramWidth?: number;
+    /** Reduce opacity (per `shared.ts` `stateOpacity`). */
+    dimmed?: boolean;
+    /** Color of the N converging guide lines. Defaults to textNavy. */
+    lineColor?: ThemeColor;
+    /** Color of the rendered NumberCard glyphs (passed through to NumberCard's
+     *  card surface). Defaults to white. */
+    numberColor?: ThemeColor;
+    /** 0..1. Drives stroke-on of the N converging lines; recedes the per-item
+     *  cards as they consolidate; resolves + settle-pops the total card in
+     *  across the second half. */
+    progress?: number;
+    /** When false, the primitive draws ONLY the N converging lines — the
+     *  caller places the per-item NumberCards AND the total NumberCard at
+     *  `getCardinalConsolidationAnchors(diagramWidth, itemCount)` so the SAME
+     *  card instances travel in (identity preserved, no cross-fade). */
+    renderNumbers?: boolean;
+    /** Vertical reach of the converging lines as a fraction of `diagramWidth`.
+     *  Default 0.62. Must match the ratio passed to
+     *  `getCardinalConsolidationAnchors` when the caller places its own cards. */
+    verticalReachRatio?: number;
+    /** How many per-item count tags (the count of items counted). Default 2. */
+    itemCount?: number;
+    /** The cardinal total glyph value (the last count word / how-many).
+     *  Required when `renderNumbers` is true; ignored when false (caller's
+     *  external card carries it). */
+    total?: CardinalConsolidationValue;
+  };
+
+export const CardinalConsolidation = ({
+  diagramWidth = 220,
+  dimmed = false,
+  itemCount = 2,
+  lineColor,
+  numberColor,
+  progress = 1,
+  renderNumbers = true,
+  transform,
+  total,
+  verticalReachRatio = 0.62,
+  x = 0,
+  y = 0,
+  ...groupProps
+}: CardinalConsolidationProps) => {
+  const reveal = clamp01(progress);
+  const stroke = resolveColor(lineColor, colors.textNavy);
+  const cardSurface = resolveColor(numberColor, colors.white);
+  const anchors = getCardinalConsolidationAnchors(
+    diagramWidth,
+    itemCount,
+    verticalReachRatio,
+  );
+  const cardSize = diagramWidth * 0.34;
+  const cardHeight = cardSize * 1.18;
+
+  // Motion schedule (all derived from `reveal`, never a frame literal):
+  //   lines     0.00 → 0.60   draw on  (the convergence gesture)
+  //   per-item  0.40 → 0.85   recede as they consolidate into the total
+  //   total     0.55 → 1.00   settle-pop in (the cardinality reveal climax)
+  const lineReveal = clamp01(reveal / 0.6);
+  const itemFade = 1 - clamp01((reveal - 0.4) / 0.45);
+  const totalReveal = clamp01((reveal - 0.55) / 0.45);
+  // Settle pop: base scale 0.55→1.0 eased by outCubic, plus a tiny anticipation
+  // overshoot (sin bulge) across the resolve for a bouncy-feel climax. Every
+  // curve is a named EASE — no raw motion literal.
+  const easedTotal = EASE.outCubic(totalReveal);
+  const totalScale =
+    0.55 + 0.45 * easedTotal +
+    (totalReveal > 0 && totalReveal < 1 ? 0.06 * Math.sin(totalReveal * Math.PI) : 0);
+
+  const strokeWidth = Math.max(4, diagramWidth * 0.022);
+  // Inset each line endpoint by ~half the card's box so it meets the card edge,
+  // not the numeral's centre (mirrors FenHeDiagram's inset convention).
+  const topInset = cardHeight * 0.42;
+  const bottomInset = cardHeight * 0.42;
+
+  const lineSegs = anchors.itemAnchors.map((p) => {
+    const dx = anchors.total.x - p.x;
+    const dy = anchors.total.y - p.y;
+    const len = Math.hypot(dx, dy);
+    const ux = dx / len;
+    const uy = dy / len;
+    return {
+      x1: p.x + ux * bottomInset,
+      y1: p.y + uy * bottomInset,
+      x2: anchors.total.x - ux * topInset,
+      y2: anchors.total.y - uy * topInset,
+    };
+  });
+
+  return (
+    <PlacedGroup
+      {...groupProps}
+      opacity={stateOpacity(undefined, dimmed)}
+      transform={transform}
+      x={x}
+      y={y}
+    >
+      <g className="lines">
+        {lineSegs.map((seg, i) => (
+          <line
+            key={i}
+            pathLength={1}
+            stroke={stroke}
+            strokeDasharray={1}
+            strokeDashoffset={1 - lineReveal}
+            strokeLinecap="round"
+            strokeWidth={strokeWidth}
+            x1={seg.x1}
+            x2={seg.x2}
+            y1={seg.y1}
+            y2={seg.y2}
+          />
+        ))}
+      </g>
+      {renderNumbers ? (
+        <g className="numbers">
+          <g className="items" opacity={itemFade}>
+            {anchors.itemAnchors.map((p, i) => (
+              <NumberCard
+                color={cardSurface}
+                height={cardHeight}
+                key={`item-${i}`}
+                value={i + 1}
+                width={cardSize}
+                x={p.x}
+                y={p.y}
+              />
+            ))}
+          </g>
+          <g
+            className="total"
+            opacity={clamp01(totalReveal * 1.6)}
+            transform={`scale(${totalScale}) translate(${anchors.total.x / totalScale} ${anchors.total.y / totalScale})`}
+          >
+            <NumberCard
+              color={cardSurface}
+              height={cardHeight * 1.15}
+              value={total ?? ""}
+              width={cardSize * 1.15}
+              x={0}
+              y={0}
+            />
+          </g>
+        </g>
+      ) : null}
+    </PlacedGroup>
+  );
+};
