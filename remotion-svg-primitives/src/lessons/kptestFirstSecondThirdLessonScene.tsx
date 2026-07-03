@@ -5,7 +5,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import type { AlignedLessonCue } from "@studio/narration-kit";
-import { cueMap } from "@studio/narration-kit";
+import { makeCueAccessors } from "./_cues/cueAccessors";
 
 import { colors } from "../theme";
 import { EASE } from "../motion-primitives/curves";
@@ -59,8 +59,6 @@ import {
   SWEEP_STEP_FRAMES,
   ZONE_PROMPT,
 } from "./kptestFirstSecondThird/layout";
-
-type CueKey = string;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -296,11 +294,9 @@ export const KptestFirstSecondThirdLessonScene: React.FC<{
   const frame = useCurrentFrame();
   useMeasureHook();
 
-  const c = cueMap([...cuesArray]);
-
-  // Shortcuts for cue start/end frames
-  const cStart = (id: CueKey) => c[id]?.startFrame ?? 0;
-  const cEnd = (id: CueKey) => c[id]?.endFrame ?? 0;
+  // Throwing cue accessors — a wrong/stale id THROWS (naming it + valid ids),
+  // never a silent frame-0 fallback (self-scan C3).
+  const { cStart, cEnd } = makeCueAccessors(cuesArray);
 
   // ─── VISIBILITY gates (each element is live once its arrive cue starts) ───
   const introVisible = frame >= cStart("intro") && frame <= cEnd("intro");

@@ -19,12 +19,12 @@ import { mediaSrc } from "../lesson-media/mediaSrc";
 import type { LessonComposition } from "./lessonRegistryTypes";
 import { KptestCountToTwoLessonScene } from "./kptestCountToTwoLessonScene";
 import {
+  kptestCountToTwoCueAccessors,
   kptestCountToTwoCues,
   kptestCountToTwoDuration,
   kptestCountToTwoLessonCaptionCues,
   kptestCountToTwoVoiceClips,
 } from "./kptestCountToTwoLessonTimeline";
-import { cueMap } from "./timingTypes";
 import {
   APPLE_1_POPIN_REL_START,
   APPLE_2_POPIN_REL_START,
@@ -46,9 +46,10 @@ const audioCues = audioCuesRaw as {
 };
 const BED_KEY = audioCues.bed;
 
-// ─── CUE MAP ─────────────────────────────────────────────────────────────────
-const c = cueMap(kptestCountToTwoCues);
-const cStart = (id: string): number => c[id]?.startFrame ?? 0;
+// ─── CUE ACCESSORS ───────────────────────────────────────────────────────────
+// Throwing, union-typed — a wrong/stale cue id is a COMPILE error or THROWS,
+// never a silent frame-0 fallback (self-scan C3).
+const { cStart, cEnd } = kptestCountToTwoCueAccessors;
 
 // ─── VOICE-OVER SPANS for bed-duck windows (mechanical envelope) ────────────
 const voiceoverSpans: Array<[number, number]> = kptestCountToTwoVoiceClips.map(
@@ -58,35 +59,37 @@ const voiceoverSpans: Array<[number, number]> = kptestCountToTwoVoiceClips.map(
 // ─── SFX EVENTS (composer-owned frames from audio-cues.json + layout.ts) ────
 // Each fromFrame = cues[id].startFrame + named layout offset (NEVER a literal).
 // Per audio-cues.json: C4 fires a "ta-da" reward at the cardinal reveal moment.
+// apple-1 and apple-2 are sub-beats of cue-1-count (both narrated there); the
+// cardinal reward fires in cue-2-cardinality.
 const sfxEvents: SfxEvent[] = [
-  // C2: apple 1 pops as it lands
+  // apple 1 pops as it lands
   {
     sound: "pop",
-    fromFrame: cStart("first-apple-one") + APPLE_1_POPIN_REL_START + SFX_APPLE_POP_OFFSET,
+    fromFrame: cStart("cue-1-count") + APPLE_1_POPIN_REL_START + SFX_APPLE_POP_OFFSET,
     volume: 0.5,
   },
-  // C2: tag 1 pops as it attaches
+  // tag 1 pops as it attaches
   {
     sound: "pop",
-    fromFrame: cStart("first-apple-one") + TAG_1_POPIN_REL_START + SFX_TAG_POP_OFFSET,
+    fromFrame: cStart("cue-1-count") + TAG_1_POPIN_REL_START + SFX_TAG_POP_OFFSET,
     volume: 0.5,
   },
-  // C3: apple 2 pops as it lands
+  // apple 2 pops as it lands
   {
     sound: "pop",
-    fromFrame: cStart("second-apple-two") + APPLE_2_POPIN_REL_START + SFX_APPLE_POP_OFFSET,
+    fromFrame: cStart("cue-1-count") + APPLE_2_POPIN_REL_START + SFX_APPLE_POP_OFFSET,
     volume: 0.5,
   },
-  // C3: tag 2 pops as it attaches
+  // tag 2 pops as it attaches
   {
     sound: "pop",
-    fromFrame: cStart("second-apple-two") + TAG_2_POPIN_REL_START + SFX_TAG_POP_OFFSET,
+    fromFrame: cStart("cue-1-count") + TAG_2_POPIN_REL_START + SFX_TAG_POP_OFFSET,
     volume: 0.5,
   },
-  // C4: ta-da reward at the cardinal bouncy peak (audio-cues.json)
+  // ta-da reward at the cardinal bouncy peak (audio-cues.json)
   {
     sound: "ta-da",
-    fromFrame: cStart("cardinality") + SFX_CARDINAL_REWARD_OFFSET,
+    fromFrame: cStart("cue-2-cardinality") + SFX_CARDINAL_REWARD_OFFSET,
     volume: 0.55,
   },
 ];
@@ -100,8 +103,8 @@ const INTRO_STING_VOLUME = 0.45;
 // Outro resolve (outro.resolve = true) — fires near the end of the cardinality
 // cue as a soft resolve on the resolved "cardinal 2" state.
 const OUTRO_RESOLVE_OFFSET_FRAMES =
-  Math.max(0, c["cardinality"]?.endFrame ?? 0) -
-  (c["cardinality"]?.startFrame ?? 0) -
+  Math.max(0, cEnd("cue-2-cardinality")) -
+  cStart("cue-2-cardinality") -
   18; // ~0.6s before cue end
 const OUTRO_RESOLVE_VOLUME = 0.5;
 
@@ -121,7 +124,7 @@ export const CompleteKptestCountToTwoLesson: React.FC = () => (
 
     {/* Intro sting — calm rise as the lesson opens. */}
     <Sequence
-      from={cStart("lesson-intro") + INTRO_STING_OFFSET_FRAMES}
+      from={cStart("announce-topic") + INTRO_STING_OFFSET_FRAMES}
     >
       <Html5Audio
         src={mediaSrc("audio/_stings/kids-section-lift.wav")}
@@ -130,7 +133,7 @@ export const CompleteKptestCountToTwoLesson: React.FC = () => (
     </Sequence>
 
     {/* Outro resolve — soft rising swell over the cardinal-2 close. */}
-    <Sequence from={cStart("cardinality") + OUTRO_RESOLVE_OFFSET_FRAMES}>
+    <Sequence from={cStart("cue-2-cardinality") + OUTRO_RESOLVE_OFFSET_FRAMES}>
       <Html5Audio
         src={mediaSrc("audio/_stings/kids-outro-resolve.wav")}
         volume={OUTRO_RESOLVE_VOLUME}

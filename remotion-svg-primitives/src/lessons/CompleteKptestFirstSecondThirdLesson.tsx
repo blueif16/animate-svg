@@ -28,15 +28,15 @@ import {
   SFX_REWARD_OFFSET,
   SFX_ASK_POPIN_OFFSET,
 } from "./kptestFirstSecondThird/layout";
-import { cueMap } from "@studio/narration-kit";
+import { makeCueAccessors } from "./_cues/cueAccessors";
 
 // ─── AUDIO CUES (keyed values from audio-cues.json) ─────────────────────────
 const BED_KEY = "math-calm-68-cmaj";
 
-// ─── CUE MAP ─────────────────────────────────────────────────────────────────
-const c = cueMap(kptestFirstSecondThirdCues);
-
-const cStart = (id: string): number => c[id]?.startFrame ?? 0;
+// ─── CUE ACCESSORS ───────────────────────────────────────────────────────────
+// Throwing — a wrong/stale cue id THROWS (naming it + the valid ids), never a
+// silent frame-0 fallback (self-scan C3).
+const { cStart } = makeCueAccessors(kptestFirstSecondThirdCues);
 
 // ─── VOICE-OVER SPANS for bed-duck windows ────────────────────────────────────
 // Build spans from the voice clips: [fromFrame, fromFrame + durationInFrames]

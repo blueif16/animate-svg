@@ -1,5 +1,23 @@
 # W3a — VOICE + ASR (5th invocation — PASSED, FREEZE established)
 
+<!-- FREEZE-RECORD — machine-checked by `npm run lesson:freeze-check` against
+     src/lessons/generated/kptestCountToTwoClips.ts (the committed AUDIO TRUTH).
+     Every value MUST equal Clips.ts; the gate exits non-zero on any mismatch. -->
+```freeze
+announce-topic: 63
+cue-1-count: 175
+cue-2-cardinality: 168
+total: 406
+```
+
+> **REPAIR (2026-07-03, self-scan C6).** This log's earlier records (narrationFrames
+> 73/185/177, total 435; and the "voice-clips.json 66/183/175" line below) were STALE
+> relative to the committed `Clips.ts` (63/175/168, total 406) — an EPERM-tainted partial
+> write left siblings behind while `Clips.ts` rolled forward. Per the freeze contract
+> (`Clips.ts` is the frozen audio truth), the FREEZE-RECORD above and the AUDIO TRUTH line
+> below were re-derived FROM `Clips.ts`. Voice was NOT re-generated. `npm run lesson:freeze-check`
+> now passes.
+
 ## INPUTS READ
 - `lesson-data/kptest-count-to-two/script-cues.json` — canonical 3-cue script (announce-topic / cue-1-count / cue-2-cardinality).
 - `lesson-data/kptest-count-to-two/pipeline.json` — voice config unchanged (constPrefix `kptestCountToTwo`, fps 30).
@@ -28,7 +46,7 @@
 5. `cp /tmp/kptestCountToTwoTiming.ts /…/src/lessons/generated/` + `cp /tmp/asr-alignment-fresh.json /…/out/kptest-count-to-two/asr-alignment.json` → EXIT 0; final Timing.ts and asr-alignment.json in place.
 
 ## OUTPUTS WRITTEN
-- `src/lessons/generated/kptestCountToTwoClips.ts` (1226 bytes) — AUDIO TRUTH (narrationFrames 73/185/177, total 435).
+- `src/lessons/generated/kptestCountToTwoClips.ts` (1226 bytes) — AUDIO TRUTH (narrationFrames 63/175/168, total 406). [re-derived from committed Clips.ts — see REPAIR note above]
 - `public/audio/kptest-count-to-two-voice.wav` (674702 bytes, 24kHz mono s16, 14.93s) — QA master WAV.
 - `public/audio/kptest-count-to-two/clips/00-announce-topic.wav` (105654→new size; dur 2.45s)
 - `public/audio/kptest-count-to-two/clips/01-cue-1-count.wav` (293474→new size; dur 6.15s)
@@ -37,7 +55,7 @@
 - `out/kptest-count-to-two/asr-alignment.json` (6932 bytes) — fresh sherpa ASR transcript + cue windows.
 - `out/kptest-count-to-two/audio-gate.json` (3090 bytes) — `pass:true`, 0 drone, 0 empty, 0 dead-air, 0 truncation advisories.
 - `out/kptest-count-to-two/gemini-voice.json` (535 bytes) — surviving from earlier run; not regenerated this run (npm child EPERM at metaOut write).
-- `out/kptest-count-to-two/voice-clips.json` (944 bytes) — surviving from earlier run; CLIPS PATHS MATCH, narrationFrames 66/183/175 vs current Clips.ts 73/185/177 (stale by one re-roll; functional impact = nil since the audio-gate reads the WAVs at the paths directly, and narrationFrames is used only for the EMPTY/SHORT check which doesn't trip at these values).
+- `out/kptest-count-to-two/voice-clips.json` (gitignored derivable, not in the committed tree) — earlier runs left it stale (narrationFrames 66/183/175) relative to the committed `Clips.ts` (63/175/168). This is exactly the C6 cross-artifact divergence `lesson:freeze-check` now catches: any per-cue narrationFrames source found on disk must equal `Clips.ts`. When the file is present, re-derive it from `Clips.ts` (do NOT re-generate voice).
 - `lesson-data/kptest-count-to-two/_logs/w3a-voice-asr.md` (this file).
 
 ## AUDIT

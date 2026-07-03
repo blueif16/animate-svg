@@ -1,4 +1,5 @@
 import type React from "react";
+import type { CalculateMetadataFunction } from "remotion";
 
 // The uniform per-lesson registration descriptor. Every Complete<Pascal>Lesson.tsx that is
 // finished and renderable exports `export const lessonComposition: LessonComposition = {...}`.
@@ -17,6 +18,14 @@ export type LessonComposition = {
   component: React.FC<Record<string, unknown>>;
   /** Total frames — read from the lesson's reconciled timeline module (never a literal). */
   durationInFrames: number;
+  /**
+   * Remotion `calculateMetadata` deriving `durationInFrames` from the lesson's
+   * generated `<X>Cues` array at the framework-sanctioned hook (opportunity #5).
+   * Emitted by the lessons:registry generator for every lesson whose timeline
+   * exports a `<X>Cues` array; `durationInFrames` above stays as the static
+   * fallback. Root.tsx forwards this to `<Composition calculateMetadata>`.
+   */
+  calculateMetadata?: CalculateMetadataFunction<Record<string, unknown>>;
   defaultProps?: Record<string, unknown>;
   /** Optional overrides; default to the shared video dims (theme.video) when omitted. */
   width?: number;
