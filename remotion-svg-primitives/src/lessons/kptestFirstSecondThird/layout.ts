@@ -2,7 +2,9 @@
 // All values derive from video.width / video.height — ZERO raw magic literals.
 // Scene and manifest both import from here. Same in → same out.
 
+import { stepFramesFromOnsets } from "@studio/narration-kit";
 import { video } from "../../theme";
+import { kptestFirstSecondThirdCues } from "../kptestFirstSecondThirdLessonTimeline";
 
 export const CANVAS_WIDTH = video.width;   // 1280
 export const CANVAS_HEIGHT = video.height; // 720
@@ -40,7 +42,18 @@ export const FLAG_H = 133;
 export const ANIMAL_CX: [number, number, number] = [400, 653, 907];
 export const ANIMAL_CY = 500;   // body center above ground (stands on GROUND_Y)
 export const ANIMAL_W = 173;    // 260 × 0.667
-export const ANIMAL_H = 187;    // 280 × 0.667
+// PIPELINE FINDING: ANIMAL_H feeds `<CountableObject size={ANIMAL_H}>` (the
+// queue animals + the OrderedRowSpotlight sweep items) — the SAME
+// countable-unit-size pattern opportunity #14 migrated for kptestCountToTwo's
+// APPLE_SIZE via `fitUnitsToZone`. Not migrated here: opportunity #14's named
+// target was APPLE_SIZE only (research/remotion-vendor-best-practices-2026-07-03.md
+// §5 #14); ANIMAL_CX is a fixed 3-slot queue (identity-invariant animal
+// positions reused whether 2 or 3 are visible), not a per-cue varying `count`
+// fed to one zone the way the apple pair is, so the migration needs its own
+// zone-derivation pass rather than a drop-in reuse of the apple fix. Deliberate
+// deferral, tracked here (not silent) — a follow-up should reuse ZONE_OBJECTS
+// (adapted from {x,y,w,h} to {x,y,width,height}) + fitUnitsToZone(zone, 3).
+export const ANIMAL_H = 187;    // 280 × 0.667 — hand-picked, see finding above
 export const ANIMAL_STEP_FORWARD_DX = 80; // how far animal steps forward for reveal
 
 // ─────────────────────────────────────────────────────────────
@@ -80,7 +93,42 @@ export const CHIP_PULSE_DUR = 12;               // scale pulse duration (frames)
 
 // Count sweep: atFrame relative offset — sweep starts at cue head
 export const SWEEP_REL_START = 0;
-export const SWEEP_STEP_FRAMES = 48;    // ~1.6s per ordinal position (spacious dwell)
+
+// Spoken-enumeration step cadence — adoption of `stepFramesFromOnsets`
+// (CLAUDE.md "SPOKEN ENUMERATION BINDS TO TOKEN ONSETS": MEASURE, DON'T
+// ASSUME). Try the MEASURED per-token onset spacing off the reconciled
+// count-second cue (n=2, this lesson's smallest spoken count) first, deriving
+// a step interval from two consecutive onsets rather than a hand-picked
+// literal.
+//
+// PIPELINE FINDING: the frozen Wave 3a audio truth
+// (`src/lessons/generated/kptestFirstSecondThirdClips.ts`) does not carry
+// `tokenOnsets` for this fixture (grepped: zero `tokenOnsets` matches — the
+// ASR-onset-projection step was not run for this voice generation), so
+// `stepFramesFromOnsets` returns null here and this constant falls back to the
+// previous fixed cadence. This is the CLAUDE.md-sanctioned escape hatch
+// ("onsets unavailable → fall back to the constant AND emit a
+// pipelineFinding"), never a silent guess. Re-running `npm run lesson:voice`
+// with onset projection enabled would unlock the measured value automatically
+// (no code change needed here).
+//
+// PIPELINE FINDING (scope handoff): `OrderedRowSpotlight` also accepts a
+// `stepFrames` ARRAY prop (per-position measured onsets), which would bind
+// count-second / count-third / recap-count to their OWN cue's onsets
+// individually instead of sharing one scalar cadence. That requires
+// `kptestFirstSecondThirdLessonScene.tsx` (Wave-4/composer-owned) to pass
+// `stepFrames={stepFramesFromOnsets(cues[id], n)}` per sweep instead of
+// `stepDurationFrames={SWEEP_STEP_FRAMES}` — out of this file's scope
+// (layout.ts constants only); flagged for the composer lane.
+const COUNT_SECOND_CUE = kptestFirstSecondThirdCues.find(
+  (cue) => cue.id === "count-second",
+);
+const COUNT_SECOND_STEPS = COUNT_SECOND_CUE
+  ? stepFramesFromOnsets(COUNT_SECOND_CUE, 2)
+  : null;
+export const SWEEP_STEP_FRAMES = COUNT_SECOND_STEPS
+  ? COUNT_SECOND_STEPS[1] - COUNT_SECOND_STEPS[0]
+  : 48; // FALLBACK — see PIPELINE FINDING above; onsets unavailable this fixture
 
 // Reveal step-forward / step-back
 export const REVEAL_STEP_FORWARD_REL = 0;
