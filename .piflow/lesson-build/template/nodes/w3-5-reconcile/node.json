@@ -59,7 +59,9 @@
     "post": [
       { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts" },
       { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "reconcileClipTimeline\\s*\\(", "severity": "fail" },
-      { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "PADDED_CUE_DURATIONS_FRAMES|detectSilenc|Silences|ASR_CORRECTIONS", "severity": "fail" }
+      { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "makeCueAccessors\\s*\\(", "severity": "fail" },
+      { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "PADDED_CUE_DURATIONS_FRAMES|detectSilenc|Silences|ASR_CORRECTIONS", "severity": "fail" },
+      { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "\\?\\?\\s*0", "severity": "fail" }
     ]
   },
   "policy": { "fail": "block" },
