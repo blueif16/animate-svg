@@ -128,6 +128,14 @@ The mechanically-generated `<camelId>LessonCaptionCues` (Wave 3.5, via the kit's
 
 Both derivations sit at the composer's own wiring site in `Complete<PascalId>Lesson.tsx`, over arrays the generated timeline already exports — the timeline module itself stays untouched (Wave 3.5 is mechanical, never yours to hand-edit).
 
+## Transition-overlap accounting (pre-emptive)
+
+We do not use `@remotion/transitions` today — this law is pre-emptive so the day we DO adopt cross-cue transitions, the reconcile math never silently desyncs the (already-frozen) audio from a shortened picture.
+
+- **Every cross-cue transition's overlap MUST feed back into the Wave 3.5 reconcile sum.** With N overlapping transitions of `overlap` frames each: `Total = Σ(cue durations) − Σ(transition overlaps)`. Skipping this shortens the VISIBLE timeline while each cue's per-cue voice clip keeps its original mount frame — picture and voice drift apart by exactly the summed overlap.
+- **A spring-driven transition's duration is QUERIED, never guessed.** Call `measureSpring({fps, config})` (or the transition's own `timing.getDurationInFrames({fps})`) for the actual frame count a spring config resolves to, and feed THAT number into the sum above — a hand-typed duration constant living next to a spring config is the same class of bug as a hardcoded frame literal: the two WILL drift the moment either changes independently.
+- Doc-only until a lesson actually adopts a transition — there is no code to wire yet. When one first does, the composer queries the duration and updates the reconcile inputs itself; it never hand-types a number beside the spring config it's supposed to describe.
+
 ## Named motion vocabulary
 
 Every easing curve and spring config in scene code comes from `src/motion-primitives/curves.ts` — see `CAPABILITIES.md#motion-vocabulary` for the full reach guide. Raw `Easing.bezier(...)` numbers or inline `{ damping, stiffness, mass }` literals in a `LessonScene.tsx` are a smell — name it.
