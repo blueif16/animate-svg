@@ -16,15 +16,15 @@
 //   4. Run the SAME AABB + ratio overlap math as scripts/lesson-manifest.mjs
 //      (OVERLAP_RATIO_THRESHOLD 0.15) on the MEASURED bboxes.
 //   5. The gate set on the same data: bbox-binding bijection (makes the overlap
-//      gate trustworthy) + LUFS on the master MP4 + the CALIBRATED legibility
-//      gate (vendor-study opportunity #4: per-role type floor is HARD; safe-area
-//      is WARN). Its numbers (safe insets, type floors) live ONCE in
-//      manifestTypes.ts, forwarded by the extractor. Eye-judged proxies
-//      (contrast, motion-too-fast, caption-redundancy) stay OUT — the human is
-//      the eye for visual quality.
+//      gate trustworthy) + LUFS on the master MP4 + two CALIBRATED structural
+//      text gates (vendor-study opportunities #4/#13): legibility (per-role type
+//      floor is HARD; safe-area is WARN) and caption/label hard-kill self-lint.
+//      Their numbers (safe insets, type floors) live ONCE in manifestTypes.ts,
+//      forwarded by the extractor. Eye-judged proxies (contrast, motion-too-fast,
+//      caption-redundancy) stay OUT — the human is the eye for visual quality.
 //   6. WRITE out/<id>/bbox-manifest.json: the `measured` block + a `summary`
 //      with measuredCollisionCount / captionIntrusionCount / typeFloorViolation
-//      Count / gatesFailed.
+//      Count / captionHardKillCount / gatesFailed.
 //
 // HONEST EXIT: the process exits 1 when a high-confidence GATE fails — any
 // `gatesFailed` entry (bbox-binding bijection or LUFS). A measured overlap is a
@@ -77,6 +77,16 @@ const ENTRANCE_PEAK_OFFSETS = [4, 8, 12, 18];
 // 84/44/32px type floors themselves live ONCE in src/lessons/manifestTypes.ts
 // and are forwarded by the extractor — never hardcoded in this script.
 const SETTLED_OPACITY = 0.9;
+
+// Caption/label hard-kill self-lint (vendor-study opportunity #13). A text
+// element that disappears must be gone ONE tick after the cue it lived in — this
+// is the boundary tick sampled (cue.endFrame + CUE_BOUNDARY_OFFSET). An element
+// still visible there but absent in the NEXT cue is the left-over-fade /
+// off-by-one defect open-design's caption lint catches (research §5 #13).
+const CUE_BOUNDARY_OFFSET = 1;
+// Opacity at/under which an element counts as "gone" (a hard kill lands on 0);
+// above it, still visibly present. Symmetric residual threshold.
+const HARD_KILL_RESIDUAL_MAX = 0.05;
 
 // ---------------------------------------------------------------------------
 // Arg parsing (mirrors the sibling scripts).
@@ -180,6 +190,40 @@ const derivePeakFrames = (cues) => {
   return Array.from(set).sort((a, b) => a - b);
 };
 
+// Cue-boundary ticks for the caption/label hard-kill self-lint (#13): the exact
+// frame each cue's caption/label MUST already be gone (endFrame + offset), for
+// every cue that has a successor. Clamped into the composition; the last cue has
+// no successor so its boundary is out of the picture and never sampled.
+const deriveBoundaryFrames = (cues) => {
+  const set = new Set();
+  const maxFrame = cues.length ? Math.max(...cues.map((c) => c.endFrame)) : 0;
+  for (let i = 0; i < cues.length - 1; i += 1) {
+    const raw = cues[i].endFrame + CUE_BOUNDARY_OFFSET;
+    const clamped = Math.max(0, Math.min(maxFrame - 1, Math.round(raw)));
+    set.add(clamped);
+  }
+  return Array.from(set).sort((a, b) => a - b);
+};
+
+// The sampled frame nearest a cue's midpoint (the cue's settled reference) — used
+// by the hard-kill lint to decide whether a disappearing element is truly absent
+// in the successor cue.
+const findSampleInCue = (cue, frames) => {
+  const mid = cue.startFrame + (cue.endFrame - cue.startFrame) * 0.5;
+  let best = null;
+  let bestD = Infinity;
+  for (const f of frames) {
+    if (f >= cue.startFrame && f < cue.endFrame) {
+      const d = Math.abs(f - mid);
+      if (d < bestD) {
+        bestD = d;
+        best = f;
+      }
+    }
+  }
+  return best;
+};
+
 // ---------------------------------------------------------------------------
 // Gate: LUFS / true-peak via ffmpeg ebur128 (proposal Exp D1).
 // ---------------------------------------------------------------------------
@@ -280,7 +324,15 @@ const main = async () => {
   // peak frames come from the reconciled cues (derivePeakFrames).
   const extracted = extractManifest(camelId);
   const peakFrames = derivePeakFrames(extracted.cues);
-  measured.framesSampled = peakFrames;
+  // Cue-boundary ticks (endFrame + offset) added for the hard-kill lint (#13).
+  const boundaryFrames = deriveBoundaryFrames(extracted.cues);
+  // Everything actually rendered/measured. Overlap + bijection keep sampling the
+  // motion-peak set (peakFrames) unchanged; the boundary ticks are extra samples
+  // the hard-kill lint reads from measuredOpacityByFrame.
+  const allFrames = Array.from(
+    new Set([...peakFrames, ...boundaryFrames]),
+  ).sort((a, b) => a - b);
+  measured.framesSampled = allFrames;
   const allowedPairs = buildAllowedPairSet(extracted.allowedOverlaps);
   // Canonical zone-overlap rule, built from the list forwarded by the extractor.
   const isZoneOverlapAllowed = makeZoneOverlapAllowed(extracted.allowedZonePairs);
@@ -348,7 +400,7 @@ const main = async () => {
     });
 
     const perFrame = [];
-    for (const frame of peakFrames) {
+    for (const frame of allFrames) {
       const t0 = Date.now();
       const captured = [];
       await renderer.renderStill({
@@ -637,6 +689,74 @@ const main = async () => {
     }
   }
 
+  // --- Gate: caption/label hard-kill self-lint (opportunity #13) --------------
+  // For every cue boundary, assert that any text element that DISAPPEARS is
+  // already gone one tick after its cue ends — no lingering caption/label. An
+  // element still visible at cue.endFrame + CUE_BOUNDARY_OFFSET but absent in the
+  // next cue is the off-by-one / left-over-fade defect. Persisting elements
+  // (still visible in the next cue) are correctly ignored. HARD gate (a leftover
+  // caption is deterministic, not eye-judged) → contributes to gatesFailed.
+  if (measured.method !== "getBBox") {
+    gateLines.push("SKIP: caption-hard-kill — measured pass unavailable (no getBBox)");
+    measured.gates.captionHardKill = { skipped: "measured pass unavailable" };
+  } else {
+    const hardKillIds = (extracted.elements || [])
+      .filter((e) => textZones.has(e.zone))
+      .map((e) => e.id);
+    if (hardKillIds.length === 0) {
+      gateLines.push(
+        "SKIP: caption-hard-kill — no caption/label (text-zone) elements in manifest",
+      );
+      measured.gates.captionHardKill = {
+        skipped: "no text-zone elements in manifest",
+      };
+    } else {
+      const cues = extracted.cues || [];
+      const maxFrame = cues.length
+        ? Math.max(...cues.map((c) => c.endFrame))
+        : 0;
+      const lingerViolations = [];
+      for (let i = 0; i < cues.length - 1; i += 1) {
+        const cue = cues[i];
+        const nextCue = cues[i + 1];
+        const boundary = Math.max(
+          0,
+          Math.min(maxFrame - 1, Math.round(cue.endFrame + CUE_BOUNDARY_OFFSET)),
+        );
+        const nextRef = findSampleInCue(nextCue, allFrames);
+        if (nextRef === null) continue; // no settled sample in the successor
+        const opAtBoundary = measuredOpacityByFrame[boundary] || {};
+        const opAtNext = measuredOpacityByFrame[nextRef] || {};
+        for (const id of hardKillIds) {
+          const opB = opAtBoundary[id] ?? 0; // absent → gone
+          const opN = opAtNext[id] ?? 0;
+          // still present at the boundary tick, yet gone by the next cue → linger
+          if (opB > HARD_KILL_RESIDUAL_MAX && opN <= HARD_KILL_RESIDUAL_MAX) {
+            lingerViolations.push({
+              cue: cue.id,
+              id,
+              boundaryFrame: boundary,
+              opacityAtBoundary: Number(opB.toFixed(3)),
+            });
+          }
+        }
+      }
+      measured.gates.captionHardKill = {
+        pass: lingerViolations.length === 0,
+        boundaryOffset: CUE_BOUNDARY_OFFSET,
+        checkedBoundaries: Math.max(0, cues.length - 1),
+        violations: lingerViolations,
+      };
+      gateLines.push(
+        `${lingerViolations.length === 0 ? "PASS" : "FAIL"}: caption-hard-kill — ${lingerViolations.length} caption/label(s) lingering past a cue boundary (endFrame+${CUE_BOUNDARY_OFFSET})${
+          lingerViolations.length
+            ? ` [${[...new Set(lingerViolations.map((v) => v.id))].join(", ")}]`
+            : ""
+        }`,
+      );
+    }
+  }
+
   // --- Gate: LUFS ------------------------------------------------------------
   // The DELIVERABLE is the loudnorm'd MASTER MP4 (Wave 5 normalizes to -16
   // LUFS / -1 dBTP). Measure THAT when it exists — the only honest pass/fail.
@@ -688,9 +808,10 @@ const main = async () => {
   // motion-too-fast): the human is the eye, and the uncalibrated proxies eroded
   // the gate. Legibility returns above NOT as an uncalibrated ~24px eye-proxy but
   // as the field's calibrated, width-scaled type floors + safe rect (#4), with
-  // the composite-panel false-positive routed to a WARN. The hard failing gate
-  // set is now: bbox-binding + LUFS-on-master + legibility(type-floor)
-  // (measured overlap + safe-area stay WARN-only).
+  // the composite-panel false-positive routed to a WARN; and the caption/label
+  // hard-kill self-lint (#13) is deterministic, not eye-judged. The hard failing
+  // gate set is now: bbox-binding + LUFS-on-master + legibility(type-floor) +
+  // caption-hard-kill (measured overlap + safe-area stay WARN-only).
 
   // --- AUGMENT bbox-manifest.json (additive; leave existing shape intact) -----
   const bboxPath = path.join(outDir, "bbox-manifest.json");
@@ -711,12 +832,14 @@ const main = async () => {
   }
   manifestJson.summary.measuredCollisionCount = measured.collisionsMeasured.length;
   manifestJson.summary.captionIntrusionCount = measured.captionIntrusions.length;
-  // Calibrated text-gate counts (opportunity #4). A skipped gate has no
+  // Calibrated text-gate counts (opportunities #4/#13). A skipped gate has no
   // violation array, so it reports 0 (and never lands in gatesFailed).
   manifestJson.summary.typeFloorViolationCount =
     measured.gates.legibility?.typeFloorViolations?.length ?? 0;
   manifestJson.summary.safeAreaWarningCount =
     measured.gates.legibility?.safeAreaWarnings?.length ?? 0;
+  manifestJson.summary.captionHardKillCount =
+    measured.gates.captionHardKill?.violations?.length ?? 0;
   manifestJson.summary.gatesFailed = gatesFailed;
   fs.writeFileSync(bboxPath, JSON.stringify(manifestJson, null, 2));
 
@@ -732,7 +855,9 @@ const main = async () => {
   process.exitCode = failed ? 1 : 0;
 
   // --- Report ----------------------------------------------------------------
-  console.log(`\nSampled ${peakFrames.length} peak frame(s): ${peakFrames.join(", ")}`);
+  console.log(
+    `\nSampled ${allFrames.length} frame(s) (${peakFrames.length} motion-peak + ${boundaryFrames.length} cue-boundary): ${allFrames.join(", ")}`,
+  );
   console.log(
     `bundle=${measured.bundleMs ?? "—"}ms  perFrame≈${measured.perFrameMs ?? "—"}ms  method=${measured.method}`,
   );
@@ -756,7 +881,7 @@ const main = async () => {
   console.log(`\nAugmented ${path.relative(process.cwd(), bboxPath)} (measured block + summary.measured*)`);
   console.log(
     failed
-      ? `\nFAIL: exit 1 — gatesFailed=[${gatesFailed.join(", ")}] (bbox-binding / LUFS / legibility type-floor). ${measured.collisionsMeasured.length} measured overlap(s) + safe-area WARN(s) reported as advisory.`
+      ? `\nFAIL: exit 1 — gatesFailed=[${gatesFailed.join(", ")}] (bbox-binding / LUFS / legibility type-floor / caption-hard-kill). ${measured.collisionsMeasured.length} measured overlap(s) + safe-area WARN(s) reported as advisory.`
       : `\nPASS: exit 0 — no failed gates (SKIP lines do not fail). ${measured.collisionsMeasured.length} measured overlap(s) WARN-only — review + fix-or-justify per discipline.`,
   );
 };
