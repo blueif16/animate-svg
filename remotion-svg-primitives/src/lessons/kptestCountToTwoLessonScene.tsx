@@ -2,25 +2,22 @@
 // ZERO frame literals: every frame = cues[id].startFrame + named layout offset.
 // ZERO raw easing literals: every curve = EASE.* / SPRING.* from motion-primitives.
 //
-// Spoken-enumeration branch (per remotion-lesson-composer skill §"Spoken
-// enumeration binds to token onsets, never a step constant"):
-//   cue.tokenOnsets IS non-empty on every cue that carries a spoken count
-//   (first-apple-one / second-apple-two / cardinality). Per-cue binding:
-//     C2 — tag-1 attaches at cue-start + 18f (settled by +30f, BEFORE spoken
-//          一 onset at +35f from tokenOnsets[1]=35).
-//     C3 — apple-2 enters at +30f (settled by +48f, BEFORE spoken 又 onset at
-//          +54f from tokenOnsets[4]=54); tag-2 attaches at +48f (settled by
-//          +60f, BEFORE spoken 一 onset at +64f from tokenOnsets[5]=64).
-//     C4 — cardinal begins at cue-start (PopIn opacity 0→1 over 8 frames)
-//          so the visual is visible when spoken 两 onset arrives at +6f
-//          (tokenOnsets[0]=6).
-//   No fixed *_STRIDE / *_STEP_FRAMES grid is used for the spoken steps —
-//   every per-step motion is anchored to the measured ASR onsets.
+// CUE-ID TRUTH (self-scan C2): this lesson has THREE frozen cues — announce-topic
+// / cue-1-count / cue-2-cardinality (kptestCountToTwoClips). cue-1-count narrates
+// BOTH apples ("一个苹果来了——一;再来一个苹果——二"), so apple-1 and apple-2 are
+// sub-beats INSIDE cue-1-count (anchored by layout offsets), not separate cues.
+// The wrong 4-id vocabulary (lesson-intro / first-apple-one / second-apple-two /
+// cardinality) is retired. Cue ids resolve through the throwing, union-typed
+// accessors from the timeline module — a wrong id is a COMPILE error or THROWS,
+// never a silent frame-0 fallback.
 
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import type { AlignedLessonCue } from "@studio/narration-kit";
-import { cueMap } from "@studio/narration-kit";
+import {
+  KPTEST_COUNT_TO_TWO_CUE_IDS,
+} from "./kptestCountToTwoLessonTimeline";
+import { makeCueAccessors } from "./_cues/cueAccessors";
 
 import { colors } from "../theme";
 import { EASE } from "../motion-primitives/curves";
@@ -66,8 +63,6 @@ import {
   TAG_DIM_REL_START,
   TAG_SIZE,
 } from "./kptestCountToTwo/layout";
-
-type CueKey = string;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -257,16 +252,16 @@ export const KptestCountToTwoLessonScene: React.FC<{
   const frame = useCurrentFrame();
   useMeasureHook(); // once at the scene root (inert outside the measured pass)
 
-  const c = cueMap([...cuesArray]);
-  const cStart = (id: CueKey): number => c[id]?.startFrame ?? 0;
-  const cEnd = (id: CueKey): number => c[id]?.endFrame ?? 0;
+  const { cStart, cEnd } = makeCueAccessors(cuesArray, KPTEST_COUNT_TO_TWO_CUE_IDS);
 
   // ─── Cue window shorthands ───────────────────────────────────────────────
-  const introStart = cStart("lesson-intro");
-  const introEnd = cEnd("lesson-intro");
-  const firstAppleStart = cStart("first-apple-one");
-  const secondAppleStart = cStart("second-apple-two");
-  const cardinalityStart = cStart("cardinality");
+  // Three frozen cues; apple-1 and apple-2 are sub-beats of cue-1-count (both
+  // apples are narrated there), anchored by layout offsets within that window.
+  const introStart = cStart("announce-topic");
+  const introEnd = cEnd("announce-topic");
+  const firstAppleStart = cStart("cue-1-count");
+  const secondAppleStart = cStart("cue-1-count");
+  const cardinalityStart = cStart("cue-2-cardinality");
 
   // ─── Visibility gates (per-cue elements live across their cue window) ────
   // Intro card reads FIRST, ALONE (announce-topic requires) — it is the ONLY

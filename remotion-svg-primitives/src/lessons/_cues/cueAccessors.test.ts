@@ -17,7 +17,6 @@ let passes = 0;
 const check = (label: string, fn: () => void): void => {
   fn();
   passes += 1;
-  // eslint-disable-next-line no-console
   console.log(`  ok  ${label}`);
 };
 
@@ -87,5 +86,4 @@ check("(d) declared union id absent from cues still THROWS (drift guard)", () =>
   );
 });
 
-// eslint-disable-next-line no-console
 console.log(`\ncueAccessors: ${passes}/${passes} checks passing`);

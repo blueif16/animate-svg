@@ -1,5 +1,6 @@
 import { AbsoluteFill } from "remotion";
-import type { CaptionCue, PlacedCue, VoiceClip } from "@studio/narration-kit";
+import type { CaptionCue, VoiceClip } from "@studio/narration-kit";
+import { makeCueAccessors } from "./_cues/cueAccessors";
 
 import {
   LessonAudioLayer,
@@ -28,7 +29,9 @@ const audioCues = audioCuesRaw as { bed?: string };
 const cueMap: CueMap = Object.fromEntries(
   kptestCompareMoreFewerCues.map((c) => [c.id, c]),
 );
-const cueOf = (id: string): PlacedCue | undefined => cueMap[id];
+// Throwing cue accessors for the SFX frames — a wrong/stale id THROWS (naming it
+// + valid ids), never a silent frame-0 fallback (self-scan C3).
+const { cStart } = makeCueAccessors(kptestCompareMoreFewerCues);
 
 // Captions: one ribbon cue per reconciled cue, spanning its narration window.
 const captionCues: CaptionCue[] = kptestCompareMoreFewerCues.map((c) => ({
@@ -49,19 +52,17 @@ const sfxEvents: SfxEvent[] = [
   // dot PopIn pop — lands on the first top dot's entrance in two-groups.
   {
     sound: "pop",
-    fromFrame:
-      (cueOf("two-groups")?.startFrame ?? 0) + L.SFX_TWO_GROUPS_POP,
+    fromFrame: cStart("two-groups") + L.SFX_TWO_GROUPS_POP,
   },
   // chime — the surplus is revealed in match (ghosts land).
   {
     sound: "chime",
-    fromFrame: (cueOf("match")?.startFrame ?? 0) + L.SFX_MATCH_CHIME,
+    fromFrame: cStart("match") + L.SFX_MATCH_CHIME,
   },
   // chime — the surplus SURVIVES the spread in not-by-size (re-pair ghosts land).
   {
     sound: "chime",
-    fromFrame:
-      (cueOf("not-by-size")?.startFrame ?? 0) + L.SFX_NOT_BY_SIZE_CHIME,
+    fromFrame: cStart("not-by-size") + L.SFX_NOT_BY_SIZE_CHIME,
   },
 ];
 

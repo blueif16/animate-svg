@@ -28,14 +28,15 @@ import {
   THREE_BUNDLE_C_SLIDE_REL_START,
   RECAP_LABEL_FADE_REL_START,
 } from "./kp2CountingByTens/layout";
-import { cueMap } from "@studio/narration-kit";
+import { makeCueAccessors } from "./_cues/cueAccessors";
 
 // ─── AUDIO CUES (keyed values from audio-cues.json) ─────────────────────────
 const BED_KEY = "math-calm-68-cmaj";
 
-// ─── CUE MAP ─────────────────────────────────────────────────────────────────
-const c = cueMap(kp2CountingByTensCues);
-const cStart = (id: string): number => c[id]?.startFrame ?? 0;
+// ─── CUE ACCESSORS ───────────────────────────────────────────────────────────
+// Throwing — a wrong/stale cue id THROWS (naming it + the valid ids), never a
+// silent frame-0 fallback (self-scan C3).
+const { cStart } = makeCueAccessors(kp2CountingByTensCues);
 
 // ─── VOICE-OVER SPANS for bed-duck windows ────────────────────────────────────
 const voiceoverSpans = kp2CountingByTensVoiceClips.map((clip) => [

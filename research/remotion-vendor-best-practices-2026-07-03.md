@@ -268,3 +268,5 @@ All 14 scan notes named in the study brief exist on disk (13 vendors + the self-
 ## Progress
 
 Implementation log for the §5 opportunities (work order: `.tasks/HANDOFF-2026-07-03T1839Z.md`). One entry per landed opportunity, appended in the same commit that lands it: date · opportunity # + quoted bullet · where it landed (`file:line` / capability id / skill) · or explicit not-bridged reason.
+
+- 2026-07-03 · #2 "Kill stringly-typed cue ids and the silent `?? 0` fallback" · landed at `remotion-svg-primitives/src/lessons/_cues/cueAccessors.ts` (throwing `makeCueAccessors`), cue-id union emitted from `remotion-svg-primitives/src/lessons/kptestCountToTwoLessonTimeline.ts:36-46` (`KptestCountToTwoCueId` = `keyof VISUAL_MOTION_SECONDS`, cross-checked vs frozen clips), every `c[id]?.startFrame ?? 0` on the accessor path replaced across all 6 lesson files · kptest-count-to-two re-keyed from the invented 4-id vocabulary to its frozen 3-cue audio truth (announce-topic/cue-1-count/cue-2-cardinality); reconcile now imports clean (duration 448). Test `cueAccessors.test.ts` proves a missing id THROWS (red demoed vs the `?? 0` behavior).
