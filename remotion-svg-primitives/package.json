@@ -48,6 +48,7 @@
     "lesson:voice": "node node_modules/@studio/narration-kit/bin/generate-voice.mjs --align",
     "lesson:check": "node scripts/lesson-check.mjs",
     "lesson:audio-gate": "node scripts/lesson-audio-gate.mjs",
+    "lesson:freeze-check": "node scripts/lesson-freeze-check.mjs",
     "lesson:contact-sheet": "node scripts/make-contact-sheet.mjs",
     "lesson:bbox": "node scripts/lesson-bbox-overlay.mjs",
     "lesson:animatic": "node scripts/lesson-animatic.mjs",
