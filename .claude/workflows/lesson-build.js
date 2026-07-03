@@ -491,7 +491,7 @@ const rVerify = (!COMPANION && run('verify')) ? await agent([
   discipline(),
   'W6 — VERIFICATION. Review the rendered output against the pedagogy discoveries. The PRIMARY surface is the action-aware contact sheet (5 samples per cue: start / narr-mid / narr-end / hold-mid / cue-end) — stagnation is visible at a glance. You CANNOT watch the mp4; judge from the contact sheet + frames.',
   `SKILLS: ${SK.verification}`,
-  `INPUT: the contact sheet ${REPO}/${P.contact} (Read as image) ; ${REPO}/${P.mp4} (ffprobe only) ; ${REPO}/${P.bbox} (linear + measured collisions, gates) ; ${REPO}/${P.primitiveChecks}/*.png ; ${REPO}/${P.pedagogy}.`,
+  `INPUT: the contact sheet ${REPO}/${P.contact} (Read as image) ; ${REPO}/${P.mp4} (ffprobe only) ; ${REPO}/${P.bbox} (measured collisions, gates) ; ${REPO}/${P.primitiveChecks}/*.png ; ${REPO}/${P.pedagogy}.`,
   'JUDGE: (1) does each cue TEACH its pedagogy discovery (re-run the §1 audit)? (2) layout/legibility — any collision or failed gate from bbox-manifest unaddressed? (3) SOUND checks: melody NOT identifiable under narration ; 3-point duck (intro duck / mid-gap rise / outro resolve) ; measured master ≈ -16 LUFS / TP ≤ -1 dB (the LUFS gate in lesson:check) ; no SFX louder than narration.',
   `OUTPUT: ${REPO}/${P.verification} — per-cue pedagogy verdict + the sound/layout gate results + a punch list of any fixes (mapped to the owning wave for a targeted re-run).`,
   contract({ artifacts: [P.verification], readScope: contentScope }),
