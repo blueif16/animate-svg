@@ -42,3 +42,4 @@ remotion-svg-primitives/compute_timeline.js
 # per the README; never commit third-party trees.
 vendor/*
 !vendor/README.md
+.claude/worktrees/

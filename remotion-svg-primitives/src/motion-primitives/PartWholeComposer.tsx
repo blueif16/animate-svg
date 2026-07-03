@@ -356,12 +356,16 @@ export const PartWholeComposer: React.FC<PartWholeComposerProps> = ({
 
       {/* Running tally of the enumerate walk — a row of dots counting the
           DECOMPOSITIONS SEEN so far (1..n-1). Dots (not a numeral) so it can
-          never be misread as a part value, and it has no label-width fragility.
-          Rides the top-left corner of the row, clear of the centered diagram. */}
+          never be misread as a part value. `maxSteps={n-1}` reserves the
+          row's full width (the walk's true ceiling) from frame 0 — only the
+          dots so far actually draw, filling in from the row's left edge, so
+          the reserved span never resizes as more arrive. Rides the top-left
+          corner of the row, clear of the centered diagram. */}
       {showTally && mode === "enumerate" && started ? (
         <g transform={`translate(${-wholeBraceWidth / 2 + itemRadius} ${-itemRadius - TALLY_GAP})`}>
           <StepTally
             dotColor={inkColor}
+            maxSteps={Math.max(1, n - 1)}
             progress={reveal}
             size={28}
             steps={stepIndex + 1}

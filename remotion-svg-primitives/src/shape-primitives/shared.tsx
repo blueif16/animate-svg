@@ -229,12 +229,18 @@ export const PrimitiveLabel = ({
   x: number;
   y: number;
 }) => (
+  // `tabular-nums`: a no-op for non-numeric content (letters, CJK, symbols),
+  // but for any numeral rendered here it fixes each digit glyph to the same
+  // advance width — a count-up label never micro-jitters its own render as
+  // the digits change (research remotion-vendor-best-practices-2026-07-03.md
+  // §5 opportunity #9).
   <text
     dominantBaseline="middle"
     fill={fill}
     fontFamily={fontFamily}
     fontSize={fontSize}
     fontWeight={fontWeight}
+    style={{ fontVariantNumeric: "tabular-nums" }}
     textAnchor="middle"
     x={x}
     y={y}

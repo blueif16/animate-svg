@@ -754,6 +754,7 @@ export const NumberCard = ({
             fontFamily={fontFamily}
             fontSize={glyphFontSize}
             fontWeight={900}
+            style={{ fontVariantNumeric: "tabular-nums" }}
             textAnchor="middle"
             y={glyphFontSize * 0.05}
           >
@@ -883,6 +884,7 @@ export const OrdinalLabelToken = ({
           fontFamily={fontFamily}
           fontSize={valueFontSize}
           fontWeight={900}
+          style={{ fontVariantNumeric: "tabular-nums" }}
           textAnchor="middle"
           x={hasPrefix ? valueCenterX : 0}
           y={valueFontSize * 0.05}
@@ -2132,6 +2134,16 @@ export type StepTallyProps = PrimitiveGroupProps &
     dotGap?: number;
     dotSize?: number;
     label?: ReactNode;
+    /**
+     * The highest `steps` this instance will ever show (e.g. the row's total
+     * item count for a running count-walk tally). Reserves the pill/dot-row
+     * footprint for THIS value from frame 0, so the width never shifts as
+     * `steps` climbs toward it — terminal-value layout (research
+     * remotion-vendor-best-practices-2026-07-03.md §5 opportunity #9).
+     * Additive + backward-compatible: omitted, width is derived from `steps`
+     * exactly as before. Ignored if smaller than the current `steps`.
+     */
+    maxSteps?: number;
     outlineColor?: ThemeColor;
     progress?: number;
     size?: number;
@@ -2147,6 +2159,7 @@ export const StepTally = ({
   dotGap = 8,
   dotSize = 18,
   label,
+  maxSteps,
   outlineColor,
   progress = 1,
   size = 64,
@@ -2158,6 +2171,10 @@ export const StepTally = ({
   ...groupProps
 }: StepTallyProps) => {
   const safeSteps = Math.max(0, Math.floor(steps));
+  // The footprint is sized off the LARGER of the current value and the
+  // caller-declared max — never smaller than what's actually on screen, but
+  // reserved for the max so the pill/row never grows again once it's shown.
+  const widthSteps = Math.max(safeSteps, Math.floor(maxSteps ?? safeSteps));
   const reveal = clamp01(progress);
   const dimOpacity = stateOpacity(undefined, dimmed);
   const fadeOpacity = clamp01(reveal) * dimOpacity;
@@ -2167,8 +2184,11 @@ export const StepTally = ({
 
   if (variant === "dots") {
     const dotFill = resolveColor(dotColor, colors.textNavy);
+    // Reserved at `widthSteps` (the max) so the row's span is stable; only
+    // `safeSteps` dots actually draw, filling in from the left edge of the
+    // reserved span as the count climbs — no dots ever shift once drawn.
     const totalWidth =
-      safeSteps > 0 ? safeSteps * dotSize + (safeSteps - 1) * dotGap : 0;
+      widthSteps > 0 ? widthSteps * dotSize + (widthSteps - 1) * dotGap : 0;
 
     return (
       <PlacedGroup
@@ -2196,7 +2216,11 @@ export const StepTally = ({
   const valueFontSize = size * 0.62;
   const labelFontSize = size * 0.42;
   const valueText = String(safeSteps);
-  const approxValueWidth = valueText.length * valueFontSize * 0.62;
+  // The pill's width reserves digit-width for `widthSteps` (the max), NOT the
+  // current value's digit count, so a 9→10 crossing never resizes the pill.
+  // The displayed glyph is still the current `valueText`, centered in the
+  // wider reserved slot exactly as it would be at the max.
+  const approxValueWidth = String(widthSteps).length * valueFontSize * 0.62;
   const labelWidth = label ? labelFontSize * 1.2 : 0;
   const innerGap = label ? 10 : 0;
   const horizontalPadding = 28;
