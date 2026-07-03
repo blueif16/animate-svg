@@ -78,6 +78,7 @@ When deprecating a capability:
 - [fen-he-diagram](#fen-he-diagram) — `<FenHeDiagram>` 分合式 part-whole notation primitive with anchor exports for identity-preserved glyph migration
 - [paired-column-layout](#paired-column-layout) — `getPairedColumnPlacement()` pure helper aligning two rows into shared columns with a ragged surplus overhang
 - [auto-size-to-zone](#auto-size-to-zone) — `fitUnitsToZone()` / `clusterBudget()` / `splitZone()` pure helpers computing unit size + positions from (count + zone), shared by scene and manifest
+- [fit-text](#fit-text) — `fitTextBox()` / `fitTextLine()` measured text fitting: CJK-aware wrap + kids-eye role-floor clamp + font gate, for any data-driven title/caption/label
 - [lesson-music-bed](#lesson-music-bed) — deterministic ducked music-bed envelope + non-looping `<LessonBgmLayer>`
 - [lesson-sfx-layer](#lesson-sfx-layer) — SFX registry + `<LessonSfxLayer>` one-shot events (composer-owned frames)
 
@@ -470,6 +471,37 @@ Pure, deterministic layout math (no React, no DOM, no measurement). A lesson dec
 - Rendering at `unit` when `fits:false` — sub-floor is forbidden; `overflowReason` is the signal, not a fallback.
 - Adding React / `useCurrentFrame` / `Math.random` / measurement to `fitToZone.ts` — it must stay pure; identical inputs → byte-identical output, or scene and manifest diverge.
 - Re-declaring the floors (`TEACHING_UNIT_TARGET_SIZE`, a per-lesson gap constant) — the defaults read `theme.sizing`; pass `opts` only for a genuine per-zone exception.
+
+---
+
+## fit-text
+
+**Code:** `remotion-svg-primitives/src/layout/fitText.ts` (barrel `src/layout/index.ts`)
+**Surface:** `fitTextBox({ text, role, box, compositionWidth?, maxLines?, cap?, lineHeight?, measure })` → `FitTextBoxResult` ({ fontSize, lines, overflow, atFloor }); `fitTextLine({ text, role, withinWidth, compositionWidth?, cap?, measure })` → `FitTextLineResult` ({ fontSize, overflow, atFloor }); `measureWithFont(style)` → `MeasureFn` (binds `@remotion/layout-utils` `measureText`); `useFontGate()` → boolean (the load gate); `segmentText(text)` / `wrapSegments(...)` / `roleFloorPx(role, compositionWidth)` / `isCJK(ch)`; constants `REFERENCE_WIDTH` (1280) / `ROLE_FLOORS` / `DEFAULT_LINE_HEIGHT`; types `TextRole` (`"headline" | "supporting" | "label" | "caption"`) / `Segment` / `MeasureFn` / `FontStyle` / `FitTextBoxOptions` / `FitTextBoxResult` / `FitTextLineOptions` / `FitTextLineResult`
+**Owned by:** `remotion-lesson-composer` (fits any data-driven title/caption/label), `kids-eye` (the role floors it clamps to)
+**Status:** experimental
+**Added:** 2026-07-03
+
+The SINGLE measured text-fitting path — the DOM-text twin of `auto-size-to-zone`. Any string that is NOT author-controlled (a title, teaser, caption, label read off a brief) is sized by MEASUREMENT between a kids-eye role floor and a `cap`, never by a constant (the constant is only the ceiling). Three behaviours wrapping `@remotion/layout-utils`: (a) **kids-eye role floors** as the lower clamp — the fit shrinks only to `roleFloorPx(role, compositionWidth)` (values from `theme.sizing`, width-scaled by `compositionWidth / REFERENCE_WIDTH`); a fit that would land below the floor returns the floor size PLUS `overflow: true` so the caller RE-LAYOUTS, never sub-floor text (same law as `fitUnitsToZone`'s `fits:false`). (b) **CJK-aware wrap** — Han/kana/hangul break per character, Latin per word, mixed handled; a plain `text.split(' ')` treats a spaceless Chinese sentence as one unbreakable word (the named remotion vendor-scan C3 failure) and never wraps. (c) **font-loaded gate** — `useFontGate()` holds a `delayRender` handle until `document.fonts.ready`, so a measure never races font load (vendor L2). The wrap/clamp CORE is PURE (an injected `measure(text, fontSize)`) and DOM-free; production binds `measureWithFont`. First consumer: `LessonIntroCard` (a string title shrinks + CJK-wraps to stay inside its card zone). Full study: `research/remotion-vendor-best-practices-2026-07-03.md` §5 #1.
+
+### Reach guide
+
+| When | Reach for |
+|---|---|
+| Size a data-driven single-line title/label to a zone width | `fitTextLine({ text, role: "headline", withinWidth, cap, measure: measureWithFont({ fontFamily, fontWeight }) })` |
+| A title/caption may need to WRAP (esp. CJK) to stay in its box | `fitTextBox({ text, role, box: { width }, maxLines, cap, measure })` → render each of `lines[]` at `fontSize` |
+| Inside a Remotion component, before any measure | gate on `useFontGate()` — only measure once it returns true |
+| Bind the measurement to a font | `measureWithFont({ fontFamily, fontWeight, letterSpacing })` — pass its result as `measure` |
+| Know the floor a role may shrink to | `roleFloorPx(role, compositionWidth)` (headline 84 / supporting·caption 48 / label 36 at width 1280) |
+| `overflow` comes back `true` | the text can't fit at/above the floor — RE-LAYOUT (shorter copy, bigger zone, more `maxLines`); it already rendered at the floor, never smaller |
+
+### Anti-patterns
+
+- Adding a SECOND text-measurement path anywhere (a hand-rolled `document.createElement('span')`, a char-count budget, a fixed `titleSize` for data-driven copy) — fit-text is the only measured text path; a char-count heuristic silently breaks on CJK and any font change.
+- `text.split(' ')` / space-based wrapping for a title or caption that may be Chinese — it never finds a break point and renders one overflowing line (remotion scan C3). Use `segmentText` / `fitTextBox`.
+- Rendering below the role floor because the fit "almost" fit — sub-floor is forbidden; `overflow: true` is the signal to re-layout, not a size to shrink past (kids-eye §1).
+- `validateFontIsLoaded: true` on a mixed Latin+CJK system stack — it false-positives (declared and fallback both resolve to the same system CJK font) and throws mid-render; it is opt-in for a single dedicated web font only. `useFontGate` is the gate.
+- A hardcoded `1080` (or any absolute) as the floor reference — floors scale by `compositionWidth / REFERENCE_WIDTH` (the fixed canvas, `theme.video.width`).
 
 ---
 

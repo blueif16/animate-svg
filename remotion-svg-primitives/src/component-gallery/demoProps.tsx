@@ -521,6 +521,20 @@ export const demoProps: Record<string, GalleryDemo> = {
               />
             ),
           },
+          {
+            // Overlong CJK title: measured + fitted (fitText) so it shrinks and
+            // CJK-wraps to stay inside the card zone instead of overflowing.
+            caption: "long CJK title fits (shrink + wrap)",
+            node: (
+              <LessonIntroCard
+                card
+                cardHeight={340}
+                cardWidth={620}
+                section="第三单元"
+                title="认识分数的加法与减法运算"
+              />
+            ),
+          },
         ]}
       />
     ),
