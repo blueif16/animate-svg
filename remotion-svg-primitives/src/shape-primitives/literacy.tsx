@@ -1,7 +1,8 @@
-import type { ReactNode, SVGProps } from "react";
+import { useMemo, type ReactNode, type SVGProps } from "react";
 import { interpolate, useCurrentFrame } from "remotion";
 import { DrawPath } from "../motion-primitives";
-import { colors } from "../theme";
+import { fitTextBox, measureWithFont, useFontGate } from "../layout";
+import { colors, sizing, video } from "../theme";
 import {
   CARD_RADIUS,
   NAVY_STROKE,
@@ -1205,6 +1206,28 @@ export type LessonIntroCardProps = PrimitiveGroupProps &
     cardWidth?: number;
     /** Card height when `card` is on. Default 360. */
     cardHeight?: number;
+    /**
+     * Measure-and-fit the title (when it is a plain string) so an overlong
+     * title shrinks + CJK-wraps to stay inside its zone instead of overflowing —
+     * via the single fitText module (CJK-aware, kids-eye headline-floor clamped,
+     * font-gated). Default true. A ReactNode title (styled/pre-wrapped) is never
+     * measured and renders at `titleSize` unchanged.
+     */
+    fitTitle?: boolean;
+    /**
+     * Max width (canvas px) the fitted title may occupy. Default: the card
+     * inner width when `card` is on, else the graphics safe-area width
+     * (`theme.sizing.safeArea.width`). Lesson-agnostic — a zone width, not copy.
+     */
+    titleMaxWidth?: number;
+    /** Max lines the fitted title may wrap into. Default 2. */
+    titleMaxLines?: number;
+    /**
+     * Composition width used to scale the kids-eye role floors. Default the
+     * fixed canvas width (`theme.video.width`). Pass the real width only when
+     * rendering this card at a non-default composition size.
+     */
+    compositionWidth?: number;
   };
 
 /**
@@ -1227,7 +1250,16 @@ export type LessonIntroCardProps = PrimitiveGroupProps &
  * Composes the shared text idiom (fontFamily) + a `<line>` draw-on underline
  * (the same write-on idiom as TeacherMark's underline, kept self-contained so
  * the intro card has no motion-primitive import cycle).
+ *
+ * The title is MEASURED and fitted (fitText) when it is a plain string: an
+ * overlong title shrinks toward the kids-eye headline floor and CJK-wraps to
+ * stay inside its zone instead of overflowing — never rendered below the floor.
  */
+// Inset applied to the card inner width when deriving the default title fit
+// width, and the CSS line-height used to stack a wrapped title's lines.
+const TITLE_FIT_PAD = 48;
+const TITLE_LINE_HEIGHT = 1.12;
+
 export const LessonIntroCard = ({
   title,
   section,
@@ -1243,23 +1275,71 @@ export const LessonIntroCard = ({
   cardStroke = "textNavy",
   cardWidth = 1180,
   cardHeight = 360,
+  fitTitle = true,
+  titleMaxWidth,
+  titleMaxLines = 2,
+  compositionWidth = video.width,
   x = 0,
   y = 0,
   ...groupProps
 }: LessonIntroCardProps) => {
   const p = clamp01(progress);
 
-  // Row vertical rhythm, measured from the card center (y = 0 local).
+  // MEASURED title fit. When the title is a plain string, size it by measurement
+  // (fitText: CJK-aware wrap + kids-eye headline-floor clamp) so an overlong
+  // title shrinks and wraps to stay inside its zone instead of overflowing —
+  // never below the floor. Gated on font load so the numbers never race the
+  // font. A ReactNode title is left untouched (renders at titleSize, one node).
+  const fontReady = useFontGate();
+  const titleStr = typeof title === "string" ? title : null;
+  // Fit width: the card inner width, else the graphics safe-area width. A zone
+  // width — lesson-agnostic, never copy.
+  const fitWidth =
+    titleMaxWidth ??
+    (card ? Math.max(0, cardWidth - TITLE_FIT_PAD * 2) : sizing.safeArea.width);
+  const titleFit = useMemo(
+    () =>
+      fitTitle && titleStr !== null && fontReady
+        ? fitTextBox({
+            text: titleStr,
+            role: "headline",
+            box: { width: fitWidth },
+            compositionWidth,
+            maxLines: titleMaxLines,
+            cap: titleSize,
+            measure: measureWithFont({ fontFamily, fontWeight: 900 }),
+          })
+        : null,
+    [
+      fitTitle,
+      titleStr,
+      fontReady,
+      fitWidth,
+      compositionWidth,
+      titleMaxLines,
+      titleSize,
+    ],
+  );
+  const renderedTitleSize = titleFit ? titleFit.fontSize : titleSize;
+  const titleLines = titleFit ? titleFit.lines : null;
+  const titleLineCount = titleLines ? titleLines.length : 1;
+  // Half-height of the (possibly multi-line) title block, so the underline and
+  // teaser sit below the LAST line. Zero for a single line → identical rhythm.
+  const titleBlockHalf =
+    ((titleLineCount - 1) / 2) * renderedTitleSize * TITLE_LINE_HEIGHT;
+
+  // Row vertical rhythm, measured from the card center (y = 0 local). Gaps read
+  // off titleSize (stable rhythm) + the title block half-height (multi-line).
   const sectionSize = Math.round(titleSize * 0.34);
   const teaserSize = Math.round(titleSize * 0.44);
-  const sectionY = section ? -titleSize * 0.86 : 0;
+  const sectionY = section ? -titleSize * 0.86 - titleBlockHalf : 0;
   const titleY = section ? -titleSize * 0.04 : -titleSize * 0.18;
-  const underlineY = titleY + titleSize * 0.62;
+  const underlineY = titleY + titleBlockHalf + titleSize * 0.62;
   const teaserY = underlineY + teaserSize * 1.28;
 
-  // Underline half-width derived from the title size (a heading-length rule),
-  // so callers don't hand-tune it. The caller can still place the whole card.
-  const underlineHalf = titleSize * 1.9;
+  // Underline half-width derived from the (fitted) title size (a heading-length
+  // rule), clamped to the fit width so it never exceeds the title's zone.
+  const underlineHalf = Math.min(fitWidth / 2, renderedTitleSize * 1.9);
 
   // Staggered per-row reveal — each row fades + rises within its own slice of
   // `progress` so the eye lands section → title → underline → teaser in order.
@@ -1326,18 +1406,41 @@ export const LessonIntroCard = ({
       ) : null}
 
       <Row reveal={titleR}>
-        <text
-          dominantBaseline="middle"
-          fill={titleInk}
-          fontFamily={fontFamily}
-          fontSize={titleSize}
-          fontWeight={900}
-          textAnchor="middle"
-          x={0}
-          y={titleY}
-        >
-          {title}
-        </text>
+        {titleLines ? (
+          titleLines.map((line, i) => (
+            <text
+              key={i}
+              dominantBaseline="middle"
+              fill={titleInk}
+              fontFamily={fontFamily}
+              fontSize={renderedTitleSize}
+              fontWeight={900}
+              textAnchor="middle"
+              x={0}
+              y={
+                titleY +
+                (i - (titleLineCount - 1) / 2) *
+                  renderedTitleSize *
+                  TITLE_LINE_HEIGHT
+              }
+            >
+              {line}
+            </text>
+          ))
+        ) : (
+          <text
+            dominantBaseline="middle"
+            fill={titleInk}
+            fontFamily={fontFamily}
+            fontSize={renderedTitleSize}
+            fontWeight={900}
+            textAnchor="middle"
+            x={0}
+            y={titleY}
+          >
+            {title}
+          </text>
+        )}
       </Row>
 
       {underline ? (
