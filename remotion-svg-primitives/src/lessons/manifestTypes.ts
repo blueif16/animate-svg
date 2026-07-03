@@ -93,6 +93,97 @@ export const isZoneOverlapAllowed = (a: ZoneName, b: ZoneName): boolean => {
   return ALLOWED_OVERLAPS.has(`${a}:${b}`);
 };
 
+// ───────────────────────────────────────────────────────────────────────────
+// LEGIBILITY & SAFE-AREA constants (vendor-study opportunity #4).
+//
+// The field publishes concrete-but-advisory numbers — key text ≥80px from the
+// sides / ≥100px top-bottom, and 84/44/32px type floors at a 1080px reference
+// width, everything WIDTH-scaled (research §2 L4: `vendor/skills/.../rules/
+// video-layout.md:15,44-48`; RemotionUI getSafeAreaPadding()/scaleFont()).
+// Upstream keeps them prose-only; this repo is the only one with a measured
+// gate that can RUN them.
+//
+// This module is the SINGLE SOURCE OF TRUTH. The measured pass runs under plain
+// node and cannot import this .ts, so `scripts/_measured-extract.ts` (which does
+// import it, under tsx) FORWARDS these raw numbers to `scripts/lesson-measured.mjs`
+// exactly as it already forwards ALLOWED_OVERLAP_PAIRS — the gate script keeps
+// NO copy of the numbers (only the width-scaling arithmetic, mirrored the same
+// way intersectArea is). Values are REFERENCE pixels at REFERENCE_WIDTH; the gate
+// scales each by the real composition width so a non-1080 canvas (ours is 1280)
+// inherits the same proportions, never a bare hardcode.
+// ───────────────────────────────────────────────────────────────────────────
+
+// The reference canvas width the field's numbers are quoted at (1080px).
+export const REFERENCE_WIDTH = 1080;
+
+// Minimum inset of key text from the canvas edges, in REFERENCE px @1080w.
+// Everything scales with WIDTH per L4 ("80/1080 * width"), including top/bottom.
+export const SAFE_AREA = {
+  side: 80, // ≥80px from left/right edges
+  topBottom: 100, // ≥100px from top/bottom edges
+} as const;
+
+// Per-role minimum RENDERED text size, in REFERENCE px @1080w (L4).
+export const TYPE_FLOORS = {
+  headline: 84,
+  supporting: 44,
+  label: 32,
+  mobile: 48,
+} as const;
+
+export type TypeRole = keyof typeof TYPE_FLOORS;
+
+// Which manifest zones carry LOAD-BEARING TEXT, and each one's type-floor role.
+// The measured legibility gate checks ONLY these zones (objects/marks/decoration
+// are not text and are never legibility-checked); a zone absent here is not text.
+// This same set defines the caption/label "hard-kill" zones (opportunity #13):
+// any text element that disappears must vanish cleanly at the cue boundary.
+export const TEXT_ZONE_ROLE: Partial<Record<ZoneName, TypeRole>> = {
+  labels: "label",
+  badges: "supporting",
+  tally: "label",
+  caption: "label",
+};
+
+// REFERENCE px → composition px, scaled by WIDTH (L4: "80/1080 * width").
+export const scaleToWidth = (refPx: number, width: number): number =>
+  (refPx / REFERENCE_WIDTH) * width;
+
+// The safe rectangle [x, y, w, h] in composition px for a canvas. Key text must
+// sit fully inside it.
+export const safeRect = (width: number, height: number): Bbox => {
+  const side = scaleToWidth(SAFE_AREA.side, width);
+  const topBottom = scaleToWidth(SAFE_AREA.topBottom, width);
+  return [side, topBottom, width - side * 2, height - topBottom * 2];
+};
+
+// A bbox is inside the safe rect when all four edges are within it (a small
+// epsilon absorbs sub-pixel getBBox noise).
+export const isInsideSafeRect = (
+  box: Bbox,
+  width: number,
+  height: number,
+  epsilon = 1,
+): boolean => {
+  const [sx, sy, sw, sh] = safeRect(width, height);
+  return (
+    box[0] >= sx - epsilon &&
+    box[1] >= sy - epsilon &&
+    box[0] + box[2] <= sx + sw + epsilon &&
+    box[1] + box[3] <= sy + sh + epsilon
+  );
+};
+
+// The rendered-text-size floor (composition px) for a zone at a given width, or
+// null when the zone is not load-bearing text.
+export const typeFloorForZone = (
+  zone: ZoneName,
+  width: number,
+): number | null => {
+  const role = TEXT_ZONE_ROLE[zone];
+  return role ? scaleToWidth(TYPE_FLOORS[role], width) : null;
+};
+
 export const intersectArea = (a: Bbox, b: Bbox): number => {
   const x1 = Math.max(a[0], b[0]);
   const y1 = Math.max(a[1], b[1]);

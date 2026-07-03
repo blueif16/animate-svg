@@ -48,7 +48,15 @@ const main = async () => {
     "lessons",
     "manifestTypes.ts",
   );
-  const { ALLOWED_OVERLAP_PAIRS } = await import(pathToFileURL(typesAbs).href);
+  const {
+    ALLOWED_OVERLAP_PAIRS,
+    // Legibility / safe-area constants (opportunity #4). manifestTypes.ts is the
+    // SINGLE source; forwarded here so the plain-node measured pass keeps no copy.
+    REFERENCE_WIDTH,
+    SAFE_AREA,
+    TYPE_FLOORS,
+    TEXT_ZONE_ROLE,
+  } = await import(pathToFileURL(typesAbs).href);
 
   // The caption ribbon's footprint is lesson-agnostic (one shared component), so
   // it lives as ONE constant (src/lesson-media/captionBand.ts) and is forwarded
@@ -88,6 +96,12 @@ const main = async () => {
       // The canonical allowed-zone-pair list from manifestTypes.ts, forwarded so
       // the .mjs measured script has ONE source — it no longer keeps its own copy.
       allowedZonePairs: ALLOWED_OVERLAP_PAIRS,
+      // Legibility / safe-area single-source numbers (opportunity #4), forwarded
+      // raw so scripts/lesson-measured.mjs width-scales them without a hardcode.
+      referenceWidth: REFERENCE_WIDTH,
+      safeArea: SAFE_AREA,
+      typeFloors: TYPE_FLOORS,
+      textZoneRole: TEXT_ZONE_ROLE,
       // The lesson-agnostic caption-ribbon footprint (src/lesson-media/captionBand.ts),
       // forwarded so the .mjs measured pass runs the caption-intrusion check.
       captionBand: CAPTION_BAND,

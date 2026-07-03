@@ -15,12 +15,16 @@
 //      transform-aware getBBox() in composition px. Capture via onBrowserLog.
 //   4. Run the SAME AABB + ratio overlap math as scripts/lesson-manifest.mjs
 //      (OVERLAP_RATIO_THRESHOLD 0.15) on the MEASURED bboxes.
-//   5. The MINIMAL gate set on the same data: bbox-binding bijection (makes the
-//      overlap gate trustworthy) + LUFS on the master MP4. Eye-judged proxies
-//      (contrast, legibility, motion-too-fast, caption-redundancy) are NOT
-//      gated here — the human is the eye for visual quality.
+//   5. The gate set on the same data: bbox-binding bijection (makes the overlap
+//      gate trustworthy) + LUFS on the master MP4 + the CALIBRATED legibility
+//      gate (vendor-study opportunity #4: per-role type floor is HARD; safe-area
+//      is WARN). Its numbers (safe insets, type floors) live ONCE in
+//      manifestTypes.ts, forwarded by the extractor. Eye-judged proxies
+//      (contrast, motion-too-fast, caption-redundancy) stay OUT — the human is
+//      the eye for visual quality.
 //   6. WRITE out/<id>/bbox-manifest.json: the `measured` block + a `summary`
-//      with measuredCollisionCount / captionIntrusionCount / gatesFailed.
+//      with measuredCollisionCount / captionIntrusionCount / typeFloorViolation
+//      Count / gatesFailed.
 //
 // HONEST EXIT: the process exits 1 when a high-confidence GATE fails — any
 // `gatesFailed` entry (bbox-binding bijection or LUFS). A measured overlap is a
@@ -66,6 +70,13 @@ const TRUE_PEAK_MAX = -1.0; // dBFS
 // Peak-aware entrance offsets layered on top of manifest cue-% keyframes (§3.1).
 // Covers spring/easing overshoot ringing that 50%/80% sampling misses.
 const ENTRANCE_PEAK_OFFSETS = [4, 8, 12, 18];
+
+// Legibility gate (vendor-study opportunity #4): judge a text element's size /
+// placement only once it has FULLY faded in (mid-entrance an element is smaller
+// / sliding in, which would false-positive). The 80/100px safe-area insets and
+// 84/44/32px type floors themselves live ONCE in src/lessons/manifestTypes.ts
+// and are forwarded by the extractor — never hardcoded in this script.
+const SETTLED_OPACITY = 0.9;
 
 // ---------------------------------------------------------------------------
 // Arg parsing (mirrors the sibling scripts).
@@ -516,6 +527,116 @@ const main = async () => {
     }
   }
 
+  // --- Gate: legibility — safe-area + per-role type floor (opportunity #4) ----
+  // The field's concrete-but-advisory numbers (80/100px safe insets; 84/44/32px
+  // type floors, width-scaled) live ONCE in manifestTypes.ts and are forwarded
+  // (extracted.safeArea / typeFloors / textZoneRole / referenceWidth); this
+  // script keeps NO copy of them, only the width-scaling arithmetic. The check
+  // runs on the SAME measured getBBox boxes the overlap gate uses.
+  //   • type-floor = HARD gate: a text element whose settled rendered height is
+  //     below its role floor is illegibly small (false-positive-free — a box is
+  //     only ever "too small", never too small by being a big composite panel).
+  //   • safe-area  = WARN: a composite label PANEL (e.g. a full-bleed intro card)
+  //     legitimately extends past the text safe rect, so — like the caption /
+  //     overlap geometry gates — this is advisory, the human is the eye.
+  const textZoneRole = extracted.textZoneRole || {};
+  const textZones = new Set(Object.keys(textZoneRole));
+  const refW = extracted.referenceWidth;
+  const compW = extracted.width;
+  const compH = extracted.height;
+  // Width-scale a REFERENCE-px number into composition px (L4: "80/1080 * width").
+  // Reads the forwarded referenceWidth — no bare number lives here.
+  const scaleW = (refPx) => (refPx / refW) * compW;
+  if (measured.method !== "getBBox") {
+    gateLines.push("SKIP: legibility — measured pass unavailable (no getBBox)");
+    measured.gates.legibility = { skipped: "measured pass unavailable" };
+  } else {
+    const textEls = (extracted.elements || []).filter((e) =>
+      textZones.has(e.zone),
+    );
+    if (textEls.length === 0) {
+      gateLines.push(
+        "SKIP: legibility — no load-bearing text elements in manifest",
+      );
+      measured.gates.legibility = {
+        skipped: "no load-bearing text elements in manifest",
+      };
+    } else {
+      const safeArea = extracted.safeArea || {};
+      const typeFloors = extracted.typeFloors || {};
+      const safeSide = scaleW(safeArea.side);
+      const safeTB = scaleW(safeArea.topBottom);
+      const safeRectPx = [safeSide, safeTB, compW - 2 * safeSide, compH - 2 * safeTB];
+      const insideSafe = (b, eps = 1) =>
+        b[0] >= safeRectPx[0] - eps &&
+        b[1] >= safeRectPx[1] - eps &&
+        b[0] + b[2] <= safeRectPx[0] + safeRectPx[2] + eps &&
+        b[1] + b[3] <= safeRectPx[1] + safeRectPx[3] + eps;
+
+      // Settled (fully faded-in) samples per element, keyed by id.
+      const settledById = {};
+      for (const rec of measured.elements) {
+        if (rec.opacity >= SETTLED_OPACITY) {
+          (settledById[rec.id] ||= []).push(rec);
+        }
+      }
+      const typeFloorViolations = [];
+      const safeAreaWarnings = [];
+      let checked = 0;
+      for (const el of textEls) {
+        const samples = settledById[el.id] || [];
+        if (samples.length === 0) continue; // never settles in a sample → can't judge
+        checked += 1;
+        const role = textZoneRole[el.zone];
+        const floorPx = scaleW(typeFloors[role]);
+        // The element's full rendered height (mid-entrance/pulse frames are
+        // smaller/larger; the DESIGN size is the max settled height).
+        const maxH = Math.max(...samples.map((s) => s.measuredBbox[3]));
+        if (maxH < floorPx) {
+          typeFloorViolations.push({
+            id: el.id,
+            zone: el.zone,
+            role,
+            maxHeightPx: Number(maxH.toFixed(1)),
+            floorPx: Number(floorPx.toFixed(1)),
+          });
+        }
+        const outside = samples.find((s) => !insideSafe(s.measuredBbox));
+        if (outside) {
+          safeAreaWarnings.push({
+            id: el.id,
+            zone: el.zone,
+            frame: outside.frame,
+            bbox: outside.measuredBbox,
+          });
+        }
+      }
+      measured.gates.legibility = {
+        pass: typeFloorViolations.length === 0, // HARD: type floor only
+        checked,
+        safeRect: safeRectPx.map((n) => Number(n.toFixed(1))),
+        typeFloorViolations,
+        safeAreaWarnings, // advisory
+      };
+      gateLines.push(
+        `${typeFloorViolations.length === 0 ? "PASS" : "FAIL"}: legibility(type-floor) — ${typeFloorViolations.length} text element(s) below role floor${
+          typeFloorViolations.length
+            ? ` [${typeFloorViolations
+                .map((v) => `${v.id} ${v.maxHeightPx}<${v.floorPx}px`)
+                .join(", ")}]`
+            : ""
+        }`,
+      );
+      gateLines.push(
+        `${safeAreaWarnings.length === 0 ? "PASS" : "WARN"}: legibility(safe-area) — ${safeAreaWarnings.length} text element(s) outside the safe rect${
+          safeAreaWarnings.length
+            ? ` [${[...new Set(safeAreaWarnings.map((v) => v.id))].join(", ")}]`
+            : ""
+        }`,
+      );
+    }
+  }
+
   // --- Gate: LUFS ------------------------------------------------------------
   // The DELIVERABLE is the loudnorm'd MASTER MP4 (Wave 5 normalizes to -16
   // LUFS / -1 dBTP). Measure THAT when it exists — the only honest pass/fail.
@@ -563,10 +684,13 @@ const main = async () => {
     );
   }
 
-  // Eye-judged proxies removed from the gate set (caption-redundancy, contrast,
-  // legibility, motion-too-fast): the human is the eye for visual quality, and
-  // the uncalibrated proxies eroded the gate. The minimal failing gate set is
-  // measured overlap + bbox-binding bijection + LUFS-on-master.
+  // Eye-judged PROXIES stay out of the gate set (caption-redundancy, contrast,
+  // motion-too-fast): the human is the eye, and the uncalibrated proxies eroded
+  // the gate. Legibility returns above NOT as an uncalibrated ~24px eye-proxy but
+  // as the field's calibrated, width-scaled type floors + safe rect (#4), with
+  // the composite-panel false-positive routed to a WARN. The hard failing gate
+  // set is now: bbox-binding + LUFS-on-master + legibility(type-floor)
+  // (measured overlap + safe-area stay WARN-only).
 
   // --- AUGMENT bbox-manifest.json (additive; leave existing shape intact) -----
   const bboxPath = path.join(outDir, "bbox-manifest.json");
@@ -587,6 +711,12 @@ const main = async () => {
   }
   manifestJson.summary.measuredCollisionCount = measured.collisionsMeasured.length;
   manifestJson.summary.captionIntrusionCount = measured.captionIntrusions.length;
+  // Calibrated text-gate counts (opportunity #4). A skipped gate has no
+  // violation array, so it reports 0 (and never lands in gatesFailed).
+  manifestJson.summary.typeFloorViolationCount =
+    measured.gates.legibility?.typeFloorViolations?.length ?? 0;
+  manifestJson.summary.safeAreaWarningCount =
+    measured.gates.legibility?.safeAreaWarnings?.length ?? 0;
   manifestJson.summary.gatesFailed = gatesFailed;
   fs.writeFileSync(bboxPath, JSON.stringify(manifestJson, null, 2));
 
@@ -626,7 +756,7 @@ const main = async () => {
   console.log(`\nAugmented ${path.relative(process.cwd(), bboxPath)} (measured block + summary.measured*)`);
   console.log(
     failed
-      ? `\nFAIL: exit 1 — gatesFailed=[${gatesFailed.join(", ")}] (bbox-binding / LUFS). ${measured.collisionsMeasured.length} measured overlap(s) reported as advisory WARN.`
+      ? `\nFAIL: exit 1 — gatesFailed=[${gatesFailed.join(", ")}] (bbox-binding / LUFS / legibility type-floor). ${measured.collisionsMeasured.length} measured overlap(s) + safe-area WARN(s) reported as advisory.`
       : `\nPASS: exit 0 — no failed gates (SKIP lines do not fail). ${measured.collisionsMeasured.length} measured overlap(s) WARN-only — review + fix-or-justify per discipline.`,
   );
 };
