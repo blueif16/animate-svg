@@ -22,3 +22,4 @@ Findings live in `research/remotion-vendor-best-practices-2026-07-03.md`.
 | `remotion-cinematic/` | https://github.com/codeverbojan/remotion-cinematic | 18dbb50 | Zone-based layout engine, prop-driven choreography, snap guides, editable window layout |
 | `claude-video-kit/` | https://github.com/runesleo/claude-video-kit (103★) | a41b174 | JSON script → vertical video: dual TTS backend, narration/caption/visual sync pipeline |
 | `vanta/` | https://github.com/itsjwill/vanta (70★) | 1923e9e | Local AI video engine: whisper-server word timestamps, animated captions, transitions |
+| `open-design/` | https://github.com/nexu-io/open-design (74K★) | 32011bd | Open-source Claude Design alternative: 259+ skills, 142+ design systems — how a design-agent platform codifies layout/typography rules and drives video/slide generation |
