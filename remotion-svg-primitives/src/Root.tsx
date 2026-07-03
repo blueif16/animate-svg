@@ -590,7 +590,10 @@ export const RemotionRoot: React.FC = () => {
           key={c.id}
           id={c.id}
           component={c.component}
+          // durationInFrames self-derives from the generated <X>Cues array via
+          // calculateMetadata (opportunity #5); the static value is the fallback.
           durationInFrames={c.durationInFrames}
+          calculateMetadata={c.calculateMetadata}
           defaultProps={c.defaultProps}
           fps={c.fps ?? compositionDefaults.fps}
           height={c.height ?? compositionDefaults.height}
