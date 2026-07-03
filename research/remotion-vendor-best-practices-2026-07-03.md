@@ -264,3 +264,7 @@ All 14 scan notes named in the study brief exist on disk (13 vendors + the self-
 - **vanta** — lead-magnet "video engine" that is ~90% stubs: worth keeping only the caption pipeline interface shape, the clipPath containment primitive, and the SRT formatter; strong negative example for frame literals and hardcoded canvas sizes. → `research/_vendor-scan/vanta.md`
 - **open-design** — agent-orchestration platform (not a Remotion app): shrink-to-fit + cqi typography, "Layout Before Animation," headless inspect with intent markers, transcript quality-gate ladder, caption hard-kill self-lint, and the layered token-schema promotion model. → `research/_vendor-scan/open-design.md`
 - **our codebase** — self-scan with the same rubric: v4 per-cue frozen audio and measured-getBBox geometry are genuinely ahead of every vendor; the weak seams are cross-wave cue-id consistency (broken newest fixture, verified), zero text measurement, and under-adoption of our own `fitUnitsToZone`/onset APIs. → `research/_vendor-scan/_our-codebase.md`
+
+## Progress
+
+Implementation log for the §5 opportunities (work order: `.tasks/HANDOFF-2026-07-03T1839Z.md`). One entry per landed opportunity, appended in the same commit that lands it: date · opportunity # + quoted bullet · where it landed (`file:line` / capability id / skill) · or explicit not-bridged reason.
