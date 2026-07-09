@@ -33,7 +33,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
-    "returnMode": "required"
+    "returnMode": "optional"
   },
   "checks": {
     "post": [

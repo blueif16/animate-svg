@@ -23,7 +23,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents",
-      "/Users/tk/Desktop/shared-sound/public/audio"
+      "{{WORKSPACE}}/../shared-sound/public/audio"
     ],
     "returnMode": "optional"
   },

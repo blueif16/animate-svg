@@ -13,7 +13,7 @@
     ],
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
-      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs"
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/render-timing.json"
     ],
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/src",

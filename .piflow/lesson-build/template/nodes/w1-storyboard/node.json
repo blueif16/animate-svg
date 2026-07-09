@@ -19,6 +19,7 @@
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/capabilities/catalog-digest.md",
       "{{WORKSPACE}}/.agents"
     ],
     "returnMode": "optional"

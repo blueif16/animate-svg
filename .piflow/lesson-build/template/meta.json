@@ -12,14 +12,5 @@
     "compose",
     "render",
     "verify"
-  ],
-  "profiles": {
-    "production": {},
-    "companion": {
-      "elidePhases": [
-        "verify"
-      ]
-    }
-  },
-  "defaultProfile": "production"
+  ]
 }

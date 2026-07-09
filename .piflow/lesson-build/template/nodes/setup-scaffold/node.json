@@ -22,6 +22,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/tsconfig.json",
       "{{WORKSPACE}}/remotion-svg-primitives/eslint.config.mjs",
       "{{WORKSPACE}}/remotion-svg-primitives/remotion.config.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/_template",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"

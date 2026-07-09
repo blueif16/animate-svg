@@ -29,8 +29,8 @@
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents",
-      "/Users/tk/Desktop/shared-sound/public/audio",
-      "/Users/tk/Desktop/vlog_test/pipeline"
+      "{{WORKSPACE}}/../shared-sound/public/audio",
+      "{{WORKSPACE}}/../vlog_test/pipeline"
     ],
     "returnMode": "optional"
   },
