@@ -59,10 +59,28 @@ kp2CountingByTens, kptestGreetingsVerify) — kptestCountToTwo is cited as the r
 - `3bfba64` 2026-07-01 — test(lesson): add kptest-count-to-two fixture from piflow template run
 - `4a26040` 2026-07-03 — feat(lessons): throwing cue-id accessor factory (kills silent ?? 0)
 - `c25c4b6` 2026-07-03 — fix(lessons): adopt throwing cue accessors; re-key count-to-two to its 3-cue audio truth
+- `edd6321` 2026-07-09 — feat(lesson-build): per-node optimization runway (measures + memory + issues)
+- `62aed23` 2026-07-09 — fix(lesson-data): restore kptestCountToTwoClips.ts corrupted during runway build
 
 ### Lessons — memory cluster
 
-_memory dir not found — lessons skipped_
+**Alias matches** (review — may include false positives):
+- [[audio-kit-shared-architecture]]
+- [[diagnose-root-cause-never-guess]]
+- [[generic-mechanisms-go-in-sdk]]
+- [[lesson-build-workflow-draft]]
+- [[lesson-voice-bilingual-asr-l2]]
+- [[narration-kit-types-from-dist]]
+- [[pacing-floor-and-clean-room-rerun]]
+- [[pedagogy-quick-wins]]
+- [[pi-harness-native-mechanism-decision]]
+- [[pi-runner-node22-and-minimax-flags]]
+- [[pi-runner-watchdog-and-sandbox]]
+- [[piflow-lesson-build-port]]
+- [[pipeline-slim-robustness-sprint]]
+- [[v4-cue-anchored-audio]]
+- [[validation-is-the-real-run-not-tests]]
+
 ### Code anchors / blast radius (codegraph)
 
 - `makeCueAccessors` (remotion-svg-primitives/src/lessons/_cues/cueAccessors.ts:33) — 9 callers in `remotion-svg-primitives/src/lessons/kptestCountToTwoLessonScene.tsx`, `remotion-svg-primitives/src/lessons/kptestCountToTwoLessonTimeline.ts`, `remotion-svg-primitives/src/lessons/kptestFirstSecondThirdLessonScene.tsx`, `remotion-svg-primitives/src/lessons/CompleteKp2CountingByTensLesson.tsx` +2 more; tests: `remotion-svg-primitives/src/lessons/_cues/cueAccessors.test.ts`
@@ -70,5 +88,5 @@ _memory dir not found — lessons skipped_
 - `Cue` (remotion-svg-primitives/scripts/_padded-cues-extract.ts:42) — 2 callers in `remotion-svg-primitives/scripts/_padded-cues-extract.ts`, `remotion-svg-primitives/src/lesson-media/captionKeywords.ts`; ⚠ no covering tests found
 - `caption` (remotion-svg-primitives/src/scenes/OrdinalLabelTokenDemo.tsx:32) — 1 caller in `remotion-svg-primitives/src/scenes/OrdinalLabelTokenDemo.tsx`; ⚠ no covering tests found
 
-<sub>derived 2026-07-09 · arc=3 commits · files=3 · lessons=0</sub>
+<sub>derived 2026-07-10 · arc=5 commits · files=3 · lessons=15</sub>
 <!-- okf:auto-end -->

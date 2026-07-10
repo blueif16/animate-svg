@@ -59,17 +59,35 @@ surface.
 - `6808fe7` 2026-06-11 — skillsys(lesson-build): re-source W3a truncation gate coverage from the generation-independent ASR pass (dedicated-TTS model drops the self-report) + adopt gemini-3.1-flash-tts-preview
 - `0a0f3b8` 2026-06-11 — skillsys(lesson-build): W3a truncation check is ADVISORY (non-blocking) — dedicated-TTS cure is the structural fix; a noisy ASR/cohort backstop must not block a clean render
 - `3bfba64` 2026-07-01 — test(lesson): add kptest-count-to-two fixture from piflow template run
+- `edd6321` 2026-07-09 — feat(lesson-build): per-node optimization runway (measures + memory + issues)
+- `62aed23` 2026-07-09 — fix(lesson-data): restore kptestCountToTwoClips.ts corrupted during runway build
 
 ### Lessons — memory cluster
 
-_memory dir not found — lessons skipped_
+**Alias matches** (review — may include false positives):
+- [[always-gitignore-generated-artifacts]]
+- [[audio-kit-shared-architecture]]
+- [[lesson-build-workflow-draft]]
+- [[lesson-voice-bilingual-asr-l2]]
+- [[narration-kit-types-from-dist]]
+- [[pi-runner-lesson-workflow]]
+- [[pi-runner-node22-and-minimax-flags]]
+- [[piflow-lesson-build-port]]
+- [[piflow-seatbelt-write-scope]]
+- [[pipeline-slim-robustness-sprint]]
+- [[sound-asset-library-status]]
+- [[teaching-action-vocabulary-gap]]
+- [[v4-cue-anchored-audio]]
+- [[validation-is-the-real-run-not-tests]]
+- [[voice-gen-dedicated-tts]]
+
 ### Code anchors / blast radius (codegraph)
 
 - `analyzeClip` (remotion-svg-primitives/scripts/lesson-audio-gate.mjs:304) — 1 caller in `remotion-svg-primitives/scripts/lesson-audio-gate.mjs`; ⚠ no covering tests found
 - `runPerClipAsr` (remotion-svg-primitives/scripts/lesson-audio-gate.mjs:192) — 1 caller in `remotion-svg-primitives/scripts/lesson-audio-gate.mjs`; ⚠ no covering tests found
+- `main` (.piflow/lesson-build/template/nodes/w3c-sound-asset/scripts/gap-scan-lint.mjs:66) — 1 caller in `.piflow/lesson-build/template/nodes/w3c-sound-asset/scripts/gap-scan-lint.mjs`; ⚠ no covering tests found
+- `main` (.piflow/lesson-build/template/nodes/w2b-audio-captions/scripts/measure.mjs:180) — 1 caller in `.piflow/lesson-build/template/nodes/w2b-audio-captions/scripts/measure.mjs`; ⚠ no covering tests found
 - `main` (remotion-svg-primitives/scripts/lesson-audio-gate.mjs:352) — 1 caller in `remotion-svg-primitives/scripts/lesson-audio-gate.mjs`; ⚠ no covering tests found
-- `main` (remotion-svg-primitives/scripts/_measured-extract.ts:28) — 1 caller in `remotion-svg-primitives/scripts/_measured-extract.ts`; ⚠ no covering tests found
-- `main` (remotion-svg-primitives/scripts/_padded-cues-extract.ts:63) — 1 caller in `remotion-svg-primitives/scripts/_padded-cues-extract.ts`; ⚠ no covering tests found
 
-<sub>derived 2026-07-09 · arc=6 commits · files=3 · lessons=0</sub>
+<sub>derived 2026-07-10 · arc=8 commits · files=3 · lessons=15</sub>
 <!-- okf:auto-end -->

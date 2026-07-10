@@ -50,7 +50,6 @@ w4b's sole artifact.
 
 ### Lessons — memory cluster
 
-_memory dir not found — lessons skipped_
 ### Code anchors / blast radius (codegraph)
 
 - `BoilConfig` (remotion-svg-primitives/src/shape-primitives/sketch.tsx:34) — 6 callers in `remotion-svg-primitives/src/lessons/Kp2CountingByTensLessonScene.tsx`, `remotion-svg-primitives/src/lessons/legacy/TenOnesMakeOneTenLessonScene.tsx`, `remotion-svg-primitives/src/shape-primitives/index.ts`, `remotion-svg-primitives/src/shape-primitives/sketch.tsx`; ⚠ no covering tests found
@@ -58,5 +57,5 @@ _memory dir not found — lessons skipped_
 - `TeacherMarkKind` (remotion-svg-primitives/src/shape-primitives/sketch.tsx:14) — 8 callers in `remotion-svg-primitives/src/lessons/Kp2CountingByTensLessonScene.tsx`, `remotion-svg-primitives/src/lessons/legacy/TenOnesMakeOneTenLessonScene.tsx`, `remotion-svg-primitives/src/shape-primitives/index.ts`, `remotion-svg-primitives/src/shape-primitives/sketch.tsx`; ⚠ no covering tests found
 - `SettleConfig` (remotion-svg-primitives/src/shape-primitives/sketch.tsx:45) — 4 callers in `remotion-svg-primitives/src/lessons/Kp2CountingByTensLessonScene.tsx`, `remotion-svg-primitives/src/shape-primitives/index.ts`, `remotion-svg-primitives/src/shape-primitives/sketch.tsx`; ⚠ no covering tests found
 
-<sub>derived 2026-07-09 · arc=1 commits · files=1 · lessons=0</sub>
+<sub>derived 2026-07-10 · arc=1 commits · files=1 · lessons=0</sub>
 <!-- okf:auto-end -->

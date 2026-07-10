@@ -66,12 +66,40 @@ none known — `npm run lesson:render` (package.json) is the canonical entry; `-
 
 ### Lessons — memory cluster
 
-_memory dir not found — lessons skipped_
+**Alias matches** (review — may include false positives):
+- [[always-gitignore-generated-artifacts]]
+- [[audio-kit-shared-architecture]]
+- [[build-reusable-not-lesson-patches]]
+- [[capability-preview-surface]]
+- [[capability-registry-harness]]
+- [[decoration-restraint-slim-to-bone]]
+- [[diagnose-root-cause-never-guess]]
+- [[lesson-build-workflow-draft]]
+- [[lesson-voice-bilingual-asr-l2]]
+- [[linear-review-surface-adoption]]
+- [[output-contract-protocol]]
+- [[pacing-floor-and-clean-room-rerun]]
+- [[pedagogy-quick-wins]]
+- [[pi-runner-lesson-workflow]]
+- [[pi-runner-watchdog-and-sandbox]]
+- [[piflow-lesson-build-port]]
+- [[pipeline-slim-robustness-sprint]]
+- [[primitive-visual-quality-initiative]]
+- [[sound-asset-library-status]]
+- [[teaching-action-vocabulary-gap]]
+- [[v4-cue-anchored-audio]]
+- [[validation-is-the-real-run-not-tests]]
+- [[verification-gate-architecture]]
+- [[videos-disposable-system-is-product]]
+- [[vision-image-mcp]]
+- [[voice-gen-dedicated-tts]]
+- [[worktree-isolation-and-auto-discovery]]
+
 ### Code anchors / blast radius (codegraph)
 
 - `renderLessonMedia` (remotion-svg-primitives/scripts/render-complete-lesson.mjs:157) — 1 caller in `remotion-svg-primitives/scripts/render-complete-lesson.mjs`; ⚠ no covering tests found
 - `intersectArea` (remotion-svg-primitives/scripts/lesson-measured.mjs:117) — 1 caller in `remotion-svg-primitives/scripts/lesson-measured.mjs`; ⚠ no covering tests found
 - `render` (pi-runner/status.mjs:43) — 1 caller in `pi-runner/status.mjs`; ⚠ no covering tests found
 
-<sub>derived 2026-07-09 · arc=18 commits · files=2 · lessons=0</sub>
+<sub>derived 2026-07-10 · arc=18 commits · files=2 · lessons=27</sub>
 <!-- okf:auto-end -->

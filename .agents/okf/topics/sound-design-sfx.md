@@ -56,12 +56,18 @@ here only as the node that FEEDS `audio-cues.json` alongside w2c, not as an owne
 
 ### Lessons — memory cluster
 
-_memory dir not found — lessons skipped_
+**Alias matches** (review — may include false positives):
+- [[always-gitignore-generated-artifacts]]
+- [[audio-kit-shared-architecture]]
+- [[lesson-build-workflow-draft]]
+- [[output-contract-protocol]]
+- [[pipeline-slim-robustness-sprint]]
+- [[sound-asset-library-status]]
+
 ### Code anchors / blast radius (codegraph)
 
 - `MAX_CONCURRENT_AUDIO` (remotion-svg-primitives/src/lesson-media/LessonSfxLayer.tsx:19) — 1 caller; tests: `remotion-svg-primitives/src/lesson-media/LessonSfxLayer.test.ts`
 - `assertConcurrentAudioBudget` (remotion-svg-primitives/src/lesson-media/LessonSfxLayer.tsx:49) — 1 caller; tests: `remotion-svg-primitives/src/lesson-media/LessonSfxLayer.test.ts`
-- `LessonAudioLayer` (remotion-svg-primitives/src/lesson-media/LessonAudioLayer.tsx:22) — 27 callers in `remotion-svg-primitives/src/lessons/CompleteKp2CountingByTensLesson.tsx`, `remotion-svg-primitives/src/lessons/CompleteKptestCompareMoreFewerLesson.tsx`, `remotion-svg-primitives/src/lessons/CompleteKptestCountToTwoLesson.tsx`, `remotion-svg-primitives/src/lessons/CompleteKptestFenyuheSixLesson.tsx` +10 more; ⚠ no covering tests found
 
-<sub>derived 2026-07-09 · arc=3 commits · files=2 · lessons=0</sub>
+<sub>derived 2026-07-10 · arc=3 commits · files=2 · lessons=6</sub>
 <!-- okf:auto-end -->

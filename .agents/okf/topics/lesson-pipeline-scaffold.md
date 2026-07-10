@@ -60,7 +60,18 @@ code.
 
 ### Lessons — memory cluster
 
-_memory dir not found — lessons skipped_
+**Alias matches** (review — may include false positives):
+- [[audio-kit-shared-architecture]]
+- [[critic-layer-direction]]
+- [[hermes-self-improving-skill-system]]
+- [[lesson-build-workflow-draft]]
+- [[lesson-voice-bilingual-asr-l2]]
+- [[pacing-floor-and-clean-room-rerun]]
+- [[pi-runner-node22-and-minimax-flags]]
+- [[piflow-lesson-build-port]]
+- [[piflow-seatbelt-write-scope]]
+- [[videos-disposable-system-is-product]]
+
 ### Code anchors / blast radius (codegraph)
 
 - `runNoSceneFallback` (remotion-svg-primitives/scripts/lesson-animatic.mjs:117) — 1 caller in `remotion-svg-primitives/scripts/lesson-animatic.mjs`; ⚠ no covering tests found
@@ -69,5 +80,5 @@ _memory dir not found — lessons skipped_
 - `toPascal` (remotion-svg-primitives/scripts/scaffold-lesson.mjs:28) — 1 caller in `remotion-svg-primitives/scripts/scaffold-lesson.mjs`; ⚠ no covering tests found
 - `toPascal` (remotion-svg-primitives/scripts/lesson-primitive-checks.mjs:54) — 1 caller in `remotion-svg-primitives/scripts/lesson-primitive-checks.mjs`; ⚠ no covering tests found
 
-<sub>derived 2026-07-09 · arc=5 commits · files=4 · lessons=0</sub>
+<sub>derived 2026-07-10 · arc=5 commits · files=4 · lessons=10</sub>
 <!-- okf:auto-end -->
