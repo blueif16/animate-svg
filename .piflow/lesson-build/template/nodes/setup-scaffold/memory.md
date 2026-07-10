@@ -44,16 +44,18 @@ diagnostic calls — `whoami`/`id`/`ls -laO`/repeated `mkdir`/`touch` attempts �
 importer-cache `Operation not permitted` during a `verify`-style command, logged and the node proceeded to a
 clean scaffold regardless)
 [[lesson-pipeline-scaffold]]
-**Root:** unconfirmed — looks like a local-sandbox (seatbelt) write-scope or exec granularity issue distinct
-from anything this node's own `node.json` controls (`_logs/setup-scaffold.md` IS already declared under
-`contract.owns`). Not root-caused this session; NOT this node's own `owns`/`readScope` mis-declaration as far as
-the contract goes.
-**Prevention:** none authored yet — this is an infra/sandbox-level finding, out of this node's own fix surface
-(prompt/contract edits can't repair a sandbox permission grant). Flagged to the orchestrator as a
-cross-cutting concern: EVERY node in this template writes a `_logs/<wave>.md` under the same lesson-data
-convention, so if this is systemic it likely affects sibling nodes too, with severity apparently varying by
-run/host state rather than lesson. Watch for recurrence; if it fires again, the fix surface is almost certainly
-`@piflow/core`'s local-sandbox layer or this repo's `--sandbox` config, not this node's prompt.
+**Root (CONFIRMED 2026-07-10, run `count-three-e2e-1` ×2):** an `owns` FILE grant cannot create its own
+missing PARENT DIR — `(subpath …/_logs/setup-scaffold.md)` covers only the file path and its descendants,
+so `mkdir …/_logs` targets the ungranted parent and is kernel-denied (the E11a class: "creating a new child
+EPERMs"). Prior runs never hit it because `_logs/` always pre-existed from by-hand work; a brief-only fresh
+lesson (the first real e2e) exposed it. The friction (EPERM → whoami/id/ls/xattr diagnostic spiral) then
+maximizes exposure to the separate mmgw/pi turn-abort flake, which killed both attempts before a return.
+**Prevention (landed 2026-07-10):** setup-scaffold's `owns` grants the `_logs` DIRECTORY (the scaffold node
+owns the skeleton), siblings keep per-file grants — once the dir exists, a file-create at a granted path in
+an existing dir is allowed (proven: attempt 1 created pipeline.json exactly that way). Severity spread in
+old traces (r1's 68 hits vs r3's 4) tracks whether the target file already existed. Residual: the
+`Unhandled stop reason: abort` turn-kill is a SEPARATE pi/mmgw defect (candidate for the drafted upstream
+input_tokens report — same discard-a-valid-turn family).
 
 ### `optimize` block was entirely absent (measure + criteria both unwired)
 sig: setup-scaffold::optimize-block-unwired
