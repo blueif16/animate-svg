@@ -3,12 +3,29 @@ id: sha256:cee13963a206176228f3ca15ba5c0e1b197770ca7760b8ef846d63bee73117a1
 name: baked-southern-tomato
 title: STATE PROMOTE fields (camelLessonId/composition) computed but dropped from the structured return
 severity: critical
-status: open
-reason: null
+status: fix-landed
+reason: structural fix landed 2026-07-10 — file-sourced promote takes the model out of the loop; awaiting live-run verification before adopt
 sig: setup-scaffold::state-promote-fields-dropped
 firstSeen: kp3-tens-and-ones-place-r3
 lastSeen: kp3-tens-and-ones-place-r3
-attempts: []
+attempts:
+  - date: 2026-07-10
+    actor: human-path fixer (Claude Code main session)
+    kind: structural (mechanism, not prompt)
+    change: >-
+      node.json promote ops re-sourced from @return:camelLessonId / @return:composition to
+      pipeline.json:voice.constPrefix / pipeline.json:composition (the SDK file-sourced promote,
+      node-lifecycle.ts:940-945 — built for exactly this "deterministic field of a produced file" case);
+      camelLessonId/composition dropped from the return schema's required (kept as optional properties);
+      prompt.md STATE PROMOTE paragraph rewritten (engine handles it; the model no longer echoes);
+      criteria.md C1 restructured to the state-vs-file enforcement.
+    rationale: >-
+      3 identical recurrences of narrate-but-drop on this model+prompt pairing is an executor adherence
+      ceiling (same signature as game-omni's guidance node), not a wording problem. Enforcement preserved:
+      promote-of-nothing throws (node → error) + hard-checks promote-fidelity measures state-vs-file.
+    verify: >-
+      PENDING — next live run must show state.json carrying both channels verbatim from pipeline.json with
+      setup-scaffold exiting ok. Template-level: piflowctl extract green post-edit.
 ---
 
 **What happened (run `kp3-tens-and-ones-place-r3`).** The node correctly read `pipeline.json`, correctly

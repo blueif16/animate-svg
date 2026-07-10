@@ -47,6 +47,7 @@
       "{{WORKSPACE}}/../shared-sound",
       "{{WORKSPACE}}/../shared-3d"
     ],
+    "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
     "returnMode": "optional"
   },
   "op": [

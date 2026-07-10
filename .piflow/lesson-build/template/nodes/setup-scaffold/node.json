@@ -27,11 +27,12 @@
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
+    "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
     "returnMode": "required"
   },
   "op": [
-    { "when": "post", "transform": { "kind": "promote", "from": "@return:camelLessonId", "to": "camelLessonId" } },
-    { "when": "post", "transform": { "kind": "promote", "from": "@return:composition", "to": "composition" } }
+    { "when": "post", "transform": { "kind": "promote", "from": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json:voice.constPrefix", "to": "camelLessonId" } },
+    { "when": "post", "transform": { "kind": "promote", "from": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json:composition", "to": "composition" } }
   ],
   "checks": {
     "post": [
@@ -107,6 +108,6 @@
       "issues": { "type": "array", "items": { "type": "string" } },
       "pipelineFindings": { "type": "array", "items": { "type": "string" } }
     },
-    "required": ["node", "status", "camelLessonId", "composition", "outputArtifacts", "summary", "pipelineFindings"]
+    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
   }
 }

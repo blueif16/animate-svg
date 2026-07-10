@@ -3,15 +3,15 @@
      NEVER injected into setup-scaffold's runtime prompt — a node must not see its own failure history.
      Capped (~40 lines, top-loaded: the bottom truncates first). Maintenance contract = the optimizer skill. -->
 
-_status: 4 lessons (state-promote fields dropped [recurring, hard-caught], sandbox write-permission friction
-[recurring, unmitigated], optimize block unwired [fixed 2026-07-09], adversarial-pass hard-measure holes
-[closed 2026-07-10 — see below; the "unwired" lesson's own Prevention text is now stale, corrected there])_
+_status: 4 lessons (state-promote fields dropped [CLOSED 2026-07-10 — structural fix, model out of the loop],
+sandbox write-permission friction [recurring, read-half mitigated via execCwd 2026-07-10], optimize block
+unwired [fixed 2026-07-09], adversarial-pass hard-measure holes [closed 2026-07-10 — see below])_
 
 ## Current behavior
 Verifies `brief.md` already exists (blocks if not), scaffolds `pipeline.json` via the shared
-`npm run lesson:scaffold` when missing (idempotent skip when already present), and promotes
-`camelLessonId`/`composition` — copied verbatim from pipeline.json's `voice.constPrefix`/`composition` — into
-run state every later wave's file paths resolve against.
+`npm run lesson:scaffold` when missing (idempotent skip when already present). The ENGINE then promotes
+`camelLessonId`/`composition` into run state DIRECTLY from pipeline.json (`file:voice.constPrefix` /
+`file:composition` promote sources, 2026-07-10) — the model no longer echoes them in its return.
 
 ## Known failure modes
 
@@ -25,14 +25,16 @@ camelLessonId=voice.constPrefix=kp3TensAndOnesPlace and composition=CompleteKp3T
 from pipeline.json") but omits them from the actual structured return object — a self-report/reality split, not
 a computation failure. `returnSchemaInvalid` on both runs: `"/ must have required property 'camelLessonId'"`,
 `"/ must have required property 'composition'"`.
-**Prevention:** already HARD-caught live — `contract.returnMode:"required"` + the return schema's
-`required:["camelLessonId","composition",...]` correctly forces `status=blocked` on both observed runs (verified
-against `run.json`, not the model's self-report). No new gate needed; this lesson exists so a fixer sharpening
-`prompt.md`'s STATE PROMOTE section (already the most heavily-worded paragraph in the prompt) has a concrete
-before/after target instead of guessing at the failure mode. Residual: recurring across 2/2 hit runs suggests a
-SKILL gap (the executor slips on this specific model+prompt pairing), not a one-off LAPSE — candidate for a
-stronger structural nudge (e.g. restating the exact JSON key names immediately before the fenced-tail
-instruction) rather than a prose-tone edit.
+**Prevention (CLOSED 2026-07-10, structural — the model is out of the loop):** the promote ops are now
+FILE-SOURCED (`from: ".../pipeline.json:voice.constPrefix"` / `":composition"` — the SDK supports this
+exactly for "a value that is a deterministic field of a produced file", node-lifecycle.ts:940-945), the two
+fields were dropped from the return schema's `required` (kept as optional echoes), and prompt.md's STATE
+PROMOTE paragraph now states the engine handles it. Enforcement is PRESERVED and stronger: a promote of
+nothing THROWS (node → error, loud) and `hard-checks.*PromoteFidelity` still verifies state-vs-file byte
+equality. The earlier prompt-sharpening candidate is superseded — 3 recurrences of narrate-but-drop on this
+model+prompt pairing was the guidance-node adherence ceiling (same as game-omni's guidance node), and the
+right fix was removing the echo requirement, not wording. Verify on the next live run: state.json carries
+both channels with the node exiting ok.
 
 ### Sandbox write/exec permission friction (`EPERM`/`Operation not permitted`) burns tool-call budget
 sig: setup-scaffold::sandbox-write-permission-friction
@@ -113,10 +115,12 @@ events (confirmed: `_pi/<node>/` here holds `prompt.md`/`tools.ts` staging, neve
   shared doc later grows a setup-scaffold entry.
 
 ## Open threads
-- `state-promote-fields-dropped` recurred 2/2 observed hit runs — worth a prompt-sharpening fix attempt (a
-  fixer's job, not this session's) once the loop is exercised for real.
-- `sandbox-write-permission-friction` is NOT root-caused; needs a dedicated look at the local-sandbox/seatbelt
-  layer, likely a cross-node consolidation item rather than a per-node fix.
+- `state-promote-fields-dropped` — fix-landed 2026-07-10 (file-sourced promote); awaiting live-run verification
+  (state.json carries both channels, node ok) before the issue can be adopted to resolved.
+- `sandbox-write-permission-friction` is NOT root-caused for the WRITE half; the READ/exec half (npm-run
+  uv_cwd family) is closed template-wide by `contract.execCwd` (system memory.md's corrected
+  `sandbox-npm-run-eperm` lesson, 2026-07-10). If write-EPERMs recur, look at the seatbelt write-scope
+  (owns→create-grant normalization, E11a) — still a `@piflow/core` surface, not this node's prompt.
 - Cross-node consolidation: verify whether OTHER sibling nodes' `optimize` wiring (per `w4a-composer`'s
   identical finding) has since been fixed workflow-wide, and whether `.agents/skill-system-criteria.md` should
   gain a setup-scaffold entry now that one exists node-locally.
