@@ -1,0 +1,24 @@
+{
+  "bed": "math-calm-68-cmaj",
+  "toneSafe": false,
+  "intro": {
+    "sting": "mandarin-accent"
+  },
+  "outro": {
+    "resolve": true
+  },
+  "sfx": [
+    {
+      "cue": "count-climb",
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": "cardinality",
+      "event": "reward",
+      "sound": "ta-da"
+    }
+  ]
+}

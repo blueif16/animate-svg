@@ -5,11 +5,13 @@
 import type { LessonComposition } from "./lessonRegistryTypes";
 import { durationFromCues } from "./_cues/durationFromCues";
 import { lessonComposition as completeKptestCompareMoreFewerLessonComposition } from "./CompleteKptestCompareMoreFewerLesson";
+import { lessonComposition as completeKptestCountThreeLessonComposition } from "./CompleteKptestCountThreeLesson";
 import { lessonComposition as completeKptestCountToTwoLessonComposition } from "./CompleteKptestCountToTwoLesson";
 import { lessonComposition as completeKptestFenyuheSixLessonComposition } from "./CompleteKptestFenyuheSixLesson";
 import { lessonComposition as completeKptestFirstSecondThirdLessonComposition } from "./CompleteKptestFirstSecondThirdLesson";
 import { lessonComposition as completeKptestGreetingsVerifyLessonComposition } from "./CompleteKptestGreetingsVerifyLesson";
 import { kptestCompareMoreFewerCues } from "./kptestCompareMoreFewerLessonTimeline";
+import { kptestCountThreeCues } from "./kptestCountThreeLessonTimeline";
 import { kptestCountToTwoCues } from "./kptestCountToTwoLessonTimeline";
 import { kptestFenyuheSixCues } from "./kptestFenyuheSixLessonTimeline";
 import { kptestFirstSecondThirdCues } from "./kptestFirstSecondThirdLessonTimeline";
@@ -17,6 +19,7 @@ import { kptestGreetingsVerifyCues } from "./kptestGreetingsVerifyLessonTimeline
 
 export const AUTO_LESSON_COMPOSITIONS: LessonComposition[] = [
   { ...completeKptestCompareMoreFewerLessonComposition, calculateMetadata: () => ({ durationInFrames: durationFromCues(kptestCompareMoreFewerCues) }) },
+  { ...completeKptestCountThreeLessonComposition, calculateMetadata: () => ({ durationInFrames: durationFromCues(kptestCountThreeCues) }) },
   { ...completeKptestCountToTwoLessonComposition, calculateMetadata: () => ({ durationInFrames: durationFromCues(kptestCountToTwoCues) }) },
   { ...completeKptestFenyuheSixLessonComposition, calculateMetadata: () => ({ durationInFrames: durationFromCues(kptestFenyuheSixCues) }) },
   { ...completeKptestFirstSecondThirdLessonComposition, calculateMetadata: () => ({ durationInFrames: durationFromCues(kptestFirstSecondThirdCues) }) },
