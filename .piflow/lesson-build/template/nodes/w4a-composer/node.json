@@ -1,6 +1,7 @@
 {
   "id": "w4a-composer",
   "phase": "compose",
+  "timeoutMs": 5400000,
   "deps": [
     "w3-5-reconcile"
   ],
