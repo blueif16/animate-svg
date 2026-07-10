@@ -19,6 +19,7 @@
 // one (report-only; consequence is the triage agent's job, not this script's).
 
 import fs from "node:fs";
+import path from "node:path";
 
 // ── shared CLI flag parser (the assertion-lint.mjs / harden-blueprint convention) ──
 export function parseFlags(argv) {
@@ -413,9 +414,65 @@ export function lintStoryboard(pedagogyMd, storyboardMd) {
   };
 }
 
+// ── run-rooted path derivation (the wired substrate op's ONLY invocation) ──
+// The measure op passes ONLY --run/--workspace, never a templated {{arg.lessonId}}: runSubstrateMeasure
+// resolveDeep's the WHOLE op (every string field, including `note`), and a {{arg.*}} token it can't
+// resolve DROPS the entire op into ops.rejected (every historical run.json has args:null, making that
+// token unresolvable on virtually any real run — see piflow-overlord's measurement-runway.md "runway
+// node-dir layout" §1). Instead this derives the lessonId IN-SCRIPT from the run's OWN already-resolved
+// artifact path (mirrors the idiom in nodes/w4a-composer + nodes/w2c-sound-design/w3c-sound-asset's
+// scripts): PRIMARY = `<run>/.pi/run.json` `nodes['w1-storyboard'].artifacts[].path`, which always embeds
+// `.../lesson-data/<lessonId>/storyboard.md` (this node's own declared contract artifact). FALLBACK =
+// `.pi/state.json`'s `camelLessonId`, for a `reused` node whose run.json artifact list is itself empty.
+const NODE_ID = "w1-storyboard";
+
+function readJsonSafe(p) {
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function camelToKebab(camel) {
+  return camel.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`);
+}
+
+export function resolveRunPaths(runDir, workspace) {
+  const runJson = readJsonSafe(path.join(runDir, ".pi", "run.json"));
+  const state = readJsonSafe(path.join(runDir, ".pi", "state.json"));
+  const artifacts = (runJson?.nodes?.[NODE_ID]?.artifacts ?? [])
+    .map((a) => a?.path)
+    .filter((p) => typeof p === "string" && p.length > 0);
+
+  let lessonId = artifacts.map((p) => /lesson-data\/([^/]+)\/storyboard\.md$/.exec(p)?.[1]).find(Boolean) ?? null;
+  let resolvedVia = lessonId ? "run.json" : null;
+
+  if (!lessonId && typeof state?.camelLessonId === "string" && state.camelLessonId) {
+    lessonId = camelToKebab(state.camelLessonId);
+    resolvedVia = "state.json";
+  } else if (!lessonId && typeof state?.lessonId === "string" && state.lessonId) {
+    lessonId = state.lessonId;
+    resolvedVia = "state.json";
+  }
+
+  if (!lessonId) return { lessonId: null, resolvedVia: null, pedagogyPath: null, storyboardPath: null };
+
+  const lessonDir = path.join(workspace, "remotion-svg-primitives", "lesson-data", lessonId);
+  return {
+    lessonId,
+    resolvedVia,
+    pedagogyPath: path.join(lessonDir, "pedagogy.md"),
+    storyboardPath: path.join(lessonDir, "storyboard.md"),
+  };
+}
+
 // ── CLI ──
 function usage() {
-  return "usage: storyboard-lint.mjs lint --pedagogy <pedagogy.md> --storyboard <storyboard.md> [--report-out <path>]";
+  return (
+    "usage: storyboard-lint.mjs lint --run <RUN> --workspace <WORKSPACE> [--report-out <path>]\n" +
+    "   or: storyboard-lint.mjs lint --pedagogy <pedagogy.md> --storyboard <storyboard.md> [--report-out <path>]"
+  );
 }
 
 function main(argv) {
@@ -429,8 +486,46 @@ function main(argv) {
     process.exit(2);
   }
 
-  const pedagogyPath = flags.pedagogy;
-  const storyboardPath = flags.storyboard;
+  let pedagogyPath = flags.pedagogy;
+  let storyboardPath = flags.storyboard;
+
+  // RUN-ROOTED mode — the wired substrate op's invocation: derive both paths from --run/--workspace
+  // rather than requiring an explicit --pedagogy/--storyboard (which the op must never template with
+  // {{arg.lessonId}}; see resolveRunPaths above). The explicit-flags mode above still works unchanged
+  // for a direct/manual invocation.
+  if ((!pedagogyPath || !storyboardPath) && flags.run && flags.workspace) {
+    const resolved = resolveRunPaths(flags.run, flags.workspace);
+    pedagogyPath = pedagogyPath || resolved.pedagogyPath;
+    storyboardPath = storyboardPath || resolved.storyboardPath;
+
+    if (!resolved.lessonId) {
+      // Genuinely nothing to measure (the node never ran, or is a `reused` node with no recorded
+      // artifacts and no state channel) — a RECORDED skip, never an invented pass, and never a crash
+      // (this tool's report-only contract).
+      const report = {
+        ok: true,
+        skipped: true,
+        reason:
+          "could not resolve a lessonId from the run's own .pi/run.json artifacts (nodes['" +
+          NODE_ID +
+          "'].artifacts[].path) or .pi/state.json's camelLessonId — the node likely never ran (or is a " +
+          "reused node with no recorded artifacts and an empty state channel). Treat as UNMEASURED, never as a pass.",
+        pedagogyDiscoveryCount: 0,
+        storyboardCueCount: 0,
+        issues: [],
+        advisories: [],
+      };
+      const json = JSON.stringify(report, null, 2);
+      if (flags["report-out"]) {
+        fs.writeFileSync(flags["report-out"], json + "\n");
+        console.log(`[storyboard-lint] skipped (no lessonId resolvable) -> ${flags["report-out"]}`);
+      } else {
+        console.log(json);
+      }
+      process.exit(0);
+    }
+  }
+
   if (!pedagogyPath || !storyboardPath) {
     console.error(usage());
     process.exit(2);

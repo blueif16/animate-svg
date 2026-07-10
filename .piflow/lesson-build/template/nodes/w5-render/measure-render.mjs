@@ -36,9 +36,21 @@
 //     render (a mtime-only check would miss that) — the legend can only match a duration if the contact
 //     sheet was actually built by sampling THIS deliverable's cues.
 //
-// Usage: node measure-render.mjs --mp4 <path> --out <report.json> [--min-duration-sec 2] [--lufs-target -16]
-//        [--lufs-tolerance 1] [--true-peak-max -1.0] [--contact-png <path>] [--contact-json <path>]
-//        [--freshness-tolerance-sec 5] [--duration-tolerance-sec 2]
+// Usage (wired form — what node.json's `optimize.measure` op actually invokes):
+//   node measure-render.mjs --run <runDir> --workspace <workspace> --out <report.json> [--min-duration-sec 2] ...
+// Usage (standalone/manual override — bypasses derivation entirely):
+//   node measure-render.mjs --mp4 <path> --out <report.json> [--contact-png <path>] [--contact-json <path>] ...
+//
+// ENGINE NOTE (why --mp4/--contact-png/--contact-json are DERIVED, never passed as {{arg.lessonId}} tokens):
+// runSubstrateMeasure's resolveDeep walks EVERY string field of the WHOLE op object (id, note, run.cmd,
+// run.args[]) and a SINGLE unresolved arg-scoped token anywhere in that tree drops the ENTIRE op into
+// ops.rejected before this script ever runs — and every historical run.json has `args:null` (run-arg
+// persistence postdates these runs), so a `{{arg.lessonId}}` path arg here would be dark on every real run
+// (see node.json's op `note` / piflow-overlord/references/measurement-runway.md, "runway node-dir layout"
+// item 1). So the op passes ONLY `--run {{RUN}}`/`--workspace {{WORKSPACE}}`, and this script recovers
+// lessonId in-script from THIS node's own declared artifact path, already recorded in `<run>/.pi/run.json`
+// (`nodes['w5-render'].artifacts[0].path` always embeds `.../out/<lessonId>/<lessonId>.mp4`) — the same
+// idiom `w3c-sound-asset/scripts/gap-scan-lint.mjs` uses for its own lessonId recovery.
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -56,6 +68,8 @@ const parseArgs = (argv) => {
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--mp4") args.mp4 = argv[++i];
+    else if (a === "--run") args.run = argv[++i];
+    else if (a === "--workspace") args.workspace = argv[++i];
     else if (a === "--out") args.out = argv[++i];
     else if (a === "--min-duration-sec") args.minDurationSec = Number(argv[++i]);
     else if (a === "--lufs-target") args.lufsTarget = Number(argv[++i]);
@@ -92,13 +106,84 @@ const measureLufs = (file, target, truePeakMax) => {
   }
 };
 
+const EMPTY_CHECKS = {
+  mp4Exists: false,
+  ffprobeRan: false,
+  hasVideoStream: false,
+  hasAudioStream: false,
+  durationFloorMet: false,
+  lufsWithinTolerance: false,
+  contactFreshness: false,
+  contactDurationMatch: false,
+};
+
+// Recover lessonId from THIS node's own declared artifact path, already recorded in <run>/.pi/run.json
+// (populated regardless of node status) — a mechanical derivation, not a guess: contract.artifacts always
+// embeds `.../out/<lessonId>/<lessonId>.mp4`. Same idiom as w3c-sound-asset/scripts/gap-scan-lint.mjs's
+// lessonId recovery. Never throws.
+const deriveLessonId = (runDir) => {
+  try {
+    const runJson = JSON.parse(fs.readFileSync(path.join(runDir, ".pi", "run.json"), "utf8"));
+    const artifactPath = runJson?.nodes?.["w5-render"]?.artifacts?.[0]?.path;
+    const m = typeof artifactPath === "string" ? artifactPath.match(/\/out\/([^/]+)\//) : null;
+    if (!m) {
+      return { lessonId: null, error: "no recoverable nodes['w5-render'].artifacts[0].path in " + runDir + "/.pi/run.json" };
+    }
+    return { lessonId: m[1], error: null };
+  } catch (e) {
+    return { lessonId: null, error: "could not read/parse " + runDir + "/.pi/run.json: " + e.message };
+  }
+};
+
 const main = () => {
   const args = parseArgs(process.argv.slice(2));
-  if (!args.mp4 || !args.out) {
+
+  // Wired form: the op supplies only --run/--workspace (see the ENGINE NOTE above); derive the three
+  // out/<lessonId>/ paths here rather than accepting a literal {{arg.lessonId}} token. An explicit --mp4
+  // (standalone/manual usage) always takes precedence and skips derivation entirely.
+  let derivationError = null;
+  if (!args.mp4 && args.run && args.workspace) {
+    const { lessonId, error } = deriveLessonId(args.run);
+    if (lessonId) {
+      const outDir = path.join(args.workspace, "remotion-svg-primitives", "out", lessonId);
+      args.mp4 = path.join(outDir, `${lessonId}.mp4`);
+      args.contactPng = args.contactPng ?? path.join(outDir, `${lessonId}-contact.png`);
+      args.contactJson = args.contactJson ?? path.join(outDir, `${lessonId}-contact.json`);
+    } else {
+      derivationError = error;
+    }
+  }
+
+  if (!args.out) {
     console.error(
-      "Usage: measure-render.mjs --mp4 <path> --out <report.json> [--min-duration-sec N] " +
-        "[--contact-png <path>] [--contact-json <path>]",
+      "Usage: measure-render.mjs --run <runDir> --workspace <workspace> --out <report.json> [--min-duration-sec N] | " +
+        "--mp4 <path> --out <report.json> [--contact-png <path>] [--contact-json <path>]",
     );
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!args.mp4) {
+    // Fail-CLOSED, not a silent no-op: the count-floor gate downstream reads THIS report file, so an
+    // underivable lessonId must still produce one (every check failed) rather than leave the gate starving
+    // on a file that was never written.
+    const reason = derivationError ?? "no --mp4 and no --run/--workspace supplied";
+    const report = {
+      mp4: null,
+      checks: EMPTY_CHECKS,
+      streams: [],
+      durationSec: null,
+      measuredLufs: null,
+      measuredTruePeak: null,
+      mp4MtimeMs: null,
+      contactMtimeMs: null,
+      contactLegendDurationSec: null,
+      passingChecks: [],
+      failedChecks: ["mp4Exists: " + reason],
+    };
+    fs.mkdirSync(path.dirname(args.out), { recursive: true });
+    fs.writeFileSync(args.out, JSON.stringify(report, null, 2) + "\n");
+    console.log(`render-stream-sanity: 0/${Object.keys(EMPTY_CHECKS).length} checks pass — FAILED: mp4Exists: ${reason}`);
     process.exitCode = 1;
     return;
   }

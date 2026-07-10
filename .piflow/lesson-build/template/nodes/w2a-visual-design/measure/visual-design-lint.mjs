@@ -36,33 +36,96 @@
 //   3. cue-coverage   — every cue the storyboard declares must be addressed; a silently dropped cue is
 //      the cheapest, most common omission (building-measures.md SS0 "Two soft artifacts").
 //
-// Usage: node visual-design-lint.mjs --file <visual-design.md> [--storyboard <storyboard.md>] --report-out <path>
+// Usage (WIRED, via node.json's `optimize.measure` op): node visual-design-lint.mjs --run <runDir>
+//   --workspace <workspace> --report-out <path>
+//   --file/--storyboard/--lessonId are OPTIONAL overrides for standalone/manual invocation (e.g. testing a
+//   constructed fixture directly) — when --file is given it is used as-is and no derivation happens.
+//
+// ENGINE NOTE (why lessonId is recovered from run.json, never an `{{arg.*}}` token — measurement-runway.md
+// "runway node-dir layout" item 1): `runSubstrateMeasure`'s `resolveDeep` walks EVERY string field of the
+// WHOLE op object — id, note, writes[], run.cmd, run.args[] — and a SINGLE unresolved `{{arg.*}}` token
+// anywhere in that tree throws and drops the ENTIRE op into `ops.rejected` before this script ever runs.
+// Historical + most current runs of this workflow predate arg-persistence (`run.json`'s `args` block is
+// `null`), so a `--file .../{{arg.lessonId}}/visual-design.md`-style op arg was DARK on every argless run —
+// proven live against a real run dir. So the wired op now passes ONLY `--run {{RUN}}`/`--workspace
+// {{WORKSPACE}}` (both always resolvable), and this script instead recovers lessonId from THIS node's own
+// declared artifact path already in `<run>/.pi/run.json` (`nodes['w2a-visual-design'].artifacts[0].path`
+// always embeds `.../lesson-data/<lessonId>/...`) — the exact pattern `w3c-sound-asset`'s
+// `gap-scan-lint.mjs` uses, needing no new token and no dependency on arg-persistence ever landing.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 function arg(name, def) {
   const i = process.argv.indexOf(`--${name}`);
   return i === -1 ? def : process.argv[i + 1];
 }
 
-const filePath = arg('file');
-const storyboardPath = arg('storyboard', null);
+const runDir = arg('run');
+const workspace = arg('workspace');
 const reportOut = arg('report-out');
+const lessonIdArg = arg('lessonId');
+let filePath = arg('file');
+let storyboardPath = arg('storyboard', null);
 const charTarget = Number(arg('char-target', 13000));
 const charSevere = Number(arg('char-severe', 20000));
 
-if (!filePath || !reportOut) {
-  console.error('usage: visual-design-lint.mjs --file <path> [--storyboard <path>] --report-out <path>');
+if (!reportOut) {
+  console.error('usage: visual-design-lint.mjs --run <runDir> --workspace <workspace> --report-out <path> [--file <path>] [--storyboard <path>] [--lessonId <id>]');
   process.exit(1);
+}
+
+/** Writes the minimal fail-closed report this node's own discipline requires (a measure that cannot even
+ *  read its input must emit a FAILING signal, never a silent/vacuous exit with no report — see the
+ *  FAIL-CLOSED comment block below). Mirrors the shape of a real report's top-level numeric leaves so
+ *  `runSubstrateMeasure`'s `graded` fold still has something to read. */
+function failClosed(reason) {
+  const report = {
+    node: 'w2a-visual-design',
+    error: reason,
+    charCount: 0,
+    overlapCount: 0,
+    unboxedZoneCount: 0,
+    cueTotal: 0,
+    cueMissingCount: 0,
+    ok: false,
+  };
+  mkdirSync(dirname(reportOut), { recursive: true });
+  writeFileSync(reportOut, JSON.stringify(report, null, 2));
+  console.error(`FATAL: ${reason}`);
+  process.exit(1);
+}
+
+// Derive filePath/storyboardPath from --run/--workspace + the recovered lessonId, UNLESS --file already
+// pins it directly (the standalone/manual-fixture override).
+if (!filePath) {
+  if (!runDir || !workspace) {
+    failClosed('no --file given and no --run/--workspace to derive one from (usage: --run <runDir> --workspace <workspace> --report-out <path>, or --file <path> --report-out <path> for standalone use)');
+  }
+  let lessonId = lessonIdArg;
+  if (!lessonId) {
+    try {
+      const runJson = JSON.parse(readFileSync(join(runDir, '.pi', 'run.json'), 'utf8'));
+      const artifactPath = runJson?.nodes?.['w2a-visual-design']?.artifacts?.[0]?.path;
+      const m = typeof artifactPath === 'string' ? artifactPath.match(/lesson-data\/([^/]+)\//) : null;
+      lessonId = m?.[1];
+    } catch (e) {
+      failClosed(`could not read ${join(runDir, '.pi', 'run.json')} to derive lessonId: ${e.message}`);
+    }
+  }
+  if (!lessonId) {
+    failClosed(`could not derive lessonId: no --lessonId and no recoverable nodes['w2a-visual-design'].artifacts[0].path in ${join(runDir, '.pi', 'run.json')}`);
+  }
+  const lessonDir = join(workspace, 'remotion-svg-primitives', 'lesson-data', lessonId);
+  filePath = join(lessonDir, 'visual-design.md');
+  if (!storyboardPath) storyboardPath = join(lessonDir, 'storyboard.md');
 }
 
 let text;
 try {
   text = readFileSync(filePath, 'utf8');
 } catch (e) {
-  console.error(`FATAL: cannot read --file ${filePath}: ${e.message}`);
-  process.exit(1);
+  failClosed(`cannot read --file ${filePath}: ${e.message}`);
 }
 
 const issues = [];
@@ -80,14 +143,68 @@ if (charCount > charSevere) {
 }
 
 // ---- 2. zone-disjointness (COMPUTED, not asserted; FAIL-CLOSED on any parse gap) ----
-// Matches both observed formats:
-//   "zone-objects:    x= 160, y=180, w=960, h=300    | holds: ..."   (code-fence style)
-//   "- `zone-stage` (sticks/bundles): `x=120, y=180, w=1040, h=300`" (bullet style)
-const zoneLineRe = /`?(zone(?:-[a-zA-Z]+)+)`?[^\n]*?x=\s*(-?\d+)[^\d-]+y=\s*(-?\d+)[^\d-]+w=\s*(-?\d+)[^\d-]+h=\s*(-?\d+)/g;
-const boxedZones = [];
-let m;
-while ((m = zoneLineRe.exec(text))) {
-  boxedZones.push({ name: m[1], x: Number(m[2]), y: Number(m[3]), w: Number(m[4]), h: Number(m[5]) });
+// NOTATION AUDIT (2026-07-09, closing an over-tightening the prior hardening introduced): a real audit of
+// every visual-design.md this template's runs have actually shipped shows the model free-writes the box in
+// several equally-legitimate shapes, not just "x=N y=N w=N h=N" — the prior regex fail-closed (parse-fail)
+// on every one of these even though each carries real, computed coordinates:
+//   - no '=' / no space:      "x140 y340 w1640 h130"                    (kptest-first-second-third)
+//   - colon-separated:        "x:180, y:220, w:1560, h:520"              (kptest-greetings-verify)
+//   - bracketed array:        "[400, 200, 1000, 500]"                    (kptest-classroom-objects)
+//   - bare comma list:        "460,240,1000,600"                        (kptest-make-ten)
+//   - corner-pair:            "(260,300)–(1660,780)  w1400 h480"        (kptest-compare-more-fewer)
+//   - x/y RANGE (no w/h):     "x=0-1920, y=150-750"                     (kptest-whats-your-name)
+// All six are genuinely PARSEABLE box declarations (real numbers, real geometry) — only a zone whose
+// declaration carries NO numbers at all (a prose-only reference, e.g. a reserved system region, or a bare
+// "full-bleed" outside the zone-marks exemption) is a true missing-box condition and stays correctly
+// unboxed/fail-closed below; that is a missing-box gap, not a notation gap, and this fix does not touch it.
+function tryLabeledXYWH(s) {
+  // x/y/w/h in that order; separator is optional '='/':' and optional whitespace either side (covers
+  // "x=N", "x: N", "x N", and "xN" glued with no separator at all).
+  const re = /\bx\s*[:=]?\s*(-?\d+(?:\.\d+)?)[^\d.\-]+y\s*[:=]?\s*(-?\d+(?:\.\d+)?)[^\d.\-]+w\s*[:=]?\s*(-?\d+(?:\.\d+)?)[^\d.\-]+h\s*[:=]?\s*(-?\d+(?:\.\d+)?)/i;
+  const mm = re.exec(s);
+  return mm ? { x: Number(mm[1]), y: Number(mm[2]), w: Number(mm[3]), h: Number(mm[4]) } : null;
+}
+function tryBracketArray(s) {
+  const re = /\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]/;
+  const mm = re.exec(s);
+  return mm ? { x: Number(mm[1]), y: Number(mm[2]), w: Number(mm[3]), h: Number(mm[4]) } : null;
+}
+function tryCornerPair(s) {
+  // "(x1,y1)-(x2,y2)" (hyphen/en-dash/em-dash between the two corner points); a trailing redundant "wN hN"
+  // is ignored — the corners are authoritative.
+  const re = /\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)\s*[-–—]\s*\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/;
+  const mm = re.exec(s);
+  if (!mm) return null;
+  const [x1, y1, x2, y2] = mm.slice(1).map(Number);
+  return { x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1) };
+}
+function tryRangeForm(s) {
+  // "x=a-b, y=c-d" — two 1-D ranges, no w/h field at all.
+  const re = /\bx\s*[:=]?\s*(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)[^\d.\-]+y\s*[:=]?\s*(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)/i;
+  const mm = re.exec(s);
+  if (!mm) return null;
+  const [x1, x2, y1, y2] = mm.slice(1).map(Number);
+  return { x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1) };
+}
+function tryBareList(s) {
+  // An unlabeled "n, n, n, n" right at the start of the tail (only whitespace/colon may precede it) — a
+  // bare box list with no letter labels at all. Anchored to the START so it can't false-match a random
+  // 4-number run deep in unrelated prose.
+  const re = /^[\s:]*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\b/;
+  const mm = re.exec(s);
+  return mm ? { x: Number(mm[1]), y: Number(mm[2]), w: Number(mm[3]), h: Number(mm[4]) } : null;
+}
+/** Tries every legitimate notation this template's real artifacts emit, in an order chosen so a range/
+ *  corner-pair form (which a looser pattern could otherwise partially shadow) is tried first. Returns the
+ *  first shape that parses, or null if the tail carries no recognizable box at all (a genuine missing-box
+ *  condition, correctly left unboxed by the caller). */
+function parseZoneBox(tail) {
+  return tryRangeForm(tail) || tryCornerPair(tail) || tryLabeledXYWH(tail) || tryBracketArray(tail) || tryBareList(tail) || null;
+}
+
+function lineEnd(hay, from) {
+  const nl = hay.indexOf('\n', from);
+  return nl === -1 ? hay.length : nl;
 }
 
 // One single-pass, POSITION-SORTED scan of every zone-name mention (declaration or prose reference),
@@ -95,8 +212,27 @@ while ((m = zoneLineRe.exec(text))) {
 // already-declared zone family (e.g. "zone-tally-left"/"zone-tally-right"), not a new declaration.
 const zoneNameOnlyRe = /`?(zone(?:-[a-zA-Z]+)+)(-\*)?`?/g;
 const occs = [];
+let m;
 while ((m = zoneNameOnlyRe.exec(text))) {
   occs.push({ name: m[1], isWildcard: !!m[2], start: m.index, end: m.index + m[0].length });
+}
+
+// One box PER zone name — only the FIRST occurrence that parses counts as the declaration (later prose
+// mentions of the same name are references, not re-declarations; this also avoids a duplicate-self entry
+// that could otherwise register a false self-overlap). The window is the current line (or up to the next
+// zone mention, whichever is sooner) — every real notation above always puts the box on the same line as
+// the zone name.
+const boxedZones = [];
+const boxedNames = new Set();
+for (let i = 0; i < occs.length; i++) {
+  const o = occs[i];
+  if (o.isWildcard || boxedNames.has(o.name)) continue;
+  const windowEnd = Math.min(lineEnd(text, o.end), i + 1 < occs.length ? occs[i + 1].start : Infinity);
+  const box = parseZoneBox(text.slice(o.end, windowEnd));
+  if (box) {
+    boxedZones.push({ name: o.name, ...box });
+    boxedNames.add(o.name);
+  }
 }
 
 const allZoneNames = new Set();
@@ -111,17 +247,22 @@ for (const base of wildcardBases) {
   if (!hasPrefixedBox) allZoneNames.add(base);
 }
 
-// A zone explicitly marked "(unused)" in the text GOVERNED by its own mention (up to the next zone-name
-// mention or 200 chars, whichever is sooner — never a whole line, which can bundle several zones' prose
-// together) has zero on-screen footprint THIS lesson (a documented "not present" placeholder). Scoped to
-// UNBOXED names only — it can never override a zone that DID parse real coordinates, so a genuinely
-// overlapping zone can't dodge the check by being name-dropped near an unrelated "(unused)" elsewhere.
+// A zone explicitly marked "(unused ...)" / "(not used ...)" in the text GOVERNED by its own mention (up to
+// the next zone-name mention or 200 chars, whichever is sooner — never a whole line, which can bundle
+// several zones' prose together) has zero on-screen footprint THIS lesson (a documented "not present"
+// placeholder). NOTATION AUDIT: the marker is real free text ("(unused — insight lesson, no step tally)",
+// "(not used in this lesson)"), not always the bare literal "(unused)" the prior match required exactly —
+// broadened to match the marker WORDS regardless of trailing explanation, so this intentional escape hatch
+// (memory.md: "a declared zone box that never parses is a hard fail UNLESS ... marked (unused)") actually
+// fires on how the model really writes it. Scoped to UNBOXED names only — it can never override a zone that
+// DID parse real coordinates, so a genuinely overlapping zone can't dodge the check by being name-dropped
+// near an unrelated "(unused)" elsewhere.
 const unusedZoneNames = new Set();
 for (let i = 0; i < occs.length; i++) {
   const o = occs[i];
   if (o.isWildcard) continue;
   const govEnd = i + 1 < occs.length ? occs[i + 1].start : Math.min(text.length, o.end + 200);
-  if (/\(unused\)/i.test(text.slice(o.end, govEnd))) unusedZoneNames.add(o.name);
+  if (/\(\s*(?:not\s+used|unused)\b/i.test(text.slice(o.end, govEnd))) unusedZoneNames.add(o.name);
 }
 
 function isMarksExempt(name) {
