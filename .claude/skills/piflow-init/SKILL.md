@@ -47,7 +47,13 @@ that is how a silent, wrong workflow gets built.
 |---|---|---|
 | A proven Claude Code Workflow `.js` (`agent()`/`parallel()`/`pipeline()`/`phase()`) | **PORT** | `references/parse-claude-workflow.md` + `scripts/parse-claude-workflow.mjs` — `extractWorkflow` runs it under recording stubs and captures the EXACT realized prompts + DAG; you author the rest (tools/mcp/contract-as-data/hooks/refs). ✅ implemented |
 | A workflow in another engine's format (n8n / YAML / JSON) | **IMPORT** | Map the foreign graph → the template's DAG manifest + per-node defs. ⛔ not yet — do not improvise; stop and flag the missing importer |
-| Only a task/goal, or a skill/agent system described in prose | **COMPOSE** | The agent REASONS the task into a DAG — START from a blueprint shape (`references/blueprints/`) and stamp it with the scaffold loop (below), each lane bound to a base agent. ✅ |
+| Only a task/goal, or a skill/agent system described in prose | **COMPOSE** | The agent REASONS the task into a DAG — START from a blueprint shape (`references/blueprints/`; the composition grammar is `references/blueprints/AUTHORING-GUIDE.md`) and stamp/insert it with the scaffold loop (below), each lane bound to a base agent via `--agent-type`. ✅ |
+
+- **Before authoring a lane's prose, run the skill-marketplace ladder — `references/skill-marketplace.md`.** A
+  node's craft belongs in a SKILL, not its `prompt.md`, so first SEARCH for one that already carries it
+  (`piflowctl skill list/search --json`, then the remote lane), INSTALL it if remote (`piflowctl skill add`),
+  and BIND it (`add-node --skill <id>`) — reach for an existing bundle before hand-writing craft. No match ⇒
+  compose the node without a skill; NEVER invent a skill id.
 
 - **The PORT script is the bridge; its 0 exit is the oracle.** It ends by `compile()`ing its own output and
   asserting the DAG survived — trust the exit code, not a glance at the JSON. A non-zero exit means the spec is
@@ -55,15 +61,28 @@ that is how a silent, wrong workflow gets built.
 - **Mechanical port = the floor, not the finish.** `references/parse-claude-workflow.md` names what the script
   CANNOT recover (data-flow reads, hooks, the contract decisions) and how to refine it. Read that before you
   ship the template.
+- **PORT = TRANSLATE the source's INTENT into our idioms; never transcribe its STRUCTURE.** The source graph
+  (Claude `.js` / LangGraph) is a spec of intent, not a shape to mirror — a step that was a graph node THERE is
+  not automatically a `pi` node HERE. Understand our functionality FIRST, then map each step to its MOST NATIVE
+  construct: an agentic step → a `pi` node; a deterministic step that STAGES a file the model reads → a PRE-hook
+  seed; a deterministic step that RUNS a fetch or ESTABLISHES shared state → an upstream `programmatic` node +
+  `promote`; a human pause → a `checkpoint`; a QA/fix loop → `rerouteTo`/`--from`; a build/test gate → an `op`
+  gate. **The #1 port smell — a `pi` node whose whole prompt is "run X and return its output" — is a pass-through
+  the source happened to model as a node; it MUST become a hook or a `programmatic` node, NEVER a `pi`.** You are
+  re-expressing the workflow in our SDK, not adding nodes.
 - **New conditions are a new row + a new reference + (if programmatic) a new script — never more prose here.**
 - **The scaffold loop IS the convenience pathway — author by flags, never by hand-writing node JSON.** Stamp any
   template (COMPOSE, or extend a PORT) with the CLI: `piflowctl new <dir>` → per node `piflowctl add-node <dir>
-  --id <id> [--dep …] [--tool …] [--artifact …] [--owns …] [--on-fail block] [--agent-type <base>]` (config is
+  --id <id> [--dep …] [--tool …] [--artifact …] [--owns …] [--on-fail block] [--agent-type <base>] [--skill
+  <id>]` (config is
   emitted from flags, re-runnable as a deterministic function of them; the FULL gate/judge/checkpoint/control
   surface is flags too — see the gate-authoring bullet below) → `Write` each `nodes/<id>/prompt.md` (the
   PROSE — the only part that's yours) → `piflowctl extract <dir>` to TEST (free DAG preview, no model — the real
   loadTemplate gate). `--agent-type <base>` binds a whole base agent (its tools + skill + the OBSERVABLE label,
-  via the real `mergePreset`) in one flag. This is how a node is scaffolded or customized in a single line —
+  via the real `mergePreset`) in one flag; `--skill <id>` binds ONE resolvable skill by its bare id →
+  `node.json` `prompt.skill` (an explicit `--skill` OVERRIDES the preset's fallback `skills[0]`; the id resolves
+  through the skill rings at run time — find/install it first with the marketplace ladder,
+  `references/skill-marketplace.md`). This is how a node is scaffolded or customized in a single line —
   reach for it before hand-authoring, and `extract` after every change to confirm the DAG still compiles.
 - **Gates, judges, checkpoints, and control are FLAGS — never hand-edit `node.json` for them.** The WHOLE
   per-node gate surface is reachable from `add-node`; each flag emits the exact schema field the loader honors,
@@ -85,7 +104,8 @@ that is how a silent, wrong workflow gets built.
     `--reroute <node[:max]>` (on failure, loop back to an upstream node — the target MUST be a strict ANCESTOR).
   - **Topology** — `--fusion <moa|best-of-n>` (+ `--fusion-n/-panel/-judge/-obligations/-no-verify`: panel/
     best-of-n + judge expansion) · `--subworkflow <ref>` (inline a sub-template as a sub-DAG in place of the node).
-  - **Contract** — `--full-access` (per-node jail-off, LOCAL only) · `--fill-sentinel <s>` · `--schema <p>` ·
+  - **Contract** — `--full-access` (per-node jail-off, LOCAL only) · `--fill-sentinel <s>` · `--artifact-schema <p>`
+    (per-ARTIFACT output validation → `contract.schema`; NOT the structured-RETURN handshake) ·
     `--return-mode required` (the zero-artifact gate-node idiom). These ride INSIDE `contract`.
 
 > **The per-run shape (designed, partially confident — not a separate "store" to build).** There is no
@@ -283,6 +303,19 @@ are in `reference/sdk-consumer.md` — read it first.** The flow:
   artifact is the conflation this law forbids — it makes the node un-removable, re-introduces "the student
   grades its own homework," and breaks the mode toggle below. Split it: a producer makes the artifact, the
   verifier judges it.
+- **Four re-attempt axes — never conflate them (above all, never call reroute "retry").** Four distinct
+  mechanisms re-touch work; each has an OBSERVABLE discriminator. **VERIFY** = a gate node judges an
+  already-produced PRODUCT artifact and writes a pass/fail verdict — it re-runs nothing and creates nothing
+  load-bearing (its `VALIDATION_FAILED` is a value INSIDE the written JSON; the node run is still structurally
+  `ok`). **RETRY** (`runner/retry.ts` `runNodeWithRetries`) = the runner's mechanical bounded re-run of the
+  SAME node at the same DAG position because THAT node's own execution failed (`error`/`blocked`), with an
+  optional single model escalation — a runtime loop around one node, blind to any verify verdict. **REROUTE**
+  (`rerouteTo` → `expandReroute`) = a COMPILE-TIME DAG unroll that a verify node's on-failure action triggers
+  to re-invoke an ANCESTOR PRODUCER (a bounded self-fix QA loop), gated by structural artifact presence — a
+  different code path from RETRY. **SELF-OPTIMIZATION** (`piflowctl optimize`) = an out-of-band, human-gated,
+  cross-run edit of the node/template itself — it improves the NODE, never recovers a single run. The rule:
+  judges-the-product-and-writes-a-verdict → VERIFY; re-runs the SAME node because IT broke → RETRY; a verify
+  failure re-runs an EARLIER producer → REROUTE; changes the template between runs → OPTIMIZE.
 - **An output edit is not done until its CONSUMERS are reconciled — keep a node I/O map.** A node's output
   artifact is an INTERFACE other nodes read. Change what a node writes — its format, shape, filename, or
   fields — and you silently break every downstream node still reading the old shape (moving a design doc from
@@ -347,19 +380,31 @@ them, and where an edit must be reconciled against the rest. For every node:
   engine stays uniform + genre-agnostic. *Why:* it removes the non-Claude-model explore-forever / mis-project
   thrash surface, makes mechanical output un-hallucinatable, and cuts tokens. The hook envelope + the
   DRIVER-marker → `Hook` assembly: `reference/sdk-consumer.md`; the marker spec: `reference/artifact-contract.md`.
+  **Marker-grammar law: skeleton guide prose must be quote-safe for edit anchors** — never a bare single-word
+  bracket token (`<id>`, `<threat>`) in a placeholder, since some model gateways mangle it inside a tool-call
+  argument string as XML; the colon-bearing `<FILL:` sentinel is the proven-safe convention. Canonical home:
+  `reference/artifact-contract.md` (the marker grammar).
 - **A WHOLLY-mechanical step is a PROGRAMMATIC node — never an agent node — and DEFAULTS to a neighbour's
   PRE-hook, not its own node.** The bullet above splits a *mixed* node's mechanical parts into hooks around its
   model; when a step has NO intelligent part at all (a render, a deterministic merge/derive of two parents, a
   final pack-and-ship) it must spawn **no `pi`**. Author it as `programmatic: true` — no `prompt`, no `tools`,
   no `return`; its `hooks`/`op` (`run`/`merge`/`project`) + `checks` ARE the node, run + gated by the engine
   (`@piflow/core` dispatches it to `runProgrammatic`, the no-pi twin of `checkpoint`/`rerouteGate`). **Whether
-  it becomes its own node is MECHANICAL, not a complexity judgment:** default = fold the mechanical work into
-  the *consuming* agent node's PRE-hook (`DRIVER-SEED`) — reuse, zero new node. Promote it to its OWN
-  programmatic node ONLY when one holds: (1) **no consuming agent node is guaranteed to run on every run** — its
-  would-be host is elided by a shipped profile (companion drops the verify phase) or a bounded `--until`, so some
-  runs END on this producing step and nothing is left to carry the pre-hook; or (2) the step needs its **own
-  node-scoped `rerouteTo`** an ancestor (reroute is node-granular — a pre-hook op cannot carry it). A programmatic
-  node is almost always a TERMINAL producer for the short runs. The lesson render is the canonical (1): it must
+  it becomes its own node is MECHANICAL, not a complexity judgment.** A template PRE-hook can do exactly ONE
+  thing — **STAGE a file the consuming model then reads** (`DRIVER-SEED` → `{when:'pre', transform:seed}`); it
+  CANNOT run a shell command and CANNOT write shared state (`run` + `promote` are POST-only — op-dispatch
+  REJECTS a `when:'pre'` run — and a pre-hook fires at `node-lifecycle.ts:452`, AFTER the host node's own paths
+  (`:198`) and prompt (`:363`) already resolved). So the default — fold the mechanical work into the
+  *consuming* agent node's PRE-hook, reuse, zero new node — holds ONLY for pure file-staging. Promote it to its
+  OWN upstream `programmatic` node when ANY holds: (1) **no consuming agent node is guaranteed to run on every
+  run** — its would-be host is elided by a shipped profile (companion drops the verify phase) or a bounded
+  `--until`, so some runs END on this producing step and nothing is left to carry the pre-hook; (2) the step
+  needs its **own node-scoped `rerouteTo`** an ancestor (reroute is node-granular — a pre-hook op cannot carry
+  it); or (3) **the step RUNS a shell command or PROMOTES a value into shared state** (e.g. a DB/id `resolve`
+  that establishes `{{state.slug}}` for every downstream path) — a pre-hook can do neither, and a promoted value
+  reaches a consumer ONLY via a completed upstream node's POST `promote` merged at the stage barrier, so this
+  whole class is ALWAYS its own UPSTREAM programmatic node, never a pre-hook. A programmatic
+  node is a TERMINAL producer under (1)/(2) but an UPSTREAM establisher under (3). The lesson render is the canonical (1): it must
   run whether or not the verify wave does, so it is its own `programmatic` render node joining composer ∥ sketch —
   never the verifier's pre-hook. **Invariant:** the step's full control logic (blocking gate · retry · reroute)
   must read identically wherever it lives — a pre-hook is not a licence to carry weaker logic than a node would.
@@ -421,9 +466,12 @@ every one; after, verify no consumer reads the stale shape.
 - `docs/design/sdk-canonical-build-plan.md` — D1–D9 + the U-unit table (the runtime build status).
 - `references/parse-claude-workflow.md` + `scripts/parse-claude-workflow.mjs` — **the PORT condition** (Step 0):
   the `.js` → template bridge + what it cannot recover. (These live inside this skill.)
-- `references/blueprints/` — **the COMPOSE starting shapes** (Step 0): parametric DAG topologies (`README.md` +
-  e.g. `research-synthesize-author.md`) the agent stamps via the scaffold loop, each lane bound to a base agent;
-  the graph-level sibling of `references/agent-presets/`. (Inside this skill.)
+- `references/blueprints/` — **the COMPOSE starting shapes** (Step 0): the canonical **`AUTHORING-GUIDE.md`**
+  (the DAG-composition grammar — slot model · stamp/insert-anywhere/hand-add · the `{{RUN}}`/`{{WORKSPACE}}`
+  token file-transfer rules) + the parametric topology recipes (`README.md` catalog: `research-synthesize-author`
+  · `produce-verify-fix` · `fan-out-map-reduce` · `spec-fanout-build` · `candidate-fusion-refine`), each lane
+  bound to a base agent via `--agent-type`; the graph-level sibling of `references/agent-presets/`. This same
+  guide drives the design-next (long-horizon redesign) and improve-prev (optimizer) loops. (Inside this skill.)
 - `templates/pi-runner/` — **copy this into a repo: the SDK consumer.** `sdk/` (the thin glue) + `hooks/`
   (the deterministic op engine) + `extract.mjs` + `logs.mjs` + `extensions/` + `package.json` + `.env.example`.
   Generic + byte-identical; only `.env`/`package.json`/`hooks/` are yours. See `reference/sdk-consumer.md`.
