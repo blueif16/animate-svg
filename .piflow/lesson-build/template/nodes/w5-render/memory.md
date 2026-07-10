@@ -42,12 +42,34 @@ correspondence check, so it also catches a PNG copied/touched forward from a dif
 mtime-only check would miss). `render-stream-sanity-gate`'s count-floor raised 6→8. See `criteria.md` "Wiring"
 for the validity proof (fires on a constructed touched-mtime evasion; still passes the real fen-yu-he artifact).
 
+### render-loudnorm-completed-dropped-as-dark-op
+recurrence: 1 (found via the overlord's measurement-runway pre-flight — `runSubstrateMeasure` against a real
+argless run, `ctt-2`; `render-loudnorm-completed` named in `ops.rejected` on every check, not a live judged-run
+defect)
+[[render-pipeline]]
+**Root:** `render-loudnorm-completed` was a standalone `node.json` `optimize.measure` op — a NATIVE
+`gate:{kind:'regex-present'}` with no script hook — whose `path` carried a literal
+`{{WORKSPACE}}/…/lesson-data/{{arg.lessonId}}/_logs/render-timing.json` token. `runSubstrateMeasure`'s
+`resolveDeep` walks EVERY string field of the WHOLE op (id/note/path/param), and `{{arg.lessonId}}` throws
+`MissingArgError` unless the run's `args` were persisted with that key — but every historical `run.json` predates
+run-arg persistence (`args:null`), so the op was DARK on every real run (silently recorded in `ops.rejected`,
+never executed) — the exact "runway node-dir layout" item-1 failure mode the overlord skill names by name.
+**Prevention:** landed as CODE — folded the assertion into `measure-render.mjs` (the `render-stream-sanity`
+script, which already derives lessonId in-script from `<run>/.pi/run.json` for its mp4/contact-png/contact-json
+paths) as a new `loudnormCompleted` check, deriving `render-timing.json`'s path the identical way. Removed the
+standalone gate op entirely; `render-stream-sanity-gate`'s count-floor raised 8→9. Verified: `runSubstrateMeasure`
+against `ctt-2` (lessonId `kptest-count-to-two`) now shows `ops.rejected: []` and the gate PASSES at 9/9; a
+constructed evasion (same passing mp4/contact assets, `render-timing.json` with the loudnorm-verify step
+stripped) correctly fails `loudnormCompleted` alone, 8/9. See `criteria.md` "Wiring"/"VALIDITY of
+`loudnormCompleted`" for the full before/after run output.
+
 ## Open threads (known runway gaps, not yet observed failures — see `criteria.md` "Open items")
 - **No expected-duration cross-check.** `durationFloorMet` (≥2s) is a sanity floor, not a correctness oracle for
   "matches the reconciled timeline's length"; `contactDurationMatch` (above) only ties the contact PNG to THIS
   mp4's own duration, not to the RECONCILED timeline's expected duration. Closing it needs a cross-node read of
   `w3-5-reconcile`'s output — deliberately deferred, not forgotten.
-- **Step-label coupling.** `render-loudnorm-completed`'s regex gate keys on the LITERAL string
-  `"Loudnorm verify (re-measure)"` in `render-timing.json` — re-sync this gate if `render-complete-lesson.mjs`'s
-  loudnorm section is ever relabeled (a prior script version used a single `"Loudnorm (-16 LUFS / -1 dBTP)"`
-  step name; historical `_logs/render-timing.json` files under other lessonIds still show that older shape).
+- **Step-label coupling.** `loudnormCompleted` (now inside `measure-render.mjs`, see the lesson above) keys on
+  the LITERAL string `"Loudnorm verify (re-measure)"` in `render-timing.json` — re-sync `LOUDNORM_STEP_RE` if
+  `render-complete-lesson.mjs`'s loudnorm section is ever relabeled (a prior script version used a single
+  `"Loudnorm (-16 LUFS / -1 dBTP)"` step name; historical `_logs/render-timing.json` files under other
+  lessonIds still show that older shape).

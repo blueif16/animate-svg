@@ -36,6 +36,17 @@
 //     render (a mtime-only check would miss that) — the legend can only match a duration if the contact
 //     sheet was actually built by sampling THIS deliverable's cues.
 //
+// Also folds in the former standalone `render-loudnorm-completed` NATIVE gate (a `gate:{kind:'regex-present'}`
+// op with no script hook — it could only accept a literal `{{arg.lessonId}}` path token, which
+// `runSubstrateMeasure`'s `resolveDeep` drops the WHOLE op over, DARK on every real run: `ops.rejected`). Folded
+// here instead as `loudnormCompleted`, deriving `render-timing.json`'s path the same in-script way as the mp4/
+// contact-png/contact-json above: `render-complete-lesson.mjs`'s 2-pass loudnorm block is wrapped in a
+// try/catch that WARNS and continues on failure (never fails the node), so the mp4 can ship un-normalized with
+// no artifact-level signal. The "Loudnorm verify (re-measure)" step timing entry is only ever recorded after
+// pass 1 + pass 2 + the file rename all succeeded, so its presence in `render-timing.json` is a reliable proxy
+// that the deliverable was actually normalized. Coupled to the script's literal step label (see memory.md) —
+// re-sync if `render-complete-lesson.mjs`'s loudnorm section is ever relabeled.
+//
 // Usage (wired form — what node.json's `optimize.measure` op actually invokes):
 //   node measure-render.mjs --run <runDir> --workspace <workspace> --out <report.json> [--min-duration-sec 2] ...
 // Usage (standalone/manual override — bypasses derivation entirely):
@@ -79,9 +90,14 @@ const parseArgs = (argv) => {
     else if (a === "--contact-json") args.contactJson = argv[++i];
     else if (a === "--freshness-tolerance-sec") args.freshnessToleranceSec = Number(argv[++i]);
     else if (a === "--duration-tolerance-sec") args.durationToleranceSec = Number(argv[++i]);
+    else if (a === "--render-timing") args.renderTiming = argv[++i];
   }
   return args;
 };
+
+// The literal step label render-complete-lesson.mjs's loudnorm re-measure timing entry uses (see the
+// "Also folds in..." header comment above). Re-sync if that script's loudnorm section is ever relabeled.
+const LOUDNORM_STEP_RE = /Loudnorm verify \(re-measure\)/;
 
 // Mirrors render-complete-lesson.mjs's own `measureLoudness` (print_format=json 1-pass measure, never the
 // full 2-pass apply — we only need the READING, not another rewrite of the file). Note: loudnorm's reported
@@ -115,6 +131,7 @@ const EMPTY_CHECKS = {
   lufsWithinTolerance: false,
   contactFreshness: false,
   contactDurationMatch: false,
+  loudnormCompleted: false,
 };
 
 // Recover lessonId from THIS node's own declared artifact path, already recorded in <run>/.pi/run.json
@@ -149,6 +166,9 @@ const main = () => {
       args.mp4 = path.join(outDir, `${lessonId}.mp4`);
       args.contactPng = args.contactPng ?? path.join(outDir, `${lessonId}-contact.png`);
       args.contactJson = args.contactJson ?? path.join(outDir, `${lessonId}-contact.json`);
+      args.renderTiming =
+        args.renderTiming ??
+        path.join(args.workspace, "remotion-svg-primitives", "lesson-data", lessonId, "_logs", "render-timing.json");
     } else {
       derivationError = error;
     }
@@ -157,7 +177,7 @@ const main = () => {
   if (!args.out) {
     console.error(
       "Usage: measure-render.mjs --run <runDir> --workspace <workspace> --out <report.json> [--min-duration-sec N] | " +
-        "--mp4 <path> --out <report.json> [--contact-png <path>] [--contact-json <path>]",
+        "--mp4 <path> --out <report.json> [--contact-png <path>] [--contact-json <path>] [--render-timing <path>]",
     );
     process.exitCode = 1;
     return;
@@ -198,6 +218,7 @@ const main = () => {
     contactJson: args.contactJson ?? null,
     freshnessToleranceSec: args.freshnessToleranceSec,
     durationToleranceSec: args.durationToleranceSec,
+    renderTiming: args.renderTiming ?? null,
     checks: {
       mp4Exists: false,
       ffprobeRan: false,
@@ -207,6 +228,7 @@ const main = () => {
       lufsWithinTolerance: false,
       contactFreshness: false,
       contactDurationMatch: false,
+      loudnormCompleted: false,
     },
     streams: [],
     durationSec: null,
@@ -215,6 +237,8 @@ const main = () => {
     mp4MtimeMs: null,
     contactMtimeMs: null,
     contactLegendDurationSec: null,
+    loudnormStepFound: null,
+    loudnormSteps: null,
     passingChecks: [],
     failedChecks: [],
   };
@@ -354,6 +378,37 @@ const main = () => {
           report.failedChecks.push("contactDurationMatch: unparseable legend JSON (" + e.message + ")");
         }
       }
+    }
+  }
+
+  // --- Loudnorm-completion proxy (folded in from the former standalone `render-loudnorm-completed` gate —
+  // see the header comment above). Deliberately OUTSIDE the `mp4Exists` block: render-timing.json is a
+  // SEPARATE artifact from the mp4, so this fires even when the mp4 itself is missing. Fail-CLOSED: an
+  // absent/unsuppliable/unparseable render-timing.json is a recorded FAIL, never a silent skip. ---
+  if (!args.renderTiming) {
+    report.failedChecks.push(
+      "loudnormCompleted: --render-timing not supplied/derivable — cannot evaluate (fail-closed, not skipped)",
+    );
+  } else if (!fs.existsSync(args.renderTiming)) {
+    report.failedChecks.push("loudnormCompleted: render-timing.json not found at " + args.renderTiming);
+  } else {
+    try {
+      const timing = JSON.parse(fs.readFileSync(args.renderTiming, "utf8"));
+      const steps = Array.isArray(timing.steps) ? timing.steps : [];
+      report.loudnormSteps = steps.map((s) => s?.step).filter((s) => typeof s === "string");
+      const found = steps.some((s) => typeof s?.step === "string" && LOUDNORM_STEP_RE.test(s.step));
+      report.loudnormStepFound = found;
+      report.checks.loudnormCompleted = found;
+      if (!found) {
+        report.failedChecks.push(
+          "loudnormCompleted: no 'Loudnorm verify (re-measure)' step recorded in " + args.renderTiming +
+            " (steps present: " + (report.loudnormSteps.length ? report.loudnormSteps.join(", ") : "none") + ") — " +
+            "render-complete-lesson.mjs's loudnorm block likely warned-and-skipped (its try/catch swallows " +
+            "failure) and the mp4 shipped un-normalized with no other artifact-level signal",
+        );
+      }
+    } catch (e) {
+      report.failedChecks.push("loudnormCompleted: unparseable render-timing.json (" + e.message + ")");
     }
   }
 

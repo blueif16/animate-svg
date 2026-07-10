@@ -68,9 +68,10 @@ cannot itself listen to audio or read the render log, so both are HARD-measured 
 (A1–A2) are the discriminators that separate a merely-correct render from one that PROVES fidelity down to the
 cue level — they sit above what a typical clean run needs to clear and create the loop's headroom. Note what is
 DELIBERATELY absent here: "every pipeline step completed" and "audio is actually normalized within tolerance"
-are NOT graded rows — both are now HARD measures (`render-loudnorm-completed`'s regex gate +
-`measure-render.mjs`'s independent `lufsWithinTolerance` re-measurement, `node.json` `optimize.measure`); a
-numeric/log comparison a machine decides for free is never re-paid to this judge (Part D's hard/soft boundary).
+are NOT graded rows — both are now HARD measures inside `measure-render.mjs` (`loudnormCompleted`'s
+render-timing.json step check + the independent `lufsWithinTolerance` re-measurement, `node.json`
+`optimize.measure`); a numeric/log comparison a machine decides for free is never re-paid to this judge (Part
+D's hard/soft boundary).
 
 ### Required — the floor of RENDER FIDELITY above the deterministic floor
 
@@ -138,11 +139,15 @@ loudnorm target (see the Wiring §'s LUFS finding on this exact lesson's own del
 
 ## Wiring + readiness (how these plug into triage, per the runway)
 - **HARD** → `optimize/substrate/measure.w5-render.json` (via `runNodeMeasure`): the `render-stream-sanity`
-  ffprobe + loudness + contact-correspondence report (mp4Exists · ffprobeRan · hasVideoStream · hasAudioStream ·
-  durationFloorMet · lufsWithinTolerance · contactFreshness · contactDurationMatch) + the
-  `render-loudnorm-completed` regex gate over `render-timing.json` + whatever digest anomalies/trace detectors
-  fire for this node (mostly `slow`/`error`/`truncated` — w5 spawns no model, so `mega-think`/`tool-loop`/
-  `cost-spike` do not apply here).
+  ffprobe + loudness + contact-correspondence + loudnorm-completion report (mp4Exists · ffprobeRan ·
+  hasVideoStream · hasAudioStream · durationFloorMet · lufsWithinTolerance · contactFreshness ·
+  contactDurationMatch · loudnormCompleted) + whatever digest anomalies/trace detectors fire for this node
+  (mostly `slow`/`error`/`truncated` — w5 spawns no model, so `mega-think`/`tool-loop`/`cost-spike` do not apply
+  here). `loudnormCompleted` was formerly a standalone `render-loudnorm-completed` NATIVE `gate:{regex-present}`
+  op with no script hook — its literal arg-scoped `lessonId` path token made `resolveDeep` drop the WHOLE op on
+  every real run (every historical `run.json` has `args:null`), so it was silently DARK (`ops.rejected`). Folded
+  into `measure-render.mjs` instead, which derives `render-timing.json`'s path in-script from the run's own
+  `.pi/run.json`, the same way it already derives the mp4/contact-png/contact-json paths.
 - **SOFT** → this file's checklist + rubric + gold (above) as the blind judge's references — a vision-capable
   read of the contact sheet PNG. JUDGING only, never injected into any node's prompt. The soft judge has NO way
   to tell a fresh contact sheet from a stale one left behind by a swallowed regen failure — that correspondence
@@ -170,6 +175,19 @@ loudnorm target (see the Wiring §'s LUFS finding on this exact lesson's own del
   `totalDuration` overwritten to imply a wildly different length (a contact sheet built from a differently-cut
   render, mtime untouched) — correctly fails `contactDurationMatch` alone, independent of `contactFreshness`.
   See `validityProof` in the harden turn that landed this for the exact before/after run output.
+- **VALIDITY of `loudnormCompleted` (closes the un-normalized-master hole `render-loudnorm-completed`'s own
+  `{{arg.lessonId}}` gate never actually reached — see `memory.md`):** run against the REAL, currently-passing
+  `kptest-count-to-two` mp4/contact-png/contact-json set (all three unchanged) with its OWN genuinely-complete
+  `render-timing.json` — 9/9, `loudnormCompleted:true`. Then run against a constructed evasion — the SAME
+  passing mp4/contact-png/contact-json, but a `render-timing.json` with its `"Loudnorm verify (re-measure)"`
+  step entry stripped (the exact shape `render-complete-lesson.mjs`'s swallowed try/catch produces when the
+  2-pass loudnorm block warns-and-skips): `loudnormCompleted` correctly FAILS alone — 8/9, every OTHER check
+  (mp4Exists/ffprobeRan/hasVideoStream/hasAudioStream/durationFloorMet/lufsWithinTolerance/contactFreshness/
+  contactDurationMatch) still PASSES on the unchanged, genuinely-good mp4 — proving the check fires on exactly
+  this evasion and only this one, not a blunt instrument. Also re-run against the substrate's own
+  `runSubstrateMeasure` over run `ctt-2` (lessonId `kptest-count-to-two`) — the op is no longer in
+  `ops.rejected` (it used to be, via the standalone gate's literal arg token) and the `render-stream-sanity-gate`
+  count-floor PASSES at 9/9.
 
 ## Open items owed to the runway (named, not silently left unbuilt — see `memory.md`)
 - **No expected-duration cross-check.** `durationFloorMet` is a SANITY floor (≥ 2s), not a correctness oracle —
@@ -181,3 +199,9 @@ loudnorm target (see the Wiring §'s LUFS finding on this exact lesson's own del
   `--contact-png`/`--contact-json` and adds `contactFreshness` (PNG mtime vs mp4 mtime) +
   `contactDurationMatch` (the `-contact.json` legend's own totalDuration/fps vs the mp4's measured duration);
   `render-stream-sanity-gate`'s count-floor raised 6→8. See the VALIDITY bullet above + `memory.md`.
+- ~~`render-loudnorm-completed` dropped as DARK (`ops.rejected`) on every real run~~ — **CLOSED.** The standalone
+  `gate:{regex-present}` op carried a literal `{{arg.lessonId}}` path token with no script hook to derive it
+  in-script, so `resolveDeep` dropped the whole op on every historical run (`args:null`). Folded into
+  `measure-render.mjs` as `loudnormCompleted`, deriving `render-timing.json`'s path in-script the same way the
+  mp4/contact paths already are; `render-stream-sanity-gate`'s count-floor raised 8→9. See the VALIDITY bullet
+  above + `memory.md`.
