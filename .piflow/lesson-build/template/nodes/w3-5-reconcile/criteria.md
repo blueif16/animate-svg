@@ -156,7 +156,23 @@ provenance note, port back on the next sync.)_
 
 - 🟢 **Gold** — `kptest-count-to-two`, run `ctt-2` (status `ok`) · REAL artifact, VALIDATED (animatic gate PASS,
   every clip fit its cue window)
-  > `src/lessons/kptestCountToTwoLessonTimeline.ts:33-37`:
+
+  > **⚠️ CORRECTION (adversarial-pass finding, re-annotated 2026-07-09):** this exemplar previously quoted the
+  > on-disk `_logs/w3-5-reconcile.md` INPUTS-READ line ("C1=2.0s, C2=2.5s, C3=3.0s, C4=3.5s", a 4-cue vocabulary
+  > `lesson-intro`/`first-apple-one`/`second-apple-two`/`cardinality`) alongside the TS artifact's REAL 3-cue
+  > `VISUAL_MOTION_SECONDS` (`announce-topic`/`cue-1-count`/`cue-2-cardinality` @ 2.2/5.0/6.0) as if the two
+  > matched — they do NOT (different cue count, different ids, different values). Direct inspection confirms
+  > `remotion-svg-primitives/lesson-data/kptest-count-to-two/_logs/w3-5-reconcile.md` is STALE: its own reconcile
+  > describes a SUPERSEDED 4-cue vocabulary that the CURRENT TS artifact's own header comment says was corrected
+  > ("The composer previously invented a 4-id vocabulary … that did not exist in the audio, so reconcile threw at
+  > import") — the log was apparently never regenerated after that fix. This is a **product/data staleness
+  > defect, not a measure-authoring bug** — flagged to `memory.md`'s Open threads and `residual` for a real
+  > triage/product pass, NOT fixed here (out of this lane's scope: `remotion-svg-primitives/` is product code).
+  > A judge that pattern-matched "two quotes present, therefore C1 passes" on the ORIGINAL version of this
+  > exemplar would have been calibrated to accept exactly the motion-budget MISMATCH C1 exists to catch — the
+  > re-annotation below uses ONLY verified, mutually-consistent evidence.
+
+  > `src/lessons/kptestCountToTwoLessonTimeline.ts:33-37` (the REAL, current artifact):
   > ```ts
   > const VISUAL_MOTION_SECONDS = {
   >   "announce-topic": 2.2,
@@ -164,19 +180,43 @@ provenance note, port back on the next sync.)_
   >   "cue-2-cardinality": 6.0,
   > } as const;
   > ```
-  > `_logs/w3-5-reconcile.md` INPUTS READ: _"visual-design.md — §5 per-cue motion budget table: C1=2.0s,
-  > C2=2.5s, C3=3.0s, C4=3.5s"_ and its own per-cue reconcile-math table quotes the SAME four values in the
-  > `visualMotion(s)` column, cue-for-cue — a side-by-side match, not a coincidence of shape.
+  > `lesson-data/kptest-count-to-two/visual-design.md` §"per-cue motion budget" (the REAL design table, quoted
+  > directly — NOT the stale log): _"| announce-topic | … | 2.2s | … |"_, _"| cue-1-count | … | 5.0s | … |"_,
+  > _"| cue-2-cardinality | … | 6.0s | … |"_ — a genuine side-by-side match, cue-for-cue, id-for-id, value-for-
+  > value: not a coincidence of shape.
   >
-  > Comprehension-floor advisory (C4): _"`一` (count 1) = 2 exposures < 6 floor — WARN. Storyboard
-  > §'Reinforcement plan' justifies: 'Math-insight, not L2 acquisition … no later beat in THIS lesson to recall
-  > into → no recap, no echo, no learner-response-gap, no equation.' Brief explicitly caps the count at 1→2."_ —
-  > the arithmetic (2 < 6) is shown AND the justification quotes the storyboard's own design intent.
+  > Comprehension-floor advisory (C4) — the REAL current fact: `storyboard.md`'s own `exposures` ledger is
+  > `exposures: {}  # no acquisition targets — insight lesson, not §9` (verified; the stale log's elaborate
+  > "`一`=2 exposures <6 floor, WARN, storyboard quotes a 'Reinforcement plan'" narrative does not correspond to
+  > anything in the current `storyboard.md` — that section does not exist there). Per C4's own PASS bar ("When
+  > no ledger exists, the log prints the explicit `SKIP` line"), the CORRECT gold behavior for THIS lesson's
+  > current state is the **SKIP** case, not a WARN: a tier-2 log that prints `SKIP — no exposures ledger in
+  > storyboard.md` clears C4 honestly; one that fabricates a WARN narrative against a ledger that isn't there
+  > would FAIL C4 ("a justification that doesn't quote the storyboard").
+  >
+  > Tier-2 log auditability (C5) — RECOMPUTED here from the verified current inputs (the on-disk log's own table
+  > is the stale one flagged above, so it cannot serve as the C5 illustration as-is); this is the per-cue table a
+  > genuinely auditable log for the CURRENT artifact would show, derived from `kptestCountToTwoClips.ts`'s real
+  > `narrationFrames` `[63, 175, 168]` + the visual-design.md budget above, via the documented formula
+  > (`cueFrames = max(narrationFrames + gapFrames, round(visualMotionSeconds·30)) + 9`, chained from frame 0):
+  >
+  > | cue | narration | gap | visualMotion(s) | motion(f) | content=max(n+g,m) | cue(+9 tail) | start | end |
+  > |---|---|---|---|---|---|---|---|---|
+  > | announce-topic | 63 | 0 | 2.2 | 66 | 66 | 75 | 0 | 75 |
+  > | cue-1-count | 175 | 0 | 5.0 | 150 | 175 | 184 | 75 | 259 |
+  > | cue-2-cardinality | 168 | 0 | 6.0 | 180 | 180 | 189 | 259 | 448 |
+  >
+  > Total duration: 448 frames (14.93s) — a reader can re-derive every column by hand from the two frozen inputs.
 
-  _Why gold:_ C1 passes because the log itself proves the side-by-side match (not merely "the keys line up");
-  C2 passes (no narrationFrames arithmetic anywhere, `gap:0` on every ClipCue, tokenOnsets not touched since
-  this lesson's clips carry none); C4/C5 both clear the apex bar — the WARNs are computed + storyboard-quoted,
-  and the reconcile-math table is a real per-cue frame-by-frame derivation a reader can check by hand.
+  _Why gold:_ C1 passes because the TS artifact's `VISUAL_MOTION_SECONDS` genuinely, verifiably matches
+  visual-design.md's own per-cue table id-for-id and value-for-value (not merely "the keys line up") — this is
+  the ONLY evidence pairing this exemplar now uses for C1, deliberately excluding the stale log. C2 passes (no
+  narrationFrames arithmetic anywhere, `gap:0` on every ClipCue per the frozen Clips module, tokenOnsets not
+  touched since this lesson's clips carry none). C4 clears via the honest SKIP case (no ledger exists — a WARN
+  would be the FABRICATION the red flags ban). C5 is illustrated by the RECOMPUTED table above — a real,
+  verifiable, per-cue frame-by-frame derivation from the frozen inputs, which is the STANDARD a live judge should
+  hold the node's OWN log to (if `_logs/w3-5-reconcile.md` is ever regenerated for this lesson, its own table
+  should reproduce these exact numbers).
 
 - 🔴 **Red-flag** — `_prior-runs/kptest-fenyuhe-six/pre-suffix-20260612/kptestFenyuheSixLessonTimeline.ts` ·
   the pre-`c487c5e` architecture (fixed 2026-07-03, commit `c487c5e` "W3.5 emits the cue-id-union +

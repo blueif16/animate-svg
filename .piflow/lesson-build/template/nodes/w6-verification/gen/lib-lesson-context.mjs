@@ -32,6 +32,25 @@ export function resolveLessonId(runDir) {
   return null;
 }
 
+/** The [startedAt] execution window THIS run's `nodeId` itself ran in, read straight off `.pi/run.json`'s
+ *  per-node record (`startedAt`/`endedAt`, ISO timestamps — populated once a node actually executes; a
+ *  `dry`/`reused`/`pending` node record carries neither). Returns null when unavailable — the caller's job
+ *  to treat that as "cannot verify", never as license to assume freshness (fail-closed, never fail-open). */
+export function nodeWindow(runDir, nodeId) {
+  let runJson;
+  try {
+    runJson = JSON.parse(fs.readFileSync(path.join(runDir, ".pi", "run.json"), "utf8"));
+  } catch {
+    return null;
+  }
+  const rec = runJson?.nodes?.[nodeId];
+  if (!rec?.startedAt) return null;
+  const startedAt = Date.parse(rec.startedAt);
+  if (Number.isNaN(startedAt)) return null;
+  const endedAt = rec.endedAt ? Date.parse(rec.endedAt) : null;
+  return { startedAt, endedAt: Number.isNaN(endedAt) ? null : endedAt };
+}
+
 /** The lesson-scoped paths every w6-verification measure script reads. */
 export function lessonPaths(workspace, lessonId) {
   const root = path.join(workspace, "remotion-svg-primitives");

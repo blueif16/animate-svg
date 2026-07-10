@@ -12,16 +12,39 @@
 // wrapped as `{key: "..."}` objects instead of plain strings/booleans) AND syntactically invalid JSON,
 // yet the node's log claimed full success. This script is the deterministic catch.
 //
+// HARDENING (adversarial-pass follow-up — closes three additional holes on top of the original gate):
+//   1. MEMBERSHIP ALONE IS NOT RESOLUTION. A name present in an `_index.json` / the vlog_test GENERATED
+//      sidecar is metadata, not proof a file exists — the manifest can carry a row for a mint that was
+//      never actually run. Every key now must additionally `statSync` the REAL `.wav` (via the index
+//      entry's own `file` field, or the sidecar's own `outputFile`) AND a sibling `.license.txt` before it
+//      counts as resolved. A manifest-only row with no generated/backing file lands in `missingFileList`
+//      (a hard fail), not `resolvedEvidence` — this is what closes the "never-produced gap passes today"
+//      hole. (The `sound-assets.manifest.json` — the PLANNED-mint list — is no longer consulted for
+//      resolution at all; only the GENERATED sidecar + a real file on disk counts as "minted".)
+//   2. ZERO REQUESTED KEYS IS A HARD FAIL, NEVER A SILENT PASS. Every lesson's sound manifest carries at
+//      least a `bed` key by contract (`lesson-sound-design` SKILL: "Pick ONE bed key... never invent a
+//      track per lesson" — bed is never optional). A syntactically-valid but EMPTY `audio-cues.json`
+//      (`{}`) previously produced `totalKeys:0` with nothing to fail on — a false green for an upstream
+//      defect (w2c-sound-design never populated the manifest), not "nothing to do".
+//   3. THE LOG'S CITED BYTE COUNT IS NOW A DETERMINISTIC FACT-CHECK, not merely a judge-quotable line.
+//      For every key this script resolves with real evidence (a real stat() size), it also looks for a
+//      plausible byte-count-shaped number on the log's line mentioning that key and cross-checks it
+//      against the ACTUAL size. A log that cites a fabricated/incorrect byte count is now a hard fail
+//      (`logByteMismatches`) independent of whatever a soft judge concludes from reading the prose.
+//
 // USAGE
 //   node gap-scan-lint.mjs --run <runDir> --workspace <workspace> [--lessonId <id>]
-//   --run and --workspace are the only args `optimize.measure` can supply today (see the ENGINE GAP
-//   note below); --lessonId is an optional override for standalone/manual invocation.
+//   --run and --workspace are the only args `optimize.measure` can supply today (see the ENGINE NOTE in
+//   node.json's op `note`); --lessonId is an optional override for standalone/manual invocation.
 //
-// EXIT CODE: 1 iff the audio-cues.json fails to parse, a bed/sting/sfx value is schema-malformed
-// (non-string), an outro.resolve is present but non-boolean, or a genuinely unresolved key remains
-// (in neither the shared-sound index nor the vlog_test manifest/generated sidecars). 0 otherwise.
-// logMissingKeys (does the node's own log ever mention each key) is ADVISORY — folded into the report,
-// never fails the op; the log's evidence density is a SOFT (criteria.md) concern, not a hard floor.
+// EXIT CODE: 1 iff the audio-cues.json fails to parse, requests ZERO bed/intro.sting/sfx keys, a
+// bed/sting/sfx value is schema-malformed (non-string), an outro.resolve is present but non-boolean, a
+// requested key resolves to NEITHER a registry entry NOR a minted sidecar entry, a resolved key's real
+// `.wav`/`.license.txt` is missing on disk (membership without a backing file), or the log cites a real
+// but WRONG byte count for a key it claims resolved. 0 otherwise.
+// logMissingKeys (does the node's own log ever mention each key) stays ADVISORY — folded into the report,
+// never fails the op; the log's evidence DENSITY is a SOFT (criteria.md) concern. A cited-but-WRONG number
+// is different in kind (a fact-check, not a formatting nicety) and DOES fail — see logByteMismatches.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -39,18 +62,36 @@ function readJson(p) {
   }
 }
 
-/** Every top-level `name` in an `_index.json` array (best-effort — a missing/unreadable file is an
- *  empty registry, never a throw; this is a READ-ONLY audit over external, out-of-repo files). */
-function registryNames(indexPath) {
-  const r = readJson(indexPath);
-  return r.ok && Array.isArray(r.value) ? new Set(r.value.map((x) => x?.name)) : new Set();
+/** `statSync`'s size, or null on any error (missing file, not a file, permission) — never throws. This is
+ *  the machinery that closes the "membership without a backing file" hole: an index/manifest row is a
+ *  CLAIM, this is the PROOF. */
+function statSize(p) {
+  try {
+    return fs.statSync(p).size;
+  } catch {
+    return null;
+  }
 }
 
-/** Every top-level `id` in the vlog_test pipeline's manifest/generated sidecars (a key legitimately
- *  named-and-minted THIS run, ahead of the frozen shared-sound index). */
-function sidecarIds(sidecarPath) {
+function licensePathFor(wavPath) {
+  return wavPath.replace(/\.wav$/i, '.license.txt');
+}
+
+/** Every entry of an `_index.json` array, keyed by `name` (best-effort — a missing/unreadable file is an
+ *  empty registry, never a throw; this is a READ-ONLY audit over external, out-of-repo files). Keyed by
+ *  the whole entry (not just presence) so the caller can read its `file` field for the real on-disk path. */
+function registryEntries(indexPath) {
+  const r = readJson(indexPath);
+  return r.ok && Array.isArray(r.value) ? new Map(r.value.map((x) => [x?.name, x])) : new Map();
+}
+
+/** Every entry of the vlog_test pipeline's GENERATED sidecar, keyed by `id`. ONLY the generated sidecar
+ *  counts toward "minted this run" — the PLANNED manifest (`sound-assets.manifest.json`) is deliberately
+ *  no longer consulted for resolution: a manifest row means "queued to mint", not "actually produced", and
+ *  treating it as resolved is exactly the never-produced-gap hole this hardening closes. */
+function generatedEntries(sidecarPath) {
   const r = readJson(sidecarPath);
-  return r.ok && Array.isArray(r.value) ? new Set(r.value.map((x) => x?.id)) : new Set();
+  return r.ok && Array.isArray(r.value) ? new Map(r.value.map((x) => [x?.id, x])) : new Map();
 }
 
 function writeReportAndExit(runDir, report, code) {
@@ -58,7 +99,7 @@ function writeReportAndExit(runDir, report, code) {
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
   // stdout mirrors the report minus the verbose lists — the run op's own `stdout` capture stays terse.
-  const { unresolvedList, schemaViolations, logMissingKeys, ...terse } = report;
+  const { unresolvedList, schemaViolations, logMissingKeys, missingFileList, logByteMismatches, resolvedEvidence, ...terse } = report;
   console.log(JSON.stringify(terse));
   process.exit(code);
 }
@@ -73,11 +114,10 @@ function main() {
     process.exit(2);
   }
 
-  // ENGINE GAP WORKED AROUND: runSubstrateMeasure's ResolveCtx carries {run, workspace, state} but NOT
-  // `args`, so an `optimize.measure` op cannot resolve `{{arg.lessonId}}` (packages/core/src/optimize/
-  // substrate/measure.ts + workflow/resolver.ts's ResolveCtx). Recover it instead from THIS node's own
-  // declared artifact path, already recorded in <run>/.pi/run.json (populated regardless of node status)
-  // — a mechanical derivation, not a guess: contract.artifacts always embeds `lesson-data/<id>/`.
+  // Recover lessonId from THIS node's own declared artifact path, already recorded in <run>/.pi/run.json
+  // (populated regardless of node status) — a mechanical derivation, not a guess: contract.artifacts
+  // always embeds `lesson-data/<id>/`. (See node.json's op `note` for why this — not an arg token — is the
+  // recovery path.)
   let lessonId = lessonIdArg;
   if (!lessonId) {
     const runJson = readJson(path.join(runDir, '.pi', 'run.json'));
@@ -102,6 +142,11 @@ function main() {
   const logPath = path.join(lessonDir, '_logs', 'sound-asset.md');
   const libRoot = path.join(workspace, '..', 'shared-sound', 'public', 'audio');
   const pipelineRoot = path.join(workspace, '..', 'vlog_test', 'pipeline');
+  // `sound-assets.generated.json`'s own `outputFile` is written by generate-sound-assets.mjs as
+  // `path.relative(REPO_ROOT, wavPath)` where REPO_ROOT = the pipeline dir's PARENT (`vlog_test/`, not
+  // `vlog_test/pipeline/`) — resolve outputFile against THIS root, never pipelineRoot, or every minted
+  // path silently misses.
+  const vlogRoot = path.join(workspace, '..', 'vlog_test');
 
   const cues = readJson(audioCuesPath);
   if (!cues.ok) {
@@ -138,21 +183,75 @@ function main() {
     pushKey('sfx', row?.sound, `sfx[${i}].sound`);
   }
 
-  const registry = {
-    bed: registryNames(path.join(libRoot, '_beds', '_index.json')),
-    sting: registryNames(path.join(libRoot, '_stings', '_index.json')),
-    sfx: registryNames(path.join(libRoot, '_sfx', '_index.json')),
-  };
-  // A key legitimately named-and-minted THIS run lands in the manifest before (or alongside) the frozen
-  // index — a manifest/generated hit counts as resolved same as a registry hit.
-  const pending = new Set([
-    ...sidecarIds(path.join(pipelineRoot, 'sound-assets.manifest.json')),
-    ...sidecarIds(path.join(pipelineRoot, 'sound-assets.generated.json')),
-  ]);
+  // ZERO-KEY HARD FAIL (hardening #2). `audio-cues.json` parsed as valid JSON but requested NOTHING —
+  // every lesson's manifest carries at least a `bed` key by contract, so this is never legitimately
+  // "nothing to do". Fires even when schemaViolations is also non-empty (both are real, independent
+  // defects); it specifically closes the case a schema violation does NOT cover: a bare `{}` with no
+  // malformed shape at all, just nothing in it (the historical kptest-compare-more-fewer input on disk).
+  if (requested.length === 0) {
+    report.zeroKeysUnexpected = true;
+    report.totalKeys = 0;
+    report.resolvedKeys = 0;
+    report.unresolvedKeys = 0;
+    report.missingFileCount = 0;
+    report.logByteMismatchCount = 0;
+    report.schemaViolations = schemaViolations;
+    report.schemaViolationCount = schemaViolations.length;
+    report.error =
+      'audio-cues.json parses but requests ZERO bed/intro.sting/sfx keys -- every lesson requires at least a ' +
+      'bed key (lesson-sound-design SKILL: "Pick ONE bed key... never invent a track per lesson"); an empty ' +
+      'manifest is an upstream (w2c-sound-design) defect, not "nothing to do".';
+    writeReportAndExit(runDir, report, 1);
+    return;
+  }
 
-  const unresolvedList = [];
+  const KIND_DIR = { bed: '_beds', sting: '_stings', sfx: '_sfx' };
+  const registry = {
+    bed: registryEntries(path.join(libRoot, KIND_DIR.bed, '_index.json')),
+    sting: registryEntries(path.join(libRoot, KIND_DIR.sting, '_index.json')),
+    sfx: registryEntries(path.join(libRoot, KIND_DIR.sfx, '_index.json')),
+  };
+  const generated = generatedEntries(path.join(pipelineRoot, 'sound-assets.generated.json'));
+
+  const unresolvedList = [];   // key absent from every registry AND the generated sidecar
+  const missingFileList = [];  // key found as an entry, but its real .wav/.license.txt is absent on disk
+                                // -- the "never-produced gap" hardening (#1): membership is a claim, this
+                                // is the proof, and a claim without proof is a hard fail, not a pass.
+  const resolvedEvidence = []; // {type,key,resolvedFile,bytes,source} -- the deterministic oracle the log's
+                                // own claims are cross-checked against below (hardening #3).
+
   for (const { type, key } of requested) {
-    if (!registry[type]?.has(key) && !pending.has(key)) unresolvedList.push({ type, key });
+    const entry = registry[type]?.get(key);
+    if (entry) {
+      const wavPath = path.join(libRoot, KIND_DIR[type], entry.file || `${key}.wav`);
+      const licPath = licensePathFor(wavPath);
+      const bytes = statSize(wavPath);
+      const licBytes = statSize(licPath);
+      if (bytes == null) {
+        missingFileList.push({ type, key, reason: 'registry entry exists but .wav is missing on disk', path: wavPath });
+      } else if (licBytes == null) {
+        missingFileList.push({ type, key, reason: '.license.txt is missing on disk', path: licPath });
+      } else {
+        resolvedEvidence.push({ type, key, resolvedFile: path.relative(workspace, wavPath), bytes, source: 'registry' });
+      }
+      continue;
+    }
+    const gen = generated.get(key);
+    if (gen && typeof gen.outputFile === 'string') {
+      const wavPath = path.resolve(vlogRoot, gen.outputFile);
+      const licPath = licensePathFor(wavPath);
+      const bytes = statSize(wavPath);
+      const licBytes = statSize(licPath);
+      if (bytes == null) {
+        missingFileList.push({ type, key, reason: 'minted (generated sidecar) but .wav was never produced on disk', path: wavPath });
+      } else if (licBytes == null) {
+        missingFileList.push({ type, key, reason: 'minted .wav present but .license.txt is missing on disk', path: licPath });
+      } else {
+        resolvedEvidence.push({ type, key, resolvedFile: path.relative(workspace, wavPath), bytes, source: 'minted-this-run' });
+      }
+      continue;
+    }
+    unresolvedList.push({ type, key });
   }
 
   // Log-completeness (ADVISORY only): does the node's own output log ever mention each requested key?
@@ -163,16 +262,48 @@ function main() {
   const uniqueKeys = [...new Set(requested.map((r) => r.key))];
   const logMissingKeys = uniqueKeys.filter((k) => !logText.includes(k));
 
+  // DETERMINISTIC BYTE-COUNT CROSS-CHECK (hardening #3). For every key resolved with real evidence, look
+  // for a plausible byte-count-shaped number on the log's line mentioning that key and require it to match
+  // the ACTUAL stat() size. The candidate shape is DELIBERATELY NARROW — only a COMMA-GROUPED integer
+  // (`\d{1,3}(,\d{3})+`, e.g. `32,881,004`) counts as a byte-count claim, because that comma-grouped form is
+  // the convention every sampled real byte-count citation in this lane actually uses (kptest-compare-more-
+  // fewer's log, the gold exemplar). A log that instead cites `lengthSeconds` (kp2-counting-by-tens: `184.97s`,
+  // `3.00s`) has NO comma-grouped number on those lines, so it yields zero candidates and is correctly left
+  // alone — this check must never punish a log for using a legitimate, different (non-byte) evidence unit. A
+  // match against ANY candidate on the line passes (a log may cite more than one number); absence of any
+  // comma-grouped number at all is `logMissingKeys`' concern (soft), not this check's (hard).
+  const logByteMismatches = [];
+  const logLines = logText.split('\n');
+  for (const { type, key, bytes } of resolvedEvidence) {
+    const keyLine = logLines.find((line) => line.includes(key));
+    if (!keyLine) continue;
+    const numberTokens = keyLine.match(/\d{1,3}(?:,\d{3})+/g) ?? [];
+    const candidates = numberTokens.map((n) => Number(n.replace(/,/g, ''))).filter((n) => Number.isFinite(n));
+    if (candidates.length === 0) continue;
+    if (!candidates.includes(bytes)) {
+      logByteMismatches.push({ type, key, claimedNumbers: candidates, actualBytes: bytes });
+    }
+  }
+
   report.totalKeys = requested.length;
-  report.resolvedKeys = requested.length - unresolvedList.length;
-  report.unresolvedKeys = unresolvedList.length;
+  report.resolvedKeys = resolvedEvidence.length;
+  report.unresolvedKeys = unresolvedList.length + missingFileList.length;
   report.unresolvedList = unresolvedList;
+  report.missingFileList = missingFileList;
+  report.missingFileCount = missingFileList.length;
+  report.resolvedEvidence = resolvedEvidence;
   report.schemaViolations = schemaViolations;
   report.schemaViolationCount = schemaViolations.length;
   report.logMissingKeys = logMissingKeys;
   report.logMentionsAllKeys = logMissingKeys.length === 0;
+  report.logByteMismatches = logByteMismatches;
+  report.logByteMismatchCount = logByteMismatches.length;
 
-  const failing = unresolvedList.length > 0 || schemaViolations.length > 0;
+  const failing =
+    unresolvedList.length > 0 ||
+    missingFileList.length > 0 ||
+    schemaViolations.length > 0 ||
+    logByteMismatches.length > 0;
   writeReportAndExit(runDir, report, failing ? 1 : 0);
 }
 

@@ -16,6 +16,16 @@ folds both into `optimize/substrate/measure.w3b-primitive-build.json` for triage
 a membership, liveness, non-empty, or schema check** — those already passed, and passing THEM earns nothing
 here.
 
+**2026-07-09 hardening (adversarial pass closed) — C5's existence floor is now ALSO a prior, separate hard
+stage.** A third `optimize.measure` op, `aesthetic-stills-floor` (`scripts/measure/check-aesthetic-stills.mjs`),
+FAILS whenever a primitive was registered this run (detected STRUCTURALLY — registry ids now vs the git HEAD
+revision of `primitive-registry.json`, never a keyword scan of this artifact's prose) but
+`out/<lessonId>/primitive-checks/` holds zero rendered stills. **C5 below no longer arbitrates whether a still
+exists at all** — that is now a hard, structural, hard-floor breach the judge never needs to catch. What C5
+still owns, and the only thing it owns, is the QUALITY of what the stills prove: was the SPECIFIC hardest
+frame + worst-case multiplicity chosen, and is there a genuine, specific finger-cover verdict (not a bare
+"stills rendered")? Passing the new hard floor earns nothing on C5 below.
+
 These marks judge the one thing the floor cannot: **whether this scan actually hands the composer a visual
 world that can carry the lesson's teaching to a genuinely great end product.** w3b's leverage is unusual among
 the pipeline's nodes — it does not just route or spec, it can also SHIP CODE (a new primitive), so its ceiling
@@ -103,8 +113,11 @@ most trivial).
 states a SPECIFIC finger-cover-test verdict (recognizable at lesson scale, at that multiplicity) — not merely
 "stills rendered." Quote the verdict and what was checked.
 **Failure signature —** stills exist only at one easy/sparse frame; "looks fine" asserted with no finger-cover
-verdict; or a primitive shipped with declared aesthetic quality but no still at all (a hard-floor breach
-disguised as a soft judgment call — this gate is the ONLY check for "does it look like what it claims to be").
+verdict. (A primitive shipped with ZERO still at all is now caught upstream of this mark, by the hard
+`aesthetic-stills-floor` measure — see "What this file is" above; that used to be a hard-floor breach this soft
+mark had to catch alone, which is exactly the fabricated-claim hole the 2026-07-09 hardening closed. This mark
+now judges only the QUALITY of the stills that genuinely exist: right frame, right multiplicity, a real
+finger-cover verdict — not their bare presence.)
 **Grounding —** primitive-builder SKILL "Aesthetic quality is YOURS (the W3→W4 boundary gate)."
 
 ### C6 · Topic-intro ownership + sequencing (R)

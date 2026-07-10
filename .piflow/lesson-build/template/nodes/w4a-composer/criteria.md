@@ -16,11 +16,19 @@
 
 The **bbox-manifest hard floor is a PRIOR, separate stage**: `node.json`'s POST checks assert
 `measured.method === "getBBox"`, `summary.measuredCollisionCount === 0`, and `summary.captionIntrusionCount === 0`
-directly off the regenerated `bbox-manifest.json` (never the model's self-report), and `optimize.measure` mirrors
-the same three checks into the optimize substrate's hard-measure report. **None of the marks below is that
-floor** — passing it earns nothing here. These marks judge the one thing the floor cannot verify: whether the
-composed scene is genuinely legible, honest, and teaches the discovery — as a senior Remotion/motion-design
-practitioner who has never seen this pipeline would judge it.
+directly off the regenerated `bbox-manifest.json` (never the model's self-report). `optimize.measure`
+(`scripts/measure.mjs`) independently re-derives those SAME three facts in-script (never via the live run's
+`checks.post`), PLUS three guards an adversarial pass proved this floor still lacked: a FRESHNESS check
+(`measured.ranAt` must fall inside THIS run's own node window — a crashed `lesson-measured.mjs` exits 0 without
+regenerating the file, so a stale prior-run manifest can otherwise false-green all three numbers); the
+`measured.gates.bboxBinding` measure-id≡manifest-id bijection (a broken bijection is exactly how the f1258
+case below fell through to zone "decoration" and voided detection); and a phantom/dead-id guard on
+`manifest.ts`'s own `allowedOverlaps` exemption list. **None of the marks below is that floor** — passing it
+earns nothing here, and none of the new guards can tell whether a *present-and-valid* exemption is *justified*
+either — that judgment call is exactly what the marks below (esp. "Vacuous green"/"Justification laundering")
+are for. These marks judge the one thing no hard gate can verify: whether the composed scene is genuinely
+legible, honest, and teaches the discovery — as a senior Remotion/motion-design practitioner who has never
+seen this pipeline would judge it.
 
 **EVIDENCE LAW (anti-hallucination).** Every mark requires a QUOTED line/number from the artifact (the scene
 file, `layout.ts`, `manifest.ts`, or the `lesson:bbox` boxed still) — no quote ⇒ FAIL. Cite the evidence BEFORE

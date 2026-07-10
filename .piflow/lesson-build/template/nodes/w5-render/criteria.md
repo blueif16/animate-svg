@@ -138,12 +138,16 @@ loudnorm target (see the Wiring §'s LUFS finding on this exact lesson's own del
 
 ## Wiring + readiness (how these plug into triage, per the runway)
 - **HARD** → `optimize/substrate/measure.w5-render.json` (via `runNodeMeasure`): the `render-stream-sanity`
-  ffprobe + loudness report (mp4Exists · ffprobeRan · hasVideoStream · hasAudioStream · durationFloorMet ·
-  lufsWithinTolerance) + the `render-loudnorm-completed` regex gate over `render-timing.json` + whatever digest
-  anomalies/trace detectors fire for this node (mostly `slow`/`error`/`truncated` — w5 spawns no model, so
-  `mega-think`/`tool-loop`/`cost-spike` do not apply here).
+  ffprobe + loudness + contact-correspondence report (mp4Exists · ffprobeRan · hasVideoStream · hasAudioStream ·
+  durationFloorMet · lufsWithinTolerance · contactFreshness · contactDurationMatch) + the
+  `render-loudnorm-completed` regex gate over `render-timing.json` + whatever digest anomalies/trace detectors
+  fire for this node (mostly `slow`/`error`/`truncated` — w5 spawns no model, so `mega-think`/`tool-loop`/
+  `cost-spike` do not apply here).
 - **SOFT** → this file's checklist + rubric + gold (above) as the blind judge's references — a vision-capable
-  read of the contact sheet PNG. JUDGING only, never injected into any node's prompt.
+  read of the contact sheet PNG. JUDGING only, never injected into any node's prompt. The soft judge has NO way
+  to tell a fresh contact sheet from a stale one left behind by a swallowed regen failure — that correspondence
+  is exactly why `contactFreshness`/`contactDurationMatch` are HARD, not soft, checks (Part D's hard/soft
+  boundary: a mtime/duration comparison is a `==`, never worth paying a judge for).
 - **VALIDITY confirmed at authoring time (do NOT skip re-confirming after any change to `measure-render.mjs`
   or `render-complete-lesson.mjs`'s loudnorm block):** `measure-render.mjs` was run against the real
   `fen-yu-he.mp4` render (5/6 checks pass — it correctly FAILED `lufsWithinTolerance`, measuring I=-17.22 LUFS /
@@ -153,12 +157,27 @@ loudnorm target (see the Wiring §'s LUFS finding on this exact lesson's own del
   a video-only/1s clip (3/6, correctly flags `hasAudioStream` + `durationFloorMet` + `lufsWithinTolerance` by
   name). All three runs confirm the hard measure FIRES and DISCRIMINATES rather than silently passing a broken
   or degraded artifact.
+- **VALIDITY of `contactFreshness`/`contactDurationMatch` (closes the stale-clean-PNG hole an adversarial pass
+  proved):** run against the real `fen-yu-he` artifact set with its OWN genuinely-corresponding contact PNG/JSON
+  — both PASS (contact mtime 8s after the mp4's; legend-implied 40.07s vs ffprobe's measured 40.13s, well inside
+  tolerance). Then run against a constructed evasion — the SAME good mp4 + contact PNG/JSON, but with the mp4
+  `touch`ed to a fresh mtime (simulating "re-rendered this run") while the contact PNG/JSON keep their OLD
+  mtimes (simulating "regen silently failed, stale PNG shipped," the exact swallowed-try/catch failure mode
+  named above): `contactFreshness` correctly FAILS (PNG now far older than the mp4) while every OTHER check
+  (mp4Exists/ffprobeRan/hasVideoStream/hasAudioStream/durationFloorMet/lufsWithinTolerance) still PASSES on the
+  unchanged, genuinely-good mp4 — proving the new check is the ONE that fires on exactly this evasion, not a
+  blunt instrument that also flags a good render. A second constructed evasion — the legend JSON's
+  `totalDuration` overwritten to imply a wildly different length (a contact sheet built from a differently-cut
+  render, mtime untouched) — correctly fails `contactDurationMatch` alone, independent of `contactFreshness`.
+  See `validityProof` in the harden turn that landed this for the exact before/after run output.
 
 ## Open items owed to the runway (named, not silently left unbuilt — see `memory.md`)
 - **No expected-duration cross-check.** `durationFloorMet` is a SANITY floor (≥ 2s), not a correctness oracle —
   it cannot catch a render that is real-but-truncated relative to the reconciled cue timeline. A real fix needs
-  the expected duration from `w3-5-reconcile`'s output, a cross-node comparison intentionally deferred.
-- **Stale-artifact risk on a failed contact-sheet regen.** `make-contact-sheet.mjs`'s call site swallows its own
-  errors (non-fatal by design) and `checks.post` only asserts the PNG is non-empty, not fresh — a failed
-  regeneration could in principle leave a stale PNG from a prior run passing the hard gate. Not yet closed here
-  (would need a freshness/mtime check.js kind that does not exist today); flagged for a future runway pass.
+  the expected duration from `w3-5-reconcile`'s output, a cross-node comparison intentionally deferred. (This is
+  a DIFFERENT axis from `contactDurationMatch` below: that ties the contact PNG to THIS mp4's OWN duration, not
+  to the reconciled timeline's EXPECTED duration — closing this item still needs the cross-node read.)
+- ~~Stale-artifact risk on a failed contact-sheet regen~~ — **CLOSED.** `measure-render.mjs` now takes
+  `--contact-png`/`--contact-json` and adds `contactFreshness` (PNG mtime vs mp4 mtime) +
+  `contactDurationMatch` (the `-contact.json` legend's own totalDuration/fps vs the mp4's measured duration);
+  `render-stream-sanity-gate`'s count-floor raised 6→8. See the VALIDITY bullet above + `memory.md`.

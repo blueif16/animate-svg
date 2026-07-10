@@ -71,7 +71,7 @@
             "--run", "{{RUN}}",
             "--report-out", "{{RUN}}/optimize/substrate/bbox-overlay-produced.json"
           ],
-          "note": "MEASURE (post-run, report-only): the prompt's REVIEW SURFACE law requires running `npm run lesson:bbox` before judging any collision/size question — this checks the side effect (out/<id>/bbox-overlay/*.png) actually exists, i.e. the command actually ran."
+          "note": "MEASURE (post-run, report-only): the prompt's REVIEW SURFACE law requires w6-verification ITSELF to run `npm run lesson:bbox` before judging any collision/size question. out/<id>/bbox-overlay/*.png is a SHARED side-effect path w4a-composer's own self-check also writes, so bare existence false-passes on a stale upstream leftover — this checks that at least one PNG's mtime is AT/AFTER w6-verification's own .pi/run.json startedAt (fail-closed if that timing is unavailable), i.e. THIS node actually ran the command, not merely inherited w4a's."
         },
         "writes": ["{{RUN}}/optimize/substrate/bbox-overlay-produced.json"]
       },
@@ -85,7 +85,7 @@
             "--run", "{{RUN}}",
             "--report-out", "{{RUN}}/optimize/substrate/cue-coverage.json"
           ],
-          "note": "MEASURE (post-run, report-only): every cue script-cues.json declares must get an independently-addressed verdict row in verification.md — catches a silently-dropped cue. Report-only; never blocks (see gen/check-cue-coverage.mjs)."
+          "note": "MEASURE (post-run, report-only): every cue script-cues.json declares must get an independently-addressed verdict row INSIDE a markdown table whose header names a \"cue\" column — a bare `| N |` anywhere in the document (a TOC, a frame-index list) does not count, only a row within a genuine per-cue table does. Catches both a silently-dropped cue and a coincidental-numbering false pass. Report-only; never blocks (see gen/check-cue-coverage.mjs)."
         },
         "writes": ["{{RUN}}/optimize/substrate/cue-coverage.json"]
       },
@@ -99,7 +99,7 @@
             "--run", "{{RUN}}",
             "--report-out", "{{RUN}}/optimize/substrate/gate-citations.json"
           ],
-          "note": "MEASURE (post-run, report-only): every non-clean bbox-manifest.json summary signal (gatesFailed[]/measuredCollisionCount/captionIntrusionCount) must be at least MENTIONED in verification.md — the lesson-verification SKILL forbids silent acceptance. Mechanical completeness only; whether the justification is GOOD is criteria.md R2/R4's job."
+          "note": "MEASURE (post-run, report-only): every non-clean bbox-manifest.json summary signal (gatesFailed[]/measuredCollisionCount/captionIntrusionCount) must be ACKNOWLEDGED in verification.md — the lesson-verification SKILL forbids silent acceptance. An outright DENIAL of a measured signal ('no collisions found', 'overlap: clear') is factually false and FAILS same as an omission — mere keyword presence is not enough, the mention must not itself deny the signal. Mechanical completeness only; whether the justification is GOOD is criteria.md R2/R4's job."
         },
         "writes": ["{{RUN}}/optimize/substrate/gate-citations.json"]
       }

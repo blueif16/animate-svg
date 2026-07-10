@@ -64,49 +64,40 @@
     "verifyDefault": "full",
     "measure": [
       {
-        "gate": {
-          "kind": "regex-present",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/sketch-overlay.md",
-          "param": "(?=[\\s\\S]*[Pp]er-cue mark table)(?=[\\s\\S]*[Cc]limax sketch)(?=[\\s\\S]*[Cc]omposer hand-off)"
-        },
-        "note": "FLOOR (zero new code): the artifact covers all four sections the skill requires (sketch language, per-cue mark table, climax sketch, composer hand-off). LEAN ARTIFACT concision could otherwise cut a whole section rather than a sentence within it; this catches the omission the non-empty check can't (non-empty only proves the file isn't blank)."
-      },
-      {
-        "gate": {
-          "kind": "regex-absent",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/sketch-overlay.md",
-          "param": "\\|\\s*\\d{2,4}\\s*\\|\\s*\\d{1,3}\\s*\\|\\s*\\d{2,4}\\s*\\|"
-        },
-        "note": "FLOOR (zero new code): the CUE-RELATIVE FRAMING RULE's own FORBIDDEN example shape — three bare, consecutive numeric-only table columns with no `cue=` reference (the skill's literal '| 891 | 24 | 1057 |' anti-pattern for a master-timeline absolute). A compliant row always carries a named cue id / cue= token and prose cells (anchor, purpose) between its numeric offsets, so this never false-fires on real cue-relative rows (verified against the real fen-yu-he/sketch-overlay.md, which never trips it)."
-      },
-      {
-        "id": "mark-restraint-lint",
+        "id": "w4b-sketch-hard-measure",
         "run": {
           "cmd": "node",
           "args": [
-            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w4b-sketch/scripts/mark-restraint-lint.mjs",
-            "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/sketch-overlay.md",
-            "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/optimize/substrate"
-          ],
-          "note": "THIN WRAPPER (Part D): the two node-specific deterministic invariants a JSON schema can't encode — the restraint BUDGET (marks <= floor(cueCount*0.6), counting '×N' multi-instance rows, not just marked cues) and the MARK VOCABULARY (only underline|wrap-arc|label-arrow|vs-mark). Best-effort: an unreadable/tableless sketch-overlay.md writes parseError:true and exits 0 (the section-presence gate above and the non-empty checks.post gate own that failure). Verified against the real fen-yu-he/sketch-overlay.md (reproduces its own stated ledger: 9 cues, 3 marks, budget 5, no violations) and a synthetic over-budget + off-vocabulary fixture (both flip to true)."
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w4b-sketch/scripts/measure.mjs",
+            "{{RUN}}"
+          ]
         },
-        "writes": ["remotion-svg-primitives/lesson-data/{{arg.lessonId}}/optimize/substrate/w4b-sketch.mark-restraint.json"]
+        "writes": ["{{RUN}}/optimize/substrate/w4b-sketch.measure.json"],
+        "note": "HARDENED (adversarial pass, 2026-07-09) — REWIRED wholesale off `{{arg.lessonId}}` (the OLD version of every check in this array, both this run op and every companion gate below, templated `{{arg.lessonId}}` into its own path/args; the substrate measure stage resolves those tokens against the FINISHED run's PERSISTED args, and no run sampled in this product repo carries a persisted args block, so EVERY one of those ops was silently dropped into `ops.rejected` and NEVER evaluated — the entire hard floor was hollow on every real run, exactly as the adversarial pass proved). This op's only arg is `{{RUN}}`, which always resolves; the script derives the lessonId + the `sketch-overlay.md` path itself from `<run>/.pi/run.json`'s persisted per-node `artifacts[]` (mirrors the w0-pedagogy/w2b-audio-captions/w3a-voice-asr precedent). ONE script now computes all FOUR hard invariants (section completeness, cue-relative discipline, restraint budget, mark vocabulary) into ONE report under `{{RUN}}/optimize/substrate/` (never the live product's lesson-data dir — the OLD `writes[]` pointed there, missing even a `{{WORKSPACE}}` prefix, so it could never fold into `graded` and risked a STALE prior run's report reading as this run's verdict). Verified against the real fen-yu-he/sketch-overlay.md (reproduces its own stated ledger: 9 cues, 3 marks, budget 5, all 4 sections present, no violations) and constructed evasion fixtures for each of the four proven holes (see measure.mjs's header + this node's validityProof)."
       },
       {
-        "gate": {
-          "kind": "regex-absent",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/optimize/substrate/w4b-sketch.mark-restraint.json",
-          "param": "\"overBudget\":\\s*true"
-        },
-        "note": "FLOOR (hard fail): the restraint budget was exceeded — the single most load-bearing numeric rule the sketch-explainer-layer skill states (\"Restraint is the rule\"). VALIDITY: fires+discriminates (see mark-restraint-lint.mjs's note)."
+        "gate": { "kind": "exists", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json" },
+        "note": "FAIL-CLOSE (adversarial hole d): an absent report must be a HARD FAIL, never a vacuous `regex-absent` pass. Before this gate, a report that never got written (op rejected, script crashed, wrong path) read as an EMPTY file to every downstream `regex-absent` check below — which all vacuously PASS on empty content. This gate makes 'the measure never ran' visible as its own failure."
       },
       {
-        "gate": {
-          "kind": "regex-absent",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/optimize/substrate/w4b-sketch.mark-restraint.json",
-          "param": "\"hasVocabViolation\":\\s*true"
-        },
-        "note": "FLOOR (hard fail): a marked row named a mark type outside {underline, wrap-arc, label-arrow, vs-mark} — the skill's closed vocabulary (\"NOT in this vocabulary (don't invent)\")."
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"ungradable\":\\s*true" },
+        "note": "FAIL-CLOSE (adversarial hole b, the \"prose-table\" evasion): a sketch-overlay.md that mentions the per-cue-mark-table heading but never writes a parseable pipe table (or the artifact is otherwise unreadable) used to degrade to cueCount:0/markCount:0/budget:0/overBudget:false — a SILENT VACUOUS PASS on the exact surface this node exists to grade. measure.mjs now sets `ungradable:true` in that state; this gate turns it into a hard fail instead of a pass."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"hasMissingSection\":\\s*true" },
+        "note": "FLOOR: the artifact covers all FOUR sections the skill requires (sketch language, per-cue mark table, climax sketch, composer hand-off) as REAL headings, not a substring match anywhere in the file. Replaces the old node.json `regex-present` lookahead gate, which was missing a lookahead for 'Sketch language' entirely (only 3 of 4 sections were ever checked) AND, like every op here, was silently rejected on every real run for referencing `{{arg.lessonId}}`."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"hasCueRelativeViolation\":\\s*true" },
+        "note": "FLOOR (hard fail) — the node's raison-d'être invariant, BROADENED + RELOCATED (adversarial hole c): the OLD standalone `regex-absent` matched only ONE exact shape (three consecutive bare-numeric pipe-columns, the skill's literal '| 891 | 24 | 1057 |' example) over the WHOLE FILE. measure.mjs now scans each row's three semantically-identified timing cells for a bare, unqualified (no `cueLength`/`cue.`/`Math.` reference) integer >= 500 frames (~16-20s, past any plausible single-cue length) — column-position-agnostic and formatting-agnostic, never keyed to one shape. Verified: fires on a constructed absolute-frame fixture (891/1057 in the timing cells), does not false-fire on the real fen-yu-he row (all real values 12-66, or qualified by `cueLength`) or on the anchor column's own pixel coordinates (out of scope — only the 3 timing columns are checked)."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"overBudget\":\\s*true" },
+        "note": "FLOOR (hard fail): the restraint budget was exceeded — the single most load-bearing numeric rule the sketch-explainer-layer skill states (\"Restraint is the rule\"). HARDENED (adversarial hole a): markedness is now NEGATIVE-token-gated (a row counts as marked unless its cell is an explicit n/no/-/–/— token), so a row gamed with `✓`/`Yes`/any other token can no longer be silently excluded from this count."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"hasVocabViolation\":\\s*true" },
+        "note": "FLOOR (hard fail): a marked row named a mark type outside {underline, wrap-arc, label-arrow, vs-mark} — the skill's closed vocabulary (\"NOT in this vocabulary (don't invent)\"). HARDENED (adversarial hole a): the same negative-token markedness fix means a row gamed with a non-\"y\" mark token can no longer dodge this check either (the old `/^y/i` filter silently excluded such rows from BOTH the budget count and this vocabulary check at once)."
       }
     ]
   }

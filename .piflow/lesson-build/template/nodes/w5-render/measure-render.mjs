@@ -18,15 +18,41 @@
 // master from an EARLIER render (whichever ran last) — never THIS run's fresh deliverable. Re-measuring here
 // closes that gap without touching the shared render script.
 //
+// Also closes the CONTACT-SHEET freshness/correspondence hole an adversarial verification pass proved: the
+// soft judge in criteria.md only ever reads `<lessonId>-contact.png` as a still image — it has no way to know
+// whether that PNG actually corresponds to THIS run's mp4. `make-contact-sheet.mjs`'s call site in
+// render-complete-lesson.mjs ("Contact sheet" step) is wrapped in a non-fatal try/catch: a failed regen
+// silently leaves whichever PNG was already on disk (a PRIOR run's, possibly a different/shorter cut)
+// untouched, and `checks.post` only asserts the PNG is non-empty — never fresh, never derived from this
+// deliverable. So a stale-but-clean PNG can false-green a broken/changed render. Two checks close this:
+//   - `contactFreshness` — the contact PNG's mtime must not be OLDER than the mp4's own mtime (beyond a small
+//     tolerance). In a normal run make-contact-sheet.mjs runs strictly AFTER the render + loudnorm rename in
+//     the SAME `render-complete-lesson.mjs` invocation, so a fresh regen's PNG mtime is always >= the mp4's.
+//     A stale prior-run PNG left behind by a swallowed regen failure is OLDER than a freshly-rendered mp4
+//     and fails this.
+//   - `contactDurationMatch` — the sidecar `<lessonId>-contact.json` legend's own `totalDuration`/`fps` must
+//     match the mp4's ffprobe-measured duration within tolerance. This is a CONTENT correspondence check
+//     (not just a timestamp), so it also catches a PNG that was copied/touched forward from a different
+//     render (a mtime-only check would miss that) — the legend can only match a duration if the contact
+//     sheet was actually built by sampling THIS deliverable's cues.
+//
 // Usage: node measure-render.mjs --mp4 <path> --out <report.json> [--min-duration-sec 2] [--lufs-target -16]
-//        [--lufs-tolerance 1] [--true-peak-max -1.0]
+//        [--lufs-tolerance 1] [--true-peak-max -1.0] [--contact-png <path>] [--contact-json <path>]
+//        [--freshness-tolerance-sec 5] [--duration-tolerance-sec 2]
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const parseArgs = (argv) => {
-  const args = { minDurationSec: 2, lufsTarget: -16, lufsTolerance: 1, truePeakMax: -1.0 };
+  const args = {
+    minDurationSec: 2,
+    lufsTarget: -16,
+    lufsTolerance: 1,
+    truePeakMax: -1.0,
+    freshnessToleranceSec: 5,
+    durationToleranceSec: 2,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--mp4") args.mp4 = argv[++i];
@@ -35,6 +61,10 @@ const parseArgs = (argv) => {
     else if (a === "--lufs-target") args.lufsTarget = Number(argv[++i]);
     else if (a === "--lufs-tolerance") args.lufsTolerance = Number(argv[++i]);
     else if (a === "--true-peak-max") args.truePeakMax = Number(argv[++i]);
+    else if (a === "--contact-png") args.contactPng = argv[++i];
+    else if (a === "--contact-json") args.contactJson = argv[++i];
+    else if (a === "--freshness-tolerance-sec") args.freshnessToleranceSec = Number(argv[++i]);
+    else if (a === "--duration-tolerance-sec") args.durationToleranceSec = Number(argv[++i]);
   }
   return args;
 };
@@ -65,7 +95,10 @@ const measureLufs = (file, target, truePeakMax) => {
 const main = () => {
   const args = parseArgs(process.argv.slice(2));
   if (!args.mp4 || !args.out) {
-    console.error("Usage: measure-render.mjs --mp4 <path> --out <report.json> [--min-duration-sec N]");
+    console.error(
+      "Usage: measure-render.mjs --mp4 <path> --out <report.json> [--min-duration-sec N] " +
+        "[--contact-png <path>] [--contact-json <path>]",
+    );
     process.exitCode = 1;
     return;
   }
@@ -76,6 +109,10 @@ const main = () => {
     lufsTarget: args.lufsTarget,
     lufsTolerance: args.lufsTolerance,
     truePeakMax: args.truePeakMax,
+    contactPng: args.contactPng ?? null,
+    contactJson: args.contactJson ?? null,
+    freshnessToleranceSec: args.freshnessToleranceSec,
+    durationToleranceSec: args.durationToleranceSec,
     checks: {
       mp4Exists: false,
       ffprobeRan: false,
@@ -83,11 +120,16 @@ const main = () => {
       hasAudioStream: false,
       durationFloorMet: false,
       lufsWithinTolerance: false,
+      contactFreshness: false,
+      contactDurationMatch: false,
     },
     streams: [],
     durationSec: null,
     measuredLufs: null,
     measuredTruePeak: null,
+    mp4MtimeMs: null,
+    contactMtimeMs: null,
+    contactLegendDurationSec: null,
     passingChecks: [],
     failedChecks: [],
   };
@@ -159,6 +201,74 @@ const main = () => {
       }
     } else {
       report.failedChecks.push("lufsWithinTolerance: skipped (no audio stream to measure)");
+    }
+
+    // --- Contact-sheet freshness + correspondence (the stale-clean-PNG hole) ---
+    // Fail-CLOSED: an absent/unsuppliable input to either check is a recorded FAIL, never a silent pass.
+    if (!args.contactPng || !args.contactJson) {
+      report.failedChecks.push(
+        "contactFreshness: --contact-png/--contact-json not supplied — cannot evaluate correspondence (fail-closed, not skipped)",
+      );
+      report.failedChecks.push(
+        "contactDurationMatch: --contact-png/--contact-json not supplied — cannot evaluate correspondence (fail-closed, not skipped)",
+      );
+    } else if (!fs.existsSync(args.contactPng)) {
+      report.failedChecks.push("contactFreshness: contact PNG not found at " + args.contactPng);
+      report.failedChecks.push("contactDurationMatch: contact PNG not found at " + args.contactPng);
+    } else {
+      const mp4MtimeMs = fs.statSync(args.mp4).mtimeMs;
+      const contactMtimeMs = fs.statSync(args.contactPng).mtimeMs;
+      report.mp4MtimeMs = mp4MtimeMs;
+      report.contactMtimeMs = contactMtimeMs;
+
+      const toleranceMs = args.freshnessToleranceSec * 1000;
+      report.checks.contactFreshness = contactMtimeMs >= mp4MtimeMs - toleranceMs;
+      if (!report.checks.contactFreshness) {
+        report.failedChecks.push(
+          `contactFreshness: contact PNG mtime (${new Date(contactMtimeMs).toISOString()}) is ` +
+            `${((mp4MtimeMs - contactMtimeMs) / 1000).toFixed(1)}s older than the mp4's ` +
+            `(${new Date(mp4MtimeMs).toISOString()}), beyond the ${args.freshnessToleranceSec}s tolerance — ` +
+            "the contact sheet was NOT regenerated for this render (make-contact-sheet.mjs likely failed/skipped " +
+            "and a stale prior-run PNG shipped instead)",
+        );
+      }
+
+      if (!fs.existsSync(args.contactJson)) {
+        report.failedChecks.push(
+          "contactDurationMatch: contact legend JSON not found at " + args.contactJson +
+            " (cannot confirm the sheet was derived from THIS mp4)",
+        );
+      } else {
+        try {
+          const legend = JSON.parse(fs.readFileSync(args.contactJson, "utf8"));
+          const fps = Number(legend.fps);
+          const totalDuration = Number(legend.totalDuration);
+          if (!Number.isFinite(fps) || fps <= 0 || !Number.isFinite(totalDuration)) {
+            report.failedChecks.push(
+              "contactDurationMatch: legend JSON missing/invalid fps or totalDuration",
+            );
+          } else if (!Number.isFinite(report.durationSec)) {
+            report.failedChecks.push(
+              "contactDurationMatch: mp4 duration unreadable (ffprobe above did not resolve it)",
+            );
+          } else {
+            const legendDurationSec = totalDuration / fps;
+            report.contactLegendDurationSec = legendDurationSec;
+            const diff = Math.abs(legendDurationSec - report.durationSec);
+            report.checks.contactDurationMatch = diff <= args.durationToleranceSec;
+            if (!report.checks.contactDurationMatch) {
+              report.failedChecks.push(
+                `contactDurationMatch: contact sheet legend implies ${legendDurationSec.toFixed(2)}s ` +
+                  `(totalDuration ${totalDuration}f @ ${fps}fps) vs the mp4's actual ${report.durationSec.toFixed(2)}s ` +
+                  `— diff ${diff.toFixed(2)}s exceeds tolerance ${args.durationToleranceSec}s (the contact sheet ` +
+                  "was built against a DIFFERENT-length render, not this mp4)",
+              );
+            }
+          }
+        } catch (e) {
+          report.failedChecks.push("contactDurationMatch: unparseable legend JSON (" + e.message + ")");
+        }
+      }
     }
   }
 

@@ -78,6 +78,15 @@ only, QUALITY stays here), runs three checks a JSON schema cannot express:
 A bonus advisory (never blocking) counts second-value tokens against cue count as a coarse proxy for "did
 every cue get a stated `visualMotionSeconds`."
 
+**FAIL-CLOSED (2026-07-09 harden — read this before trusting a `report.ok:true`).** All three checks now
+fold into the report's `ok`, and none can silently pass on an unresolved input: `char-ceiling` `severe`
+(>20k) is a hard fail, not just an advisory; `zone-disjoint` reports `parse-fail` (a hard fail, not a
+vacuous pass) whenever a declared zone name never resolves to a box or too few zones parsed to run the
+pairwise check at all — a genuinely computed overlap still wins as `fail`; `cue-coverage` reports `fail`
+(never a silent `skipped`) when `--storyboard` is missing/unreadable or parses zero cue headings, and a
+cue only counts as covered if at least one mention carries real per-cue content — a bare name-drop glued
+next to another cue name in a list (no real content between them) does not count.
+
 **Honestly NOT hard (left to the soft judge below):** whether the metaphor is genuinely singular, whether
 identity survives a transformation in more than geometry, whether a stated motion-budget number is a
 believable forecast, whether every pedagogy discovery is served by a *specific* visual choice, and whether

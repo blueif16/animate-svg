@@ -20,6 +20,18 @@
 //                                embedded-Latin-word allowance) must land within ±20% of visual-design.md's
 //                                declared `visualMotionSeconds` for that cue id.
 //
+// visual-design.md budget format: TWO conventions are live across real lesson-data (the skill does not
+// mandate one shape) — (1) a `motion-budget:` PROSE block of bare `<cueId>:  <N>s` lines (`parseMotionBudget`,
+// the original/only format this script read), and (2) a markdown PIPE TABLE whose header names
+// `visualMotionSeconds` (or whose bare `s`/`sec` column sits under a heading that names it) — `kp2-counting-
+// by-tens`, `kptest-compare-more-fewer`, `kptest-count-to-two`, `kptest-first-second-third` all use this
+// second shape (`parseTableMotionBudget`). Audited against every real lesson with both artifacts present
+// (17 lessons): the prose-only reader silently returned `budgetFitCuesChecked:0` (and, worse, a
+// zero-initialized `budgetFitWorstAbsPct:0` — a FALSE "perfectly on budget" reading) on 12/17, of which the
+// 4 named above are the table format this script now also parses. Both parsers' results MERGE (same
+// `{cueId: seconds}` shape); a lesson using neither convention still and correctly reports "no data" — see
+// the fail-closed `budgetFitSkipped`/`budgetFitWorstAbsPct:null` contract below, never a false 0%.
+//
 // Usage: node measure.mjs --run <RUN> --workspace <WORKSPACE> --out <reportPath> [--lessonId <id>]
 // (`--lessonId` is a TEST/override hook; production discovers it from `<RUN>/.pi/run.json`'s recorded
 // artifact paths, since `optimize.measure` ops have no `{{arg.*}}` token — see this node's criteria.md
@@ -82,7 +94,7 @@ function estimateSeconds(narration) {
   return cjk * CJK_RATE_SEC + latin * LATIN_WORD_SEC;
 }
 
-/** Parse visual-design.md's `motion-budget:` fenced block into `{ cueId: seconds }`. Tolerant of the prose
+/** Parse visual-design.md's `motion-budget:` prose block into `{ cueId: seconds }`. Tolerant of the prose
  *  wrapper (skill-mandated shape, `visual-discipline/SKILL.md` §motion-budget) — a line that doesn't match
  *  `<id>: <N>s` is silently skipped, never a parse error. */
 function parseMotionBudget(md) {
@@ -98,6 +110,63 @@ function parseMotionBudget(md) {
       const m = /^\s*([\w-]+):\s+([\d.]+)s\b/.exec(line);
       if (m) budgets[m[1]] = parseFloat(m[2]);
     }
+  }
+  return budgets;
+}
+
+/** Parse a markdown PIPE TABLE convention for the per-cue motion budget — the second live authoring shape
+ *  (see the header comment). Scans the WHOLE file for `| … |` blocks (a header row immediately followed by a
+ *  `|---|---|` separator row); for each, the value column is the header cell matching `visualMotionSeconds`
+ *  (any case/spacing), OR — only when the ~5 lines immediately above the table already name
+ *  `visualMotionSeconds` in prose/heading — a bare `s`/`sec(s)`/`second(s)` column (`kptest-first-second-
+ *  third`'s convention: the section heading carries the name, the column is just "s"). The id column is
+ *  whichever header cell reads "cue"/"cue id" (case-insensitive), defaulting to column 0. Returns the SAME
+ *  `{ cueId: seconds }` shape as `parseMotionBudget` so the two merge for free. Every step is best-effort: a
+ *  table with neither column shape, or a row whose id/value cell doesn't parse to `<number>[s]`, is silently
+ *  skipped — never a thrown error (this is a substrate measure op, not a live gate). */
+function parseTableMotionBudget(md) {
+  const budgets = {};
+  const lines = md.split('\n');
+  const isTableRow = (l) => /^\s*\|.*\|\s*$/.test(l);
+  const isSeparatorRow = (l) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l);
+  const splitCells = (l) => {
+    let s = l.trim();
+    if (s.startsWith('|')) s = s.slice(1);
+    if (s.endsWith('|')) s = s.slice(0, -1);
+    return s.split('|').map((c) => c.trim());
+  };
+  const stripMarkup = (c) => c.replace(/\*\*/g, '').replace(/`/g, '').trim();
+
+  let i = 0;
+  while (i < lines.length) {
+    if (isTableRow(lines[i]) && i + 1 < lines.length && isSeparatorRow(lines[i + 1])) {
+      const header = splitCells(lines[i]).map(stripMarkup);
+      let valueCol = header.findIndex((h) => /visualmotionseconds/i.test(h.replace(/\s+/g, '')));
+      if (valueCol === -1) {
+        const contextNamesIt = lines.slice(Math.max(0, i - 5), i).some((l) => /visualmotionseconds/i.test(l));
+        if (contextNamesIt) {
+          valueCol = header.findIndex((h) => /^s(ec(s|onds?)?)?$/i.test(h));
+        }
+      }
+      if (valueCol !== -1) {
+        const idCol = header.findIndex((h) => /^cue(\s*id)?$/i.test(h));
+        const idColResolved = idCol === -1 ? 0 : idCol;
+        let j = i + 2;
+        while (j < lines.length && isTableRow(lines[j]) && !isSeparatorRow(lines[j])) {
+          const cells = splitCells(lines[j]).map(stripMarkup);
+          const id = cells[idColResolved];
+          const rawValue = cells[valueCol];
+          if (id && rawValue) {
+            const m = /^([\d.]+)\s*s?$/i.exec(rawValue);
+            if (m) budgets[id] = parseFloat(m[1]);
+          }
+          j += 1;
+        }
+        i = j;
+        continue;
+      }
+    }
+    i += 1;
   }
   return budgets;
 }
@@ -128,8 +197,14 @@ async function main() {
     phrasePunctuationViolations: 0,
     ellipsisCount: 0,
     budgetFitCuesChecked: 0,
-    budgetFitWorstAbsPct: 0,
+    // Fail-CLOSED defaults (piflow-overlord building-measures.md): `null`, never `0` — a `0` here would read
+    // as "measured, perfectly on budget" to any numeric consumer, when the truth is "not measured at all".
+    // `budgetFitWorstAbsPct` only becomes a number once ≥1 cue is actually checked below; `budgetFitSkipped`
+    // is the explicit graded flag (folds into the substrate `graded` map same as any other numeric leaf) that
+    // triage sees whenever the core targeting invariant could not be evaluated this run.
+    budgetFitWorstAbsPct: null,
     budgetFitWorstCue: null,
+    budgetFitSkipped: 1,
     skipped: [],
   };
 
@@ -167,7 +242,9 @@ async function main() {
   if (!visualDesignMd) {
     report.skipped.push('no visual-design.md — budget-fit skipped');
   } else {
-    const budgets = parseMotionBudget(visualDesignMd);
+    // Merge BOTH budget-authoring conventions (see the header comment) — a lesson uses one or the other in
+    // practice, so this is a safe union; a rare collision has the table source win (arbitrary, harmless).
+    const budgets = { ...parseMotionBudget(visualDesignMd), ...parseTableMotionBudget(visualDesignMd) };
     let worst = 0;
     let worstCue = null;
     let checked = 0;
@@ -183,17 +260,26 @@ async function main() {
       }
     }
     report.budgetFitCuesChecked = checked;
-    report.budgetFitWorstAbsPct = Math.round(Math.abs(worst) * 10) / 10;
-    report.budgetFitWorstCue = worstCue;
-    if (checked === 0) report.skipped.push('no motion-budget cue ids matched script-cues.json ids');
+    if (checked > 0) {
+      report.budgetFitWorstAbsPct = Math.round(Math.abs(worst) * 10) / 10;
+      report.budgetFitWorstCue = worstCue;
+      report.budgetFitSkipped = 0;
+    } else {
+      // Fail-CLOSED: leave budgetFitWorstAbsPct/budgetFitSkipped at their "not measured" defaults above —
+      // NEVER report a 0% ("perfectly on budget") for a cue that was never actually checked.
+      report.skipped.push(
+        'no motion-budget cue ids matched script-cues.json ids (checked both the prose id:Ns block and the markdown-table format)',
+      );
+    }
   }
 
   // A quick discriminating summary line for a human glancing at stdout (the JSON report is the real output).
-  const overBudget = report.budgetFitWorstAbsPct > BUDGET_TOLERANCE_PCT;
+  const overBudget = report.budgetFitWorstAbsPct != null && report.budgetFitWorstAbsPct > BUDGET_TOLERANCE_PCT;
+  const worstFitDisplay = report.budgetFitWorstAbsPct == null ? 'n/a (skipped)' : `${report.budgetFitWorstAbsPct}%`;
   console.error(
     `w2b measure: ${report.cueCount} cues · empty=${report.emptyNarrationCount} · ` +
       `captionMismatch=${report.captionMismatchCount} · phrasePunct=${report.phrasePunctuationViolations} · ` +
-      `ellipsis=${report.ellipsisCount} · worstBudgetFit=${report.budgetFitWorstAbsPct}%` +
+      `ellipsis=${report.ellipsisCount} · worstBudgetFit=${worstFitDisplay}` +
       `${overBudget ? ` (OVER ±${BUDGET_TOLERANCE_PCT}% on ${report.budgetFitWorstCue})` : ''}`,
   );
 

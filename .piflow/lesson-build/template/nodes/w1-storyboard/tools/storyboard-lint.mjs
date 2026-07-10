@@ -58,26 +58,34 @@ export function splitHeadingBlocks(md) {
 export const STAGE_ORDER = { concrete: 0, represent: 1, symbolize: 2 };
 
 // ── pedagogy.md: per-cue discovery + stage. w0-pedagogy's own output schema has drifted across the
-//    corpus's history (4 real variants sampled) — tolerate all of them rather than pin one:
+//    corpus's history (5 real variants sampled) — tolerate all of them rather than pin one:
 //      A. "### Cue N — Label" heading, plain "discovery:"/"stage:" lines (kptest-fenyuhe-six)
 //      C. "## C1 — label" heading, "**discovery:**"/"**stage:**" bold lines (kptest-greetings-verify)
 //      D. "## cue: <id>" heading wrapping a fenced discovery:/stage: block (kptest-first-second-third)
 //      B. bare fenced ```\ncue: <id>\ndiscovery: ...\nstage: ...\n``` blocks under NO heading at all
 //         (kptest-compare-more-fewer)
-//    A/C/D all introduce a cue with a level-2 or level-3 HEADING; only B has none, so it is the
-//    fallback. This is real-world tolerance, not guesswork — grounded in the 4 sampled pedagogy.md
-//    files above. If pedagogy.md matches NONE of these, `parsePedagogyCues` returns [] and the caller
-//    reports `pedagogy-unparseable` (an honest advisory, never a crash). ──
+//      E. bare fenced ```\ncue-id: <id>\ndiscovery: ...\nstage: ...\n``` blocks — the SAME shape as B
+//         but keyed `cue-id:` instead of `cue:` (kptest-count-to-two). PROVEN GAP (adversarial pass,
+//         2026-07-09): the ORIGINAL fenced-fallback regex matched only the literal token `cue:`, so
+//         this variant silently returned zero cues on a real, current-contract fixture — degrading
+//         discovery-coverage-floor + stage-ceiling to no-ops on that run while `lintStoryboard` still
+//         reported them as passing (see memory.md's `pedagogy-cue-id-variant-blind` lesson). `cue:` and
+//         `cue-id:` are treated as the SAME label throughout.
+//    A/C/D all introduce a cue with a level-2 or level-3 HEADING; only B/E have none, so the fenced
+//    fallback (accepting either bare key) covers both. This is real-world tolerance, not guesswork —
+//    grounded in the 5 sampled pedagogy.md files above. If pedagogy.md matches NONE of these,
+//    `parsePedagogyCues` returns [] and the caller now emits a BLOCKING `pedagogy-unparseable` ISSUE
+//    (never a silent advisory-only pass — see `lintStoryboard`). ──
 export function parsePedagogyCues(md) {
   const headingBlocks = splitHeadingBlocks(md).filter(
-    (b) => (b.level === 2 || b.level === 3) && /^(C\d+\b|Cue\s+\d+|cue:\s*\S)/i.test(b.title),
+    (b) => (b.level === 2 || b.level === 3) && /^(C\d+\b|Cue\s+\d+|cue(?:-id)?:\s*\S)/i.test(b.title),
   );
   if (headingBlocks.length) return headingBlocks.map((b) => extractDiscoveryStage(b.title, b.body));
 
   const fenced = [...(md || "").matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map((m) => m[1]);
   return fenced
-    .filter((body) => /^\s*cue:\s*\S/im.test(body))
-    .map((body) => extractDiscoveryStage(/^\s*cue:\s*(.+)$/im.exec(body)?.[1]?.trim() ?? "cue", body));
+    .filter((body) => /^\s*cue(?:-id)?:\s*\S/im.test(body))
+    .map((body) => extractDiscoveryStage(/^\s*cue(?:-id)?:\s*(.+)$/im.exec(body)?.[1]?.trim() ?? "cue", body));
 }
 
 function extractDiscoveryStage(title, body) {
@@ -108,23 +116,97 @@ function extractDiscoveryStage(title, body) {
 //    opener a real discovery (e.g. kptest-fenyuhe-six's routine-reprise), the field is present anyway,
 //    so this exemption never masks a genuine drop — it only forgives the legitimately discovery-less
 //    case. ──
+// Each `re` CONSUMES through the label's separator (`:` or `—`) so its match END already points at the
+// start of the field's VALUE — required for the non-empty/placeholder enforcement below. `narrationBeat`
+// used to be a bare `/narration beat\b/i` presence sniff (no separator consumed); it is now aligned with
+// the other four so its value can be sliced the same way (verified against all 5 current-contract
+// fixtures' "narration beat intent:" / "**narration beat (intent):**" / "**narration beat (INTENT, no
+// copy)** —" phrasings — every form still matches, see storyboard-lint.mjs's own test run).
 const REQUIRED_FIELDS = [
   { key: "discoveryRef", re: /discovery ref\**\s*(?::|—)/i },
   { key: "stage", re: /\**stage\**\s*(?::|—)/i },
   { key: "teachingAction", re: /teaching action\(s\)\**\s*(?::|—)/i },
-  { key: "narrationBeat", re: /narration beat\b/i },
+  { key: "narrationBeat", re: /narration beat\b[^\n:—]*(?::|—)/i },
   { key: "requiredVisual", re: /required visual\**\s*(?::|—)/i },
 ];
+
+// ── PROVEN GAP (adversarial pass, 2026-07-09): a field whose LABEL is present but whose VALUE is empty
+//    ("discovery ref:" with nothing after it) or a bare placeholder ("required visual: TODO") passed
+//    the old presence-only test (`f.re.test(b.body)`), which only asked "does the label text appear
+//    anywhere", never "is there real content after it." Both now count as MISSING. A field's value is
+//    everything from the end of its own label match up to the START of whichever OTHER required-field
+//    label comes next in the body (positionally), or to the end of the body if it is last — this
+//    correctly tolerates a real multi-line value (e.g. fenyuhe-six's "required visual:\n\n  - <prose>"
+//    on its own following line) while still catching a truly empty same-line label. ──
+const PLACEHOLDER_VALUE_RE = /^(?:todo|tbd|tbc|n\/a|na|none|null|pending|xxx|\?{1,3})[.:!)\-\s]*$/i;
+
+// A field's raw slice runs to the NEXT required-field label or end of the cue's body — but when the
+// field is the LAST one in the cue and the cue is also the LAST heading in the file, "end of body" can
+// swallow trailing non-field document content (e.g. the file's closing `exposures:` ledger), making an
+// actually-empty value look non-empty. Cut the slice at a SECTION BREAK: a blank line followed by a
+// line that is NOT indented (a genuine continuation bullet, like fenyuhe-six's "required visual:\n\n  -
+// <prose>", IS indented and is kept; a new top-level paragraph/section is not, and ends the value).
+function truncateAtSectionBreak(raw) {
+  const lines = raw.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim() !== "") continue;
+    let j = i + 1;
+    while (j < lines.length && lines[j].trim() === "") j++;
+    if (j < lines.length && !/^\s/.test(lines[j])) return lines.slice(0, i).join("\n");
+  }
+  return raw;
+}
+
+function cleanFieldValue(raw) {
+  return truncateAtSectionBreak(raw || "")
+    .split("\n")
+    .map((line) => line.replace(/[*`_]/g, "").replace(/^\s*[-–—>]+\s*/, "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+}
+
+function isEmptyOrPlaceholder(raw) {
+  const cleaned = cleanFieldValue(raw);
+  return cleaned.length === 0 || PLACEHOLDER_VALUE_RE.test(cleaned);
+}
+
+// positional label matches (by which fields' LABELS are actually present in this cue body), sorted by
+// where they occur — used to slice each present field's value up to whichever label comes next.
+function locateFieldLabels(body) {
+  const found = [];
+  for (const f of REQUIRED_FIELDS) {
+    const m = f.re.exec(body);
+    if (m) found.push({ key: f.key, start: m.index, end: m.index + m[0].length });
+  }
+  found.sort((a, b) => a.start - b.start);
+  return found;
+}
 
 export function parseStoryboardCues(md) {
   const cues = [];
   for (const b of splitHeadingBlocks(md).filter((x) => x.level === 2 || x.level === 3)) {
+    // STRUCTURAL "is this a cue" test stays LABEL-PRESENCE-ONLY (unchanged) — a cue with fields present
+    // but empty must still be recognized as a cue (so it can be flagged), never silently excluded by a
+    // stricter threshold; only a genuine prose section (no labels at all) is skipped.
     const missingFieldsRaw = REQUIRED_FIELDS.filter((f) => !f.re.test(b.body)).map((f) => f.key);
     if (REQUIRED_FIELDS.length - missingFieldsRaw.length < 2) continue; // not structurally a cue (a prose section)
+
+    const located = locateFieldLabels(b.body);
+    const emptyFieldsRaw = [];
+    for (let i = 0; i < located.length; i++) {
+      const { key, end } = located[i];
+      const nextStart = i + 1 < located.length ? located[i + 1].start : b.body.length;
+      if (isEmptyOrPlaceholder(b.body.slice(end, nextStart))) emptyFieldsRaw.push(key);
+    }
+    const missingOrEmptyRaw = [...new Set([...missingFieldsRaw, ...emptyFieldsRaw])];
+
     const stageLine = /stage\**\s*(?::|—)\s*(\w+)/i.exec(b.body);
     const stageWord = stageLine?.[1]?.toLowerCase() ?? null;
     const isPureAnnounceTopic = /teaching action\(s\)\**\s*(?::|—)\s*`?announce-topic`?\s*[.)]?\s*$/im.test(b.body);
-    const missingFields = isPureAnnounceTopic ? missingFieldsRaw.filter((k) => k !== "discoveryRef") : missingFieldsRaw;
+    const missingFields = isPureAnnounceTopic
+      ? missingOrEmptyRaw.filter((k) => k !== "discoveryRef")
+      : missingOrEmptyRaw;
     cues.push({
       id: b.title,
       stage: stageWord,
@@ -169,6 +251,19 @@ function normalizeMatch(s) {
 }
 const WHITELIST = new Set(["3-5s", "3–5s", "≥3-5s", "≥3–5s"].map(normalizeMatch));
 
+// ── PROVEN GAP (adversarial pass, 2026-07-09): the whitelist matched by VALUE alone — ANY occurrence of
+//    the literal "3-5s"/"≥3-5s" anywhere was forgiven, with no check that it was actually CITING the
+//    fixed TEACHING-ACTIONS.md wait-time constant (the only legitimate use, per the rule's own docstring
+//    above). That is Goodhartable: a per-cue "**Estimated duration**: 3-5s" annotation — the EXACT class
+//    of violation this rule exists to catch — would sail through untouched purely because 3-5s happens
+//    to equal the whitelisted range. TOKEN-SCOPE the exemption: it applies only when the same LINE also
+//    carries one of the wait-time-citation's own vocabulary tokens (gap / silence / wait / learner-
+//    response / invite-echo / retrieve). Verified against every real citation on file (all 6 occurrences
+//    across the 5 current-contract fixtures carry at least one of these words on the same line — "silent
+//    gap", "held silence ... retrieve", "gap` (reason: learner-response, the wait)") — none lose their
+//    exemption; a bare, context-free "3-5s" no longer gets one. ──
+const WAIT_TIME_CONTEXT_RE = /\b(?:gaps?|silence|silent|waits?|learner-response|invite-echo|retriev\w*)\b/i;
+
 export function findDurationLiterals(storyboardMd) {
   const hits = [];
   const lines = (storyboardMd || "").split("\n");
@@ -178,7 +273,7 @@ export function findDurationLiterals(storyboardMd) {
     let m;
     const re = new RegExp(DURATION_RE.source, "gi");
     while ((m = re.exec(line))) {
-      if (WHITELIST.has(normalizeMatch(m[0]))) continue;
+      if (WHITELIST.has(normalizeMatch(m[0])) && WAIT_TIME_CONTEXT_RE.test(line)) continue;
       const unit = m[1].toLowerCase();
       const trailing = line.slice(m.index + m[0].length);
       if (unit === "second" && /^\s*,/.test(trailing)) continue; // ordinal-list item ("... second, ..."), not a duration
@@ -215,10 +310,16 @@ export function lintStoryboard(pedagogyMd, storyboardMd) {
   const pedagogyCues = parsePedagogyCues(pedagogyMd);
   const storyboardCues = parseStoryboardCues(storyboardMd);
 
+  // PROVEN GAP (adversarial pass, 2026-07-09): this used to be an ADVISORY (never blocks, easy to miss)
+  // even though a zero-cue parse silently degrades discovery-coverage-floor + stage-ceiling-exceeded to
+  // NO-OPS below (both are gated `if (pedagogyCount > 0)`) — a hard measure that can't evaluate its input
+  // must FAIL-CLOSED, never pass quietly. `parsePedagogyCues` now tolerates 5 real corpus variants
+  // (headings A/C/D + fenced `cue:`/`cue-id:` B/E — see its own docstring); this fires ONLY when
+  // pedagogy.md matches NONE of them, which is now itself the signal something is genuinely wrong.
   if (pedagogyCues.length === 0) {
-    advisories.push({
+    issues.push({
       rule: "pedagogy-unparseable",
-      detail: "no \"### Cue N — ...\" blocks found in pedagogy.md — the coverage-floor and stage-ceiling checks below degrade to no-ops (nothing to cross-reference). Confirm pedagogy.md matches the lesson-pedagogy SKILL's per-cue discovery-list shape.",
+      detail: 'no cue blocks recognized in pedagogy.md (checked headings "### Cue N — …" / "## C1 — …" / "## cue(-id): …" and bare fenced ```cue:``` / ```cue-id:``` blocks) — the discovery-coverage-floor and stage-ceiling-exceeded checks below CANNOT run without pedagogy\'s discovery list to cross-reference, so they are skipped and this is reported as a BLOCKING issue (never a silent pass) rather than an advisory. Confirm pedagogy.md matches one of the lesson-pedagogy SKILL\'s known per-cue discovery-list shapes, or the parser needs a new variant added.',
     });
   }
 

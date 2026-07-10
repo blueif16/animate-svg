@@ -11,6 +11,14 @@
 // `cues[]` array order — NOT the `id` string field. Validated live: 9/9 rows present in both its §3
 // (text-vs-audio) and §5 (pedagogy verdict) tables.
 //
+// HARDENED (closes the proven hole "matches any numbered table"): a bare `| N |` can occur ANYWHERE in a
+// markdown document by coincidence — a table of contents, a frame-index list, a references section — with
+// NO relation to a per-cue verdict at all. Keying on that bare pattern lets a gamed report satisfy every
+// ordinal via an unrelated numbered list. This measure now requires the ordinal row to sit INSIDE a markdown
+// table whose HEADER ROW itself carries a "cue" column (case-insensitive whole-word match, e.g. `| cue |
+// spoken phrase | ... |`) — tying the match to a table structurally ABOUT cues (Law 3: key on the relation,
+// not bare presence). Real reports pass easily: §3 and §5 (and even §6 pacing) all header with `| cue | ... |`.
+//
 // CLI: node check-cue-coverage.mjs --workspace <ws> --run <rundir> [--report-out <path>] [--json]
 
 import fs from "node:fs";
@@ -22,21 +30,56 @@ function notApplicable(reason) {
   return { applicable: false, verdict: "pass", reason, totalCues: 0, missing: [] };
 }
 
+const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
+const TABLE_SEP_RE = /^\s*\|[\s:|-]+\|\s*$/;
+
+/**
+ * extractCueTables(text) — split `text` into markdown tables (header + separator + data rows), keeping
+ * only the tables whose HEADER carries a standalone "cue" column. Returns an array of data-row-line arrays.
+ */
+export function extractCueTables(text) {
+  const lines = String(text ?? "").split(/\r?\n/);
+  const tables = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (TABLE_ROW_RE.test(lines[i]) && i + 1 < lines.length && TABLE_SEP_RE.test(lines[i + 1])) {
+      const headerCells = lines[i]
+        .split("|")
+        .map((c) => c.trim().toLowerCase())
+        .filter((c) => c.length > 0);
+      const isCueTable = headerCells.some((c) => /\bcue\b/.test(c));
+      let j = i + 2;
+      const rows = [];
+      while (j < lines.length && TABLE_ROW_RE.test(lines[j])) {
+        rows.push(lines[j]);
+        j++;
+      }
+      if (isCueTable) tables.push(rows);
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return tables;
+}
+
 /**
  * checkCueCoverage({ cues, verificationText }) — pure. `cues` = script-cues.json's `cues[]` array;
- * `verificationText` = verification.md's raw bytes. Each cue's 1-based ordinal must appear as a markdown
- * table row `| N |` (whitespace-tolerant) somewhere in the report.
+ * `verificationText` = verification.md's raw bytes. Each cue's 1-based ordinal must appear as a row `| N |`
+ * INSIDE a table whose header names a "cue" column — never a bare numbered match anywhere in the document.
  */
 export function checkCueCoverage({ cues, verificationText }) {
   if (!Array.isArray(cues) || cues.length === 0) return notApplicable("no cues declared in script-cues.json");
   const text = String(verificationText ?? "");
+  const cueTables = extractCueTables(text);
   const missing = [];
   cues.forEach((cue, i) => {
     const ordinal = i + 1;
     const rowPattern = new RegExp(`\\|\\s*${ordinal}\\s*\\|`);
-    if (!rowPattern.test(text)) missing.push({ ordinal, id: cue?.id ?? null });
+    const covered = cueTables.some((rows) => rows.some((row) => rowPattern.test(row)));
+    if (!covered) missing.push({ ordinal, id: cue?.id ?? null });
   });
-  return { applicable: true, verdict: missing.length === 0 ? "pass" : "fail", totalCues: cues.length, missing };
+  return { applicable: true, verdict: missing.length === 0 ? "pass" : "fail", totalCues: cues.length, cueTableCount: cueTables.length, missing };
 }
 
 // ── CLI ──

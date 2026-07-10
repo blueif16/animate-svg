@@ -315,3 +315,39 @@ exposures:
   `kp1-fen-yu-he-intro/storyboard.md` (15 duration/frame-literal hits from its per-cue "**Estimated
   duration**: N–Ms" annotations — the exact defect class this rule exists to catch). A measure that
   silently passes a wrong artifact is worse than none; none of these did.
+
+- **CORRECTION (adversarial pass, 2026-07-09) — the claim above was itself unverified on one axis.** The
+  "clean on 5 current-contract fixtures" claim was true only by ACCIDENT for `kptest-count-to-two`:
+  `parsePedagogyCues` returned `[]` on its pedagogy.md (a bare fenced `cue-id:`-keyed block — a 5th real
+  corpus variant the parser's fenced fallback only matched on the literal token `cue:`), which silently
+  degraded `discovery-coverage-floor` + `stage-ceiling-exceeded` to no-ops on the very fixture cited as
+  evidence they worked, and surfaced only a non-blocking `pedagogy-unparseable` ADVISORY — invisible to
+  `ok`, easy to miss, and never noticed here. Four fixes landed in `tools/storyboard-lint.mjs`, each
+  re-verified against the corpus:
+  1. **`cue-id:` support** — the fenced-block parser now accepts `cue:` and `cue-id:` as the same label.
+     Before: `kptest-count-to-two` → `pedagogyDiscoveryCount: 0` (silent no-op). After: `→ 2` (correct),
+     with the SAME single pre-existing gap (`announce-topic` missing `stage`) as the only issue — the
+     coverage-floor/stage-ceiling checks are no longer blind on this fixture.
+  2. **`pedagogy-unparseable` is now a BLOCKING issue, never an advisory** — a pedagogy.md matching NONE
+     of the 5 known shapes now fails the report (`ok:false`) instead of passing quietly. Confirmed on the
+     legacy `kp1-fen-yu-he-intro/pedagogy.md` (predates the contract, still genuinely unparseable): now
+     reports `pedagogy-unparseable` as an issue alongside its other real defects, where it used to be a
+     drop-in advisory only.
+  3. **Non-empty/placeholder enforcement on the 5 required fields** — a field whose LABEL is present but
+     whose VALUE is empty (`discovery ref:` with nothing after it) or a bare placeholder (`required
+     visual: TODO`) now counts as MISSING; before, presence-of-label was the only test, so both passed
+     silently. Verified against a constructed fixture carrying both defects: OLD tool → `ok:true`, zero
+     issues; NEW tool → `ok:false`, both flagged (`cue-missing-required-field` for each).
+  4. **Token-scoped duration whitelist** — the whitelist forgave the fixed `3-5s`/`≥3-5s` wait-time
+     constant by VALUE alone, with no check it was actually citing the constant; a per-cue
+     `**Estimated duration**: 3-5s` annotation (the SAME violation class as the PRE-W1FIX/legacy
+     regressions, just phrased to match the whitelisted value) sailed through untouched. The exemption
+     now additionally requires the citing LINE to carry one of the wait-time vocabulary tokens (gap /
+     silence / wait / learner-response / invite-echo / retrieve) — true of all 6 real citations across
+     the 5 current-contract fixtures (still exempted), false of a context-free literal (now flagged). On
+     the same constructed fixture: OLD tool did not flag the gamed `3-5s`; NEW tool fires
+     `duration-or-frame-literal` on it.
+  All 5 current-contract fixtures were re-run after the fix and remain exactly as originally claimed
+  (4 fully clean, `count-to-two` with its one pre-existing gap only) — the correction closes a blind spot
+  in the MEASURE, not a regression in the corpus. See `memory.md`'s
+  `pedagogy-cue-id-variant-blind` lesson for the recurrence record.

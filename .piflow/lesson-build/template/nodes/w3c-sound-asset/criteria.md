@@ -10,10 +10,14 @@
 
 The **registry-membership floor is a PRIOR, separate stage**: `checks.pre` (`json-parses` on the injected
 `audio-cues.json`) and `node.json` `optimize.measure` (`sound-asset-gap-scan` — cross-file membership against
-the shared-sound `_index.json` files + the vlog_test manifest/generated sidecars) fold their verdicts into
-`optimize/substrate/measure.w3c-sound-asset.json` for triage. **None of the marks below is "does the key
-exist" or "is the JSON valid"** — those already passed (or the run never reached judging), and passing THEM
-earns NOTHING here.
+the shared-sound `_index.json` files + the vlog_test GENERATED sidecar) fold their verdicts into
+`optimize/substrate/measure.w3c-sound-asset.json` for triage. That floor now goes further than bare membership:
+it `statSync`s the REAL `.wav` + a sibling `.license.txt` before counting any key resolved (an index/sidecar
+row is a claim, not proof a file exists), hard-fails a syntactically-valid `audio-cues.json` that requests
+ZERO keys (every lesson requires at least a `bed`), and cross-checks any comma-grouped byte count the log
+cites for a resolved key against the file's REAL size. **None of the marks below is "does the key exist", "is
+the JSON valid", or "is the cited byte count real"** — those already passed (or the run never reached
+judging), and passing THEM earns NOTHING here.
 
 These marks judge the one thing the floor cannot: **did the node actually VERIFY what it claims, and is its
 log a trustworthy record a downstream reader (or an auditor) can act on without re-doing the work?**
@@ -70,7 +74,12 @@ node that never actually opened the index files).
 **Why this cannot be gamed —** Restating "resolved: `<key>`" for every key is exactly the presence-based
 surrogate this criterion forbids — passing requires citing something the node could only have produced by
 actually reading the index (a real byte count, a real license check, an exact matched entry), not by asserting
-success. Enum/path-format-validity is the hard floor's job and earns nothing here.
+success. Enum/path-format-validity is the hard floor's job and earns nothing here. Note the floor now backs
+this up mechanically, not just rhetorically: `sound-asset-gap-scan` cross-checks any comma-grouped byte count
+the log cites for a resolved key against that file's REAL `statSync` size (`logByteMismatches`) — a
+FABRICATED number is caught deterministically before it ever reaches this judgment. So this mark's remaining
+job is judging COMPLETENESS and QUALITY of the cited evidence (does every key get a real per-key line, not
+just one), never verifying whether a cited number is itself true — that check is no longer this judge's to make.
 **Grounding —** the node's own prompt: "you are DONE only when EVERY file below exists and is non-empty at
 EXACTLY its path... an empty or wrong-path artifact set is a FAILURE, not an ok" — this criterion is that law
 applied to the CLAIM, not just the file.
@@ -141,7 +150,13 @@ apex — that is BY DESIGN; the apex is the permanent headroom the loop climbs t
 
 A typical current *good* w3c-sound-asset run *reliably passes* the **correctness cluster — C1 (genuine
 resolution), C2 (gaps never absorbed), C4 (lean spec)** — real runs like `kptest-compare-more-fewer` and
-`kp2-counting-by-tens` cite byte sizes, license-sidecar checks, and a per-key table. C3 is inconsistently
+`kp2-counting-by-tens` cite byte sizes, license-sidecar checks, and a per-key table. **Drift note:** as of this
+hardening pass, `kptest-compare-more-fewer`'s `audio-cues.json` on disk is now `{}` (empty) — its cited log
+above is genuine historical evidence of what the input LOOKED LIKE when the log was written, but the log and
+the current input no longer pair up, so do not attempt to re-verify this exemplar against today's input; use
+`kp2-counting-by-tens` (still live-consistent) as the calibration anchor instead. This exact drift is now
+CAUGHT mechanically going forward — the hardened `sound-asset-gap-scan` hard-fails a zero-key `audio-cues.json`
+rather than passing it silently (see node.json's `optimize.measure[0].note`). C3 is inconsistently
 reached (most runs never encounter a genuine upstream oddity to flag, so it is vacuously fine — but no sampled
 run has ever exercised it against a real malformed input). The marks a good run is *expected to STALL on* are
 the **discriminator cluster: C5 (metadata sanity)** — no sampled historical run has ever read past a resolved

@@ -111,51 +111,18 @@
   "optimize": {
     "measure": [
       {
-        "id": "scene-tsx-non-empty",
-        "gate": { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx" },
-        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — mirrors this node's own live checks.post so the optimize substrate's hard-measure report (optimize/substrate/measure.w4a-composer.json) carries the SAME floor axes triage reads, entirely parallel to the run's own gates."
-      },
-      {
-        "id": "scene-file-non-empty",
-        "gate": { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx" }
-      },
-      {
-        "id": "layout-non-empty",
-        "gate": { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/layout.ts" }
-      },
-      {
-        "id": "manifest-non-empty",
-        "gate": { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/manifest.ts" }
-      },
-      {
-        "id": "bbox-manifest-parses",
-        "gate": { "kind": "json-parses", "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json" }
-      },
-      {
-        "id": "measured-pass-ran",
-        "gate": {
-          "kind": "regex-present",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
-          "param": "\"method\"\\s*:\\s*\"getBBox\""
+        "id": "w4a-hard-floor",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w4a-composer/scripts/measure.mjs",
+            "--run", "{{RUN}}",
+            "--workspace", "{{WORKSPACE}}",
+            "--out", "{{RUN}}/optimize/substrate/w4a-composer.measure.json"
+          ]
         },
-        "note": "A SKIPPED/crashed measured pass means the gate that would have caught a laundered self-report never ran — that is itself the defect, not a clean bill."
-      },
-      {
-        "id": "measured-collision-floor",
-        "gate": {
-          "kind": "regex-present",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
-          "param": "\"measuredCollisionCount\"\\s*:\\s*0\\b"
-        },
-        "note": "Reads the MANIFEST directly, never the model's self-report — this is the durable fix for the composer self-grade 'laundering' recurrence on record in .agents/tracked-systems.md (W4a reporting 0 collisions while its own manifest disagreed). See nodes/w4a-composer/memory.md."
-      },
-      {
-        "id": "caption-intrusion-floor",
-        "gate": {
-          "kind": "regex-present",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
-          "param": "\"captionIntrusionCount\"\\s*:\\s*0\\b"
-        }
+        "writes": ["{{RUN}}/optimize/substrate/w4a-composer.measure.json"],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — replaces the old {{arg.lessonId}}/{{state.*}}-token gate array (fragile: an old argless run.json or an empty state.json silently REJECTS those ops, both proven conditions in this repo) with an in-script, run.json-discovered lessonId + a single deterministic pass. It (1) asserts bbox-manifest.json FRESHNESS against THIS run's own node window — closing the stale-manifest false-green where lesson-measured.mjs's main().catch swallows a render/extract crash to exit 0 without ever regenerating the file; (2) re-derives the method/collision/caption floor straight off the artifact; (3) asserts the bboxBinding measure-id≡manifest-id bijection (a broken bijection silently exempts an element by falling to zone \"decoration\" — the f1258 vacuous-green class); (4) guards manifest.ts's own allowedOverlaps exemption list against a phantom/dead id. See scripts/measure.mjs (full rationale) and memory.md."
       }
     ],
     "criteria": "nodes/w4a-composer/criteria.md"

@@ -38,6 +38,7 @@
   },
   "policy": { "fail": "block" },
   "optimize": {
+    "criteria": "nodes/w2b-audio-captions/criteria.md",
     "measure": [
       {
         "id": "w2b-content-invariants",

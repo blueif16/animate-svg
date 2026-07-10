@@ -49,6 +49,16 @@ says this — the discipline is documented, the lapse is in execution). The node
 `onset-augmentation-coverage` op now counts `{totalCues, cuesWithOnsets}` per run (NOT a pass/fail gate — see
 `criteria.md` R4 for why a hard gate here would over-fire: every cue gets ASR-aligned regardless of whether it
 is enumeration content, so "needs onsets" is a judgment call for the soft rubric, not a schema-checkable fact).
+**HARDENED 2026-07-10** (adversarial pass proved the measure keyed on field PRESENCE, not validity — a
+`tokenOnsets: []` or a line-adjacent string match both gamed it, and a missing/unreadable `asr-alignment.json`
+degraded to an indistinguishable `{totalCues:0}` false-green): `scripts/measure.mjs` now object-scopes the
+Clips.ts parse (survives pretty-printing), requires a non-empty onset array length-matched to `targetTokens`,
+monotonic, and in-window — a present-but-invalid `tokenOnsets` is now a hard `malformedOnsets` FAIL (exit 1) —
+and fails-closed with an explicit `asrError` on an unreadable ASR/Clips source. The RAW coverage judgment (does
+this cue need onsets at all) is unchanged and still soft — only the validity of a present onset array is now
+hard. `audio-gate-pass-floor` / `audio-gate-truncation-never-blocks-silently` were the same fix: both moved off
+a whole-file `regex-present` scan (gameable by any nested same-named field) onto a JSON.parse of the TOP-LEVEL
+`pass` / `truncationFails` field.
 **Live evidence:** `kptest-count-to-two`'s committed `kptestCountToTwoClips.ts` has zero `tokenOnsets` fields
 on any cue, while `cue-1-count` (`tokenStartIndex:8, tokenEndIndex:23`) is exactly the enumeration cue that
 needs it — this instance is UNCORRECTED as of this write (see `criteria.md`'s Gold exemplar Calibration note).

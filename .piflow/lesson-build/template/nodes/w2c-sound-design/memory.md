@@ -42,9 +42,10 @@ should have caught this outright; that it didn't suggests that historical run's 
 **Prevention:** `contract.schema` now points every `audio-cues.json` at the sibling `audio-cues.schema.json`
 (draft-2020-12; `additionalProperties:false` at every level; `sfx[].event` a closed enum) — confirmed via a
 direct ajv test to reject both historical instances with precise, quotable errors (see `criteria.md`
-"Wiring + readiness"). CAVEAT: the gate silently SKIPS if ajv fails to resolve a 2020-12 build — CONFIRMED
-true in this environment today (only ajv v6.12.6/draft-07 resolves from `@piflow/core`'s dependency chain).
-Re-verify this gate is LIVE (not skipped) before trusting it in triage.
+"Wiring + readiness"). The gate is CONFIRMED LIVE (not skipped): `@piflow/core`'s dependency chain resolves
+`ajv@8.20.0`'s `dist/2020.js`, and `defaultSchemaValidator()` run directly against `kptest-make-ten` /
+`kp2-counting-by-tens` returns real quoted errors with `skipped: null` (clean artifacts pass with no false
+positive). Re-verify this stays true after any future ajv/dependency change.
 
 ### Required `lessonId` field silently omitted
 sig: w2c-sound-design::missing-lessonid
@@ -73,16 +74,17 @@ mirroring how sibling SKILLs state this rule outright rather than leaving it imp
 
 ## Open threads
 <!-- unresolved; drop each when absorbed. -->
-- **Registry-membership + density-ceiling hard measure — DEFERRED, not a node defect.** Two more
-  deterministic invariants (key-registry membership; the ≤1-per-cue / ≤1-ta-da ceilings) are specified in
-  `criteria.md` "Wiring + readiness" but cannot be wired as an `optimize.measure` op today: that stage's
-  `ResolveCtx` (`packages/core/src/optimize/substrate/measure.ts:122`) carries no `{{arg.*}}`, and no plain
-  `lessonId` state channel is promoted anywhere in this template (only `camelLessonId`/`composition`, by
-  `setup-scaffold`) — so a measure op has no way to know WHICH lesson's `audio-cues.json` to check. Owed to
-  the orchestrator as a cross-node consolidation item (touches `setup-scaffold` or the SDK, outside this
-  node's own scope).
-- **ajv 2020-12 resolvability — an SDK/environment-wide gap, not node-specific.** See the schema-shape-drift
-  lesson's CAVEAT above; re-verify after any change to `@piflow/core`'s or the environment's ajv dependency.
+- **Registry-membership + density-ceiling + concurrent-audio-budget hard measures — WIRED (was DEFERRED).**
+  All three are now `optimize.measure` ops (`node.json` → `optimize.measure` → `scripts/measure.mjs`). The
+  prior blocker (`ResolveCtx` carrying no `{{arg.*}}`) is fixed upstream (`packages/core` `9442c31`), but the
+  script does not depend on that fix — it derives `lessonId` IN-SCRIPT from `<run>/.pi/run.json`'s recorded
+  artifact paths, robust across runs that never persisted `args` (verified against real run `ctt-2`,
+  `args: null`, lessonId still discovered correctly). See `criteria.md` "Wiring + readiness" for the full
+  validation (fired on `kptest-make-ten`'s density + budget breach and a constructed registry-membership
+  evasion; clean on `kp1-hello-greetings`/`kptest-fenyuhe-six`; fail-closed to `null` on every degrade path).
+- **ajv 2020-12 resolvability — CONFIRMED LIVE, re-verify only after a future dependency change.** See the
+  schema-shape-drift lesson above; `@piflow/core` now resolves `ajv@8.20.0`, so the schema gate fires real
+  quoted errors (`skipped: null`) rather than silently skipping.
 
 ## History
 git log --grep '^skillsys(w2c-sound-design)'

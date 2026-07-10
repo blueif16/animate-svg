@@ -3,8 +3,9 @@
      NEVER injected into setup-scaffold's runtime prompt — a node must not see its own failure history.
      Capped (~40 lines, top-loaded: the bottom truncates first). Maintenance contract = the optimizer skill. -->
 
-_status: 3 lessons (state-promote fields dropped [recurring, hard-caught], sandbox write-permission friction
-[recurring, unmitigated], optimize block unwired [fixed this session])_
+_status: 4 lessons (state-promote fields dropped [recurring, hard-caught], sandbox write-permission friction
+[recurring, unmitigated], optimize block unwired [fixed 2026-07-09], adversarial-pass hard-measure holes
+[closed 2026-07-10 — see below; the "unwired" lesson's own Prevention text is now stale, corrected there])_
 
 ## Current behavior
 Verifies `brief.md` already exists (blocks if not), scaffolds `pipeline.json` via the shared
@@ -61,20 +62,52 @@ triage --node setup-scaffold` would HALT (`buildJudgePrompt` throws "no optimize
 `runSubstrateMeasure` degraded to an empty op[] — none of this node's own leverage axes reached the substrate
 hard-measure report. The identical gap was independently found across the OTHER 13 sibling `node.json` files in
 this template (per `w4a-composer/memory.md`'s own note) — a workflow-wide runway gap, not unique to this node.
-**Prevention:** wired `optimize.measure` (ONE new check: `brief-not-authored-by-node`, a trace-regex gate — see
-`criteria.md`'s "Substrate gap" section for why the other two real leverage checks, lessonId/constPrefix
-fidelity and no-leftover-template-tokens, could NOT be safely wired the same way: `runSubstrateMeasure`'s
-`ResolveCtx` never loads the run's `args`, so a check path keyed on the run's lesson-id arg throws
-`MissingArgError` uncaught and crashes measurement for the whole node) and
+**Prevention:** wired `optimize.measure` (ONE new check: `brief-not-authored-by-node`, a trace-regex gate — this
+paragraph originally explained why the other two real leverage checks, lessonId/constPrefix fidelity and
+no-leftover-template-tokens, could NOT be safely wired the same way, citing a `ResolveCtx`-never-loads-args
+crash risk. **STALE as of 2026-07-10 — see the `hard-measure-adversarial-holes` lesson below**: the SDK was
+fixed upstream (args now threaded + graceful degrade, not a crash) and C2/C3 are now hard-wired via a script
+that avoids the `{{arg.*}}` dependency entirely. Corrected here rather than left to mislead the next reader.) and
 `optimize.criteria: "nodes/setup-scaffold/criteria.md"`
 (freshly authored — `.agents/skill-system-criteria.md` explicitly omits setup-scaffold as "trivial", so there was
 no existing block to copy, unlike w4a-composer's case). Watch for regression: if `node.json` is edited later and
 the `optimize` block or the criteria path goes stale, the loop silently reverts to blind — re-run `piflowctl
 optimize triage --node setup-scaffold --dry-run` to confirm it still resolves.
 
+### Adversarial pass proved 3 hard-measure holes: bash-redirect evasion, vacuous-pass on a missing trace, unmeasured `</item>` leak
+sig: setup-scaffold::hard-measure-adversarial-holes
+recurrence: 1 (first observed + closed this session, 2026-07-10)
+[[lesson-pipeline-scaffold]]
+**Root:** the ONLY wired gate (`brief-not-authored-by-node`) keyed write/edit tool events only, so the node's
+own step-2 `bash` scaffold tool redirecting/tee-ing/sed-i-ing into brief.md hit `false` — a vacuous PASS, PROVEN
+live against a constructed evasion. No measure asserted the trace itself was found/well-formed (a missing/
+truncated events.jsonl would let every regex-absent gate vacuously pass). The real `</item>` return-string leak
+(issues/zesty-caramel.md, run kp3-tens-and-ones-place-r3) was named only in a judge-facing issue file, never
+measured. C2 (lessonId + promote-fidelity)/C3 (no-leftover-tokens) still lived soft-only.
+**Prevention:** added `brief-not-mutated-via-bash` + `no-item-tag-leak-in-return` gates, and a `hard-checks`
+op (`scripts/measure/hard-checks.mjs`) providing `traceFound`/`traceTruncated` liveness (checked across BOTH
+the `.pi` and legacy `_pi` layouts) + hard C2/C3. Lessons id derived IN-SCRIPT from run.json's own artifact
+paths, never `{{arg.*}}` (see criteria.md's "Substrate gap" UPDATE). Live-testing against the REAL run corpus
+caught 2 bugs of its OWN before landing: (1) the bash-mutation regex's operator→target gap was wide enough to
+spill past the command string's closing JSON quote into an unrelated `ls` stdout echo that happened to list
+`brief.md` — a false positive on run kp3-tens-and-ones-place-r3, fixed by excluding `{}:` from the gap class;
+(2) trace-liveness was originally gated behind successful lessonId derivation, so it silently read
+`traceFound:0` on kp3-tens-and-ones-place-r1 (status:"running", `artifacts:[]`) even though its 470KB trace
+genuinely exists — decoupled so liveness runs unconditionally. Both fixes re-verified clean against every real
+trace in runs/ (kp3-r1/r2/r3, ctt-1/2) — zero false hits, zero false misses on the one real defect (r2/r3's
+`</item>` leak fires; a clean run does not).
+**Residual, honestly scoped:** the bash-mutation gate only catches the 3 NAMED evasion idioms (redirect/tee/
+sed-i), not every mutation idiom (`cp`/`mv` untested); it and the plain regex-absent gates still only read the
+CURRENT `.pi` layout (only the liveness check itself covers `_pi`) — a run genuinely on the legacy layout would
+have its regex gates vacuously pass while liveness correctly reports `traceFound:1` (inconsistent but honestly
+documented, not claimed as full coverage). No real run in this repo has been observed using the `_pi` layout for
+events (confirmed: `_pi/<node>/` here holds `prompt.md`/`tools.ts` staging, never `events.jsonl`).
+
 ## Active invariants
-- `optimize.measure`'s one gate path is bare RUN-relative (`.pi/nodes/setup-scaffold/events.jsonl`), never
-  `{{arg.*}}`/`{{state.*}}`-keyed — see the substrate-gap note above; violating this crashes measurement.
+- `optimize.measure` op paths avoid `{{arg.*}}`/`{{state.*}}` tokens — NOT because they crash anymore (the SDK
+  now degrades gracefully, `@piflow/core` `9442c31`+`7b97c14`), but because every run sampled in this repo has
+  no persisted `.pi/run.json` args block, so such a token would be silently REJECTED (never evaluated). Derive
+  any per-lesson value IN-SCRIPT from run.json's own recorded `artifacts[].path` instead (`hard-checks.mjs`).
 - `criteria.md` is this node's OWN fixture (not a copy of a shared block, since none existed) — an edit to the
   shared `.agents/skill-system-criteria.md` does not propagate here and vice versa; reconcile by hand if the
   shared doc later grows a setup-scaffold entry.
@@ -87,6 +120,12 @@ optimize triage --node setup-scaffold --dry-run` to confirm it still resolves.
 - Cross-node consolidation: verify whether OTHER sibling nodes' `optimize` wiring (per `w4a-composer`'s
   identical finding) has since been fixed workflow-wide, and whether `.agents/skill-system-criteria.md` should
   gain a setup-scaffold entry now that one exists node-locally.
+- Every real trace in this repo independently shows `detectors.truncatedLines:2` (the SDK's own trace detector,
+  corroborating this session's `traceTruncated` finding) — worth a dedicated look at whether this is a systemic
+  pi-runtime JSONL-flush artifact affecting every node, not just setup-scaffold; out of this node's own scope.
+- The bash-mutation/item-tag gates' `.pi`-only scope (see the hard-measure-adversarial-holes residual note) is a
+  known, honestly-documented gap, not a claimed full fix — widen to cover `_pi` too if a real run is ever
+  observed on that layout.
 
 ## History
 git log --grep '^skillsys(setup-scaffold)' ; git log --grep '^optimize(setup-scaffold)'

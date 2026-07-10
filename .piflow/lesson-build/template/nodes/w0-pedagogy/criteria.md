@@ -3,16 +3,18 @@
      human eye. NEVER injected into w0-pedagogy's runtime prompt — a gold example in the pedagogy node's
      context collapses judgment into copying and voids the clean-room signal (the same law as
      w0-classify/criteria.md, .agents/skill-system-criteria.md, and nodes/*/memory.md). Discovered BY
-     CONVENTION at nodes/w0-pedagogy/criteria.md and pointed to from node.json `optimize.judge`. Maintenance =
-     the optimize/enhance skill (the same loop that owns memory.md). -->
+     CONVENTION at nodes/w0-pedagogy/criteria.md and pointed to from node.json `optimize.criteria` (the canonical
+     key; `optimize.judge` is a back-compat READ alias only — this node authors the canonical spelling).
+     Maintenance = the optimize/enhance skill (the same loop that owns memory.md). -->
 
 ## What this file is (read before judging)
 
 The **structural floor is a PRIOR, separate stage**: `node.json` `contract.artifacts` + `checks.post`
-(non-empty) gate the run itself, and `optimize.measure` (`lesson-kind-header-present`,
-`discovery/stage/focal/reinforcement-field-present`, `no-self-audit-leakage`) folds deterministic invariants
-into `optimize/substrate/measure.w0-pedagogy.json` for triage. **None of the marks below is a presence, format,
-or field-name check** — those already passed, and passing them earns NOTHING here.
+(non-empty) gate the run itself, and `optimize.measure` (`pedagogy-field-content-valid` — lesson-kind + every
+discovery/stage/focal/reinforcement occurrence carries REAL non-placeholder content, not just its header token
+— plus `no-self-audit-leakage`) folds deterministic invariants into `optimize/substrate/measure.w0-pedagogy.json`
+for triage. **None of the marks below is a presence, format, or field-name check** — those already passed, and
+passing them earns NOTHING here.
 
 These marks judge the one thing the floor cannot: **the LESSON this pedagogy plan makes POSSIBLE.**
 w0-pedagogy is the FIRST node — "no downstream wave advances without this" (prompt.md) — and it emits prose,
@@ -83,9 +85,9 @@ non-acquisition kind), silently forcing the §4 leakage rule to suppress the ver
 drill — the child can never hear the fact said in full because the plan thinks it is an aha the picture alone
 should reveal.
 **Grounding —** SKILL.md §4 (acquisition carve-out) + §9 (L2) + Wave-0 output header. **Why this cannot be
-gamed:** the header can be PRESENT (the hard floor, `lesson-kind-header-present`) while being WRONG — presence
-earns nothing here; only a kind that is actually correct for the brief's content, forecast against everything
-the rest of the plan does with it, passes.
+gamed:** the header can carry REAL content (the hard floor, `pedagogy-field-content-valid`) while still being
+WRONG — a valid-looking, non-placeholder `lesson kind:` value earns nothing here; only a kind that is actually
+correct for the brief's content, forecast against everything the rest of the plan does with it, passes.
 
 ### C2 · Each discovery is real teaching, not narration restated (R)
 **PASS —** The `discovery` line states what the child KNOWS LEAVING the beat that they didn't know walking in,

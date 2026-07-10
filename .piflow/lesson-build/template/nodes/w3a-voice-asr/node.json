@@ -79,22 +79,32 @@
       {
         "id": "audio-gate-pass-floor",
         "when": "post",
-        "gate": {
-          "kind": "regex-present",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/audio-gate.json",
-          "param": "\"pass\":\\s*true"
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3a-voice-asr/scripts/measure.mjs",
+            "--check", "audio-gate-pass-floor",
+            "--run", "{{RUN}}",
+            "--out", "{{RUN}}/optimize/substrate/audio-gate-pass-floor.json"
+          ]
         },
-        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING -- reused for triage, parallel to the run's own gates). REUSE: the node's own checks.post only asserts audio-gate.json is non-empty + valid JSON -- it never asserts the gate's own verdict. A clean exit with a well-formed but pass:false report (an unresolved drone/empty-short/dead-air) would still read `ok` at the driver's contract level; this is the floor the schema can't encode (a JSON shape check can't see a boolean's VALUE). Zero new script -- reads the report the node's own STEP1 audio-gate run already wrote."
+        "writes": ["optimize/substrate/audio-gate-pass-floor.json"],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING -- reused for triage, parallel to the run's own gates). REUSE: the node's own checks.post only asserts audio-gate.json is non-empty + valid JSON -- it never asserts the gate's own verdict. HARDENED (adversarial pass, 2026-07-09): was a whole-file `regex-present` scan for `\"pass\":\\s*true`, which matches ANY occurrence of that substring anywhere in the file, not specifically the TOP-LEVEL field -- a nested per-finding \"pass\" key (or a hand-edited artifact) would false-PASS regardless of the real verdict. Now JSON.parse()s the report and reads `.pass` at the top level explicitly via scripts/measure.mjs (no new SDK code -- the same run+writes op shape onset-augmentation-coverage already used). Exit 0 = top-level pass===true; exit 1 with an explicit `error` string = pass is false/missing OR the file is missing/unreadable/unparseable (fail-closed, never a silent skip)."
       },
       {
         "id": "audio-gate-truncation-never-blocks-silently",
         "when": "post",
-        "gate": {
-          "kind": "regex-present",
-          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/audio-gate.json",
-          "param": "\"truncationFails\":\\s*0"
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3a-voice-asr/scripts/measure.mjs",
+            "--check", "audio-gate-truncation-floor",
+            "--run", "{{RUN}}",
+            "--out", "{{RUN}}/optimize/substrate/audio-gate-truncation-floor.json"
+          ]
         },
-        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) -- asserts the design promise the prompt states verbatim (STEP1: 'truncation NEVER sets pass:false'): truncationFails stays 0 even though truncationAdvisories may be non-zero. A non-zero truncationFails would mean the advisory/hard split silently regressed (a truncation defect started gating pass without the node or a future edit noticing). Reuse of the same on-disk report; zero new script."
+        "writes": ["optimize/substrate/audio-gate-truncation-floor.json"],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) -- asserts the design promise the prompt states verbatim (STEP1: 'truncation NEVER sets pass:false'): truncationFails stays 0 even though truncationAdvisories may be non-zero. HARDENED (adversarial pass, 2026-07-09): same whole-file-substring fragility as audio-gate-pass-floor above -- now JSON.parse()s and reads the top-level `truncationFails` field explicitly via scripts/measure.mjs. Exit 0 = top-level truncationFails===0; exit 1 = nonzero/missing/unreadable/unparseable (fail-closed)."
       },
       {
         "id": "onset-augmentation-coverage",
@@ -102,15 +112,14 @@
         "run": {
           "cmd": "node",
           "args": [
-            "-e",
-            "const fs=require(\"fs\"),path=require(\"path\");const a=process.argv.slice(1);const asrPath=a[0],clipsPath=a[1],out=a[2];const rd=p=>{try{return JSON.parse(fs.readFileSync(p,\"utf8\"))}catch(e){return null}};const asr=rd(asrPath);let clipsSrc=\"\";try{clipsSrc=fs.readFileSync(clipsPath,\"utf8\")}catch(e){}const lines=clipsSrc.split(\"\\n\");const cueIds=(asr&&Array.isArray(asr.cues)?asr.cues:[]).map(c=>c.id);const withOnsets=cueIds.filter(id=>{const line=lines.find(l=>l.includes(\"id: \\\"\"+id+\"\\\"\"));return line&&line.includes(\"tokenOnsets\")});const report={totalCues:cueIds.length,cuesWithOnsets:withOnsets.length,cueIdsWithOnsets:withOnsets};try{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(report,null,2))}catch(e){}console.log(\"onset-augmentation-coverage: \"+withOnsets.length+\"/\"+cueIds.length+\" cues carry tokenOnsets\")",
-            "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/asr-alignment.json",
-            "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/generated/{{state.camelLessonId}}Clips.ts",
-            "{{RUN}}/optimize/substrate/onset-coverage.json"
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3a-voice-asr/scripts/measure.mjs",
+            "--check", "onset-coverage",
+            "--run", "{{RUN}}",
+            "--out", "{{RUN}}/optimize/substrate/onset-coverage.json"
           ]
         },
         "writes": ["optimize/substrate/onset-coverage.json"],
-        "note": "MEASURE -- a GRADED count, deliberately NOT a gate (Part D thin wrapper; zero new SDK code). The prompt's own STEP1 names a real regression class ('ONSET CLOBBER': a cue with a scored ASR window -- asr-alignment.json tokenStartIndex non-null -- but no tokenOnsets in the frozen <camel>Clips.ts, because a later bare voice roll without --align clobbered the augmented module). A first pass keyed this on tokenStartIndex!=null as the 'needs onsets' predicate, but every cue gets ASR-aligned regardless of whether it is spoken-enumeration content (verified: kptest-count-to-two's asr-alignment.json has tokenStartIndex set on ALL 3 cues, only one of which -- cue-1-count, role count-on -- is actually enumeration content; script-cues.json's `role` field is NOT populated on any other lesson in this repo, so it is not a reliable general 'is this an enumeration cue' signal). Asserting a floor on that predicate would over-fire on every lesson -- worse than not measuring. So this stays a pure COUNT (totalCues, cuesWithOnsets folding into graded[] for triage), never a pass/fail: is-this-lesson's-onset-coverage-RIGHT is a judgment call for criteria.md R4 (which CAN read the storyboard's teaching actions), not this script. VALIDATED against the real artifact: kptest-count-to-two reports {totalCues:3, cuesWithOnsets:0} -- correctly counts the current gap (see memory.md) without wrongly asserting all 3 needed it."
+        "note": "MEASURE -- the COUNT half stays a GRADED count, deliberately NOT a gate on raw coverage (Part D thin wrapper; not every cue needs onsets -- criteria.md R4, which CAN read the storyboard's teaching actions, judges that). HARDENED (adversarial pass, 2026-07-09), three proven holes closed via scripts/measure.mjs: (1) the prior inline one-liner counted a cue as 'has onsets' if the STRING 'tokenOnsets' appeared on the SAME LINE as its `id:` -- keys on line-adjacency, breaks under pretty-printing, and a `tokenOnsets: []` (empty, present, vacuous) satisfied it. Now object-scopes the parse (a string-aware brace scanner extracts each cue's `{ ... }` literal regardless of line breaks) and VALIDATES: tokenOnsets must be non-empty, length-matched to targetTokens, monotonic (non-decreasing), and every value in-window [0, narrationFrames) -- a present-but-invalid tokenOnsets is now a MALFORMED-onsets HARD FAIL (exit 1), never silently counted as coverage. (2) an unreadable/missing asr-alignment.json or Clips.ts now reports an explicit `asrError`/`error` string and exits 1, distinct from a genuinely-empty-but-valid `{totalCues:0}` (no error field, exit 0) -- previously both degraded to the identical-looking `{totalCues:0, cuesWithOnsets:0}`, a false green. (3) lessonId/paths are discovered from this run's OWN recorded `.pi/run.json` artifacts, never `{{arg.lessonId}}` (robust across runs that predate arg-persistence -- see w2b-audio-captions/scripts/measure.mjs precedent). VALIDATED against the real artifact: kptest-count-to-two now reports {totalCues:3, cuesWithOnsets:0, malformedOnsets:[]} -- correctly counts the documented gap (memory.md) with zero false MALFORMED flags on a legitimately onset-absent lesson."
       }
     ]
   },

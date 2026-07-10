@@ -53,3 +53,54 @@ test("no bbox-manifest summary at all → not-applicable, never a crash", () => 
   assert.equal(r.verdict, "pass");
   assert.deepEqual(r.signals, []);
 });
+
+// ── the proven adversarial evasion: an outright DENIAL of a measured signal ──
+// bbox-manifest already measured the signal as non-clean; a report that DENIES it happened is factually
+// false, not a citation. The old substring-presence check saw the keyword ("collision"/"overlap") appear
+// anywhere in the text and rubber-stamped it — this is the exact hole the adversarial pass named.
+
+test("a measured collision DENIED outright ('no collisions... clear') must FAIL, not pass on keyword presence", () => {
+  const r = checkGateCitations({
+    summary: { gatesFailed: [], measuredCollisionCount: 3, captionIntrusionCount: 0 },
+    verificationText: "No collisions were found in this lesson; the overlap check came back clear.",
+  });
+  assert.equal(r.verdict, "fail");
+  assert.equal(r.missing.length, 1);
+  assert.equal(r.missing[0].kind, "measuredCollisionCount");
+});
+
+test("a caption intrusion DENIED outright ('caption intrusion: none') must FAIL", () => {
+  const r = checkGateCitations({
+    summary: { gatesFailed: [], measuredCollisionCount: 0, captionIntrusionCount: 5 },
+    verificationText: "Caption intrusion: none. Everything else looks great.",
+  });
+  assert.equal(r.verdict, "fail");
+  assert.equal(r.missing[0].kind, "captionIntrusionCount");
+});
+
+test("a gatesFailed name DENIED outright ('contrast gate: passed') must FAIL", () => {
+  const r = checkGateCitations({
+    summary: { gatesFailed: ["contrast"], measuredCollisionCount: 0, captionIntrusionCount: 0 },
+    verificationText: "The contrast gate passed cleanly across every sampled frame.",
+  });
+  assert.equal(r.verdict, "fail");
+  assert.equal(r.missing[0].kind, "gatesFailed");
+});
+
+test("a zero-count denial ('0 collisions') must FAIL, without false-flagging an unrelated decimal", () => {
+  // Regression guard: the denial detector must not be tripped by an unrelated decimal ("ratio 0.364")
+  // sitting near the keyword in a GENUINE citation (see the pass-case above) — only a literal adjacent "0".
+  const r = checkGateCitations({
+    summary: { gatesFailed: [], measuredCollisionCount: 2, captionIntrusionCount: 0 },
+    verificationText: "Layout review: 0 collisions measured across all key frames.",
+  });
+  assert.equal(r.verdict, "fail");
+});
+
+test("a genuine acknowledgment survives the denial check even when a decimal sits nearby (no regression)", () => {
+  const r = checkGateCitations({
+    summary: { gatesFailed: [], measuredCollisionCount: 7, captionIntrusionCount: 0 },
+    verificationText: "namecard-sam ∩ rah-slow measured overlap (ratio 0.364) — justified as by-design adjacency.",
+  });
+  assert.equal(r.verdict, "pass");
+});

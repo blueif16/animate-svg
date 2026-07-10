@@ -5,7 +5,7 @@
      `memory-slices`. Lessons below are grounded in REAL run evidence (`.piflow/lesson-build/runs/*`), never
      invented — recurrence is COUNTED from traces, not asserted. -->
 
-_status: 2 lessons (both real, evidence-backed; recurrence 1–2)_
+_status: 3 lessons (all real, evidence-backed; recurrence 1–2)_
 
 ## Current behavior
 <!-- what w3b-primitive-build reliably does now (1–3 lines), updated from traces. -->
@@ -24,6 +24,23 @@ avoided.
        [[<okf-slice-key>]]        (the code-map slice the fixer reads)
        **Root:** <why it happens>
        **Prevention:** <the generalized guard> -->
+
+### Aesthetic-stills claim was unverifiable by a text-only judge — no hard floor for C5
+sig: w3b-primitive-build::gap-false-positive|no-still-hard-floor
+recurrence: 1
+[[primitive-registry]]
+**Root:** criteria.md's C5 ("Aesthetic quality independently VERIFIED") was SOFT-ONLY — the blind judge reads
+only the artifact/tier-2-log prose and cannot SEE a PNG, so a claim like "stills rendered; finger-cover passed"
+with zero still ever written to disk passed undetected, on exactly the highest-stakes path (a new primitive
+shipping a bad/unverified look becomes a PERMANENT catalog defect every future lesson inherits). Proven by an
+adversarial verification pass, 2026-07-09.
+**Prevention:** a third `optimize.measure` op, `aesthetic-stills-floor`
+(`scripts/measure/check-aesthetic-stills.mjs`), now runs every pass: it STRUCTURALLY detects a shipped
+primitive (registry ids now vs. the git HEAD revision of `primitive-registry.json` — never a keyword scan of
+this artifact's prose, unlike `check-lesson-primitives.mjs`'s own 5-alternative `REUSE_VERDICT` anti-vacuous
+guard) and FAILS when `out/<lessonId>/primitive-checks/` holds zero stills. Never trust C5 (soft/judge) alone
+to catch a missing still again — existence is now a hard, structural floor; C5 only judges the QUALITY of
+stills that genuinely exist.
 
 ### Table-header literal parsed as a phantom component citation
 sig: w3b-primitive-build::gate-false-positive|header-literal-as-component
@@ -65,7 +82,8 @@ since this file is scoped to w3b-primitive-build only.
   a brief-hinted name taken on faith (the brief/upstream hint can name a deprecated or nonexistent primitive).
 - A new primitive ships ONLY behind a named, unmet teaching demand, serves exactly ONE teaching intention, adds
   no frame/motion literal to its public API, and is never committed without test stills the node itself looked
-  at (declaring aesthetic quality from code alone is a hard-floor breach, not a judgment call).
+  at (declaring aesthetic quality from code alone is a hard-floor breach, not a judgment call — now ALSO a hard,
+  structural `optimize.measure` gate, `aesthetic-stills-floor`, not merely a soft rule; see the lesson above).
 - The topic-intro card is resolved HERE (reuse or design), never deferred to the composer.
 
 ## Open threads

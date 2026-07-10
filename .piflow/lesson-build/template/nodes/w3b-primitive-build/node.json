@@ -79,6 +79,21 @@
           "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
           "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the SAME chain `npm run registry:check` runs, invoked as direct `node scripts/...` calls (bypassing `npm run`, per the sandbox-EPERM lesson above) so it fires reliably regardless of the node's own sandbox. Fires every run, zero-gap or not: catches a hand-edited generated file (primitive-registry.json / catalog-digest.md are OWNED-but-generated — w3b must never hand-edit their structural fields), a stranded barrel export, or a gallery/demo drift — none of which the per-lesson check above can see. Non-zero exit = the WHOLE catalog (every future lesson's REUSE menu) drifted, a strictly higher-severity signal than a single lesson's phantom citation."
         }
+      },
+      {
+        "id": "aesthetic-stills-floor",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3b-primitive-build/scripts/measure/check-aesthetic-stills.mjs",
+            "{{RUN}}",
+            "{{WORKSPACE}}"
+          ]
+        },
+        "writes": [
+          "{{RUN}}/optimize/substrate/w3b-primitive-build-stills.json"
+        ],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the hard floor for criteria.md C5 (2026-07-09 hardening; closes a proven adversarial-pass hole). C5 was SOFT-ONLY: a text-only blind judge cannot see a PNG, so a fabricated 'stills rendered; finger-cover passed' claim passed on the highest-stakes gap-shipping path (a bad/unverified new primitive becomes a PERMANENT catalog defect every future lesson inherits). This script FAILS, unconditionally, when a primitive was registered this run (STRUCTURALLY detected — registry ids now vs the git HEAD revision of primitive-registry.json, never a prose regex over the artifact's English, unlike check-lesson-primitives.mjs's own 5-alternative REUSE_VERDICT anti-vacuous guard) but out/<lessonId>/primitive-checks/ holds zero rendered stills. Declares `writes` (unlike the two ops above) so its numeric leaves fold into the substrate report's `graded` map — the axis triage's own harness is told to read, which was structurally EMPTY for this node before this op existed. Fail-closed: an unresolvable lessonId, unreadable registry, or git failure reports stillsFloorPass:0 + stillsFloorSkipped:1 (a visible skip, never a silent ok:true) and exits 1, same as a genuine floor breach; see the script's own header for the full rationale + memory.md."
       }
     ],
     "criteria": "nodes/w3b-primitive-build/criteria.md"

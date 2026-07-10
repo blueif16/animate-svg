@@ -3,7 +3,7 @@
      human eye. NEVER injected into w2c-sound-design's runtime prompt — a gold example in the sound
      designer's context collapses judgment into copying and voids the clean-room signal (the same law as
      game-omni's nodes/w0-classify/criteria.md and every nodes/*/memory.md). Discovered BY CONVENTION at
-     nodes/w2c-sound-design/criteria.md and pointed to by node.json's `optimize.judge`. Maintenance = the
+     nodes/w2c-sound-design/criteria.md and pointed to by node.json's `optimize.criteria`. Maintenance = the
      optimize/enhance skill (the same loop that owns memory.md). Authored via the method in
      `piflow-overlord/references/building-measures.md`. -->
 
@@ -190,29 +190,41 @@ correctly in a row — pedagogy's discovery/reward beat.
     check should have caught. That it didn't suggests THAT historical run's post-checks were elided (a
     companion/dev profile) — a cross-cutting WIRING gap, not specific to this node's own measures; worth the
     orchestrator's attention across the whole workflow, not just here.
-  - ⚠️ **KNOWN SKIP RISK.** `defaultSchemaValidator()` (`packages/core/src/runner/schema.ts`) best-effort
-    `import('ajv/dist/2020.js')`s and WARNS+SKIPS (non-blocking) if that fails to resolve — the exact
-    "game-omni blueprint schema-compile gate silently skipped" failure class cited in
-    `piflow-overlord/references/measurement-runway.md`. CONFIRMED in this environment: the only `ajv`
-    resolvable from `@piflow/core`'s dependency chain is `/Users/tk/node_modules/ajv` **v6.12.6** (draft-07 —
-    no `dist/2020.js` at all). Until a real ajv 8+ is a resolvable dependency somewhere in that chain, this
-    gate DEGRADES TO A SILENT SKIP at run time even though the schema itself is proven correct above. This is
-    an SDK/environment-wide gap (every `contract.schema` in every piflow product is affected, not just this
-    node) — flagged as the consolidation item this node owes the orchestrator. Re-run the same 6-sample test
-    after any ajv dependency change to reconfirm the gate is LIVE, not merely present.
+  - ✅ **RE-CONFIRMED LIVE (was a stale caveat — corrected).** A prior pass of this file asserted
+    `defaultSchemaValidator()` (`packages/core/src/runner/schema.ts`) SILENTLY SKIPS because only ajv v6
+    (draft-07, no `dist/2020.js`) resolved from `@piflow/core`'s dependency chain — the exact "game-omni
+    blueprint schema-compile gate silently skipped" failure class cited in
+    `piflow-overlord/references/measurement-runway.md`. **That is no longer true.** Re-verified directly
+    against `@piflow/core`'s own dependency chain (`ajv@8.20.0` now resolves `ajv/dist/2020.js` there —
+    `/Users/tk/Desktop/piflow/node_modules/.pnpm/ajv@8.20.0/`) and by calling `defaultSchemaValidator()` +
+    `validateArtifactSchemas()` directly against this node's real historical artifacts:
+    `kptest-make-ten/audio-cues.json` → `{ invalid: [{ errors: [8 quoted messages incl. "/ must have
+    required property 'lessonId'", "/outro/resolve must be boolean", 6× "/sfx/N/event must be equal to one
+    of the allowed values"] }], checked: 1, skipped: null }`; `kp2-counting-by-tens` →
+    `{ errors: ["/ must have required property 'lessonId'"] }`; `kp1-hello-greetings`/`kptest-fenyuhe-six` →
+    clean (not in `invalid[]`, no false positive). **`skipped: null` on every run** — the gate is LIVE, not
+    degraded. Re-run this same check after any future ajv/dependency change to reconfirm; do not assume it
+    stays live without re-testing.
 - **SOFT** → this file's checklist + rubric + gold (above) as the blind judge's references — JUDGING only,
   never injected into w2c-sound-design's prompt.
-- **DEFERRED follow-on (documented, NOT wired — see `memory.md` "Open threads" for the exact blocker).**
-  Two node-specific deterministic invariants a static schema cannot express: (1) **registry-membership** —
-  `bed`/`intro.sting`/`sfx[].sound` must be a LIVE member of the shared library's `_beds`/`_stings`/`_sfx`
-  `_index.json` (a growing, data-driven registry — exactly the same class of gap as game-omni w0-classify's
-  documented `archetype ∈ live registry` follow-on); (2) **density ceilings** — ≤1 `sfx` row per `cue`, and
-  `ta-da` used ≤1 time across the whole file (C2/C3's Required floor, currently judged only by the SOFT
-  rubric above). Both are mechanically trivial (read `audio-cues.json` + the three `_index.json` files;
-  group-count by `cue`; count `sound==="ta-da"`) but CANNOT be wired as an `optimize.measure` op today: that
-  stage's `ResolveCtx` (`packages/core/src/optimize/substrate/measure.ts:122` — `{run, workspace, state}`)
-  carries no `{{arg.*}}`, and no `lessonId` state channel is promoted anywhere in the template (only
-  `camelLessonId`/`composition`, by `setup-scaffold`) — so a measure op has no way to locate WHICH lesson's
-  `audio-cues.json` to check. Unblocking this needs either (a) `setup-scaffold` promoting a plain `lessonId`
-  state channel, or (b) `runSubstrateMeasure` extending its `ResolveCtx` to carry the run's `args`. Once
-  either lands, wiring the two checks above is a direct copy of the logic already specified here.
+- **WIRED (was DEFERRED — corrected).** The two node-specific deterministic invariants a static schema cannot
+  express are now `optimize.measure` ops (`node.json` → `optimize.measure` → `scripts/measure.mjs`,
+  `id: "w2c-hard-checks"`): (1) **registry-membership** — `bed`/`intro.sting`/`sfx[].sound` checked against
+  the shared library's LIVE `_beds`/`_stings`/`_sfx` `_index.json`; (2) **density ceilings** — ≤1 `sfx` row
+  per `cue` and `ta-da` used ≤1 time across the whole file (C2/C3's Required floor — previously judged only
+  by the SOFT rubric above, now also a hard axis). A third check rides the same op: (3) the
+  ALREADY-EXISTING `assertConcurrentAudioBudget()`/`MAX_CONCURRENT_AUDIO` from `[[sound-design-sfx]]`'s
+  `LessonSfxLayer.tsx`, invoked DIRECTLY (never reimplemented) as a conservative worst-case collision probe
+  (every declared row mapped to the same instant — see `scripts/measure.mjs`'s header comment for why that
+  is sound given `audio-cues.json` carries no frame data at this stage). The prior blocker (`ResolveCtx`
+  carrying no `{{arg.*}}`, so a measure op couldn't know WHICH lesson to check) is fixed upstream
+  (`packages/core` commit `9442c31`, threading run args into the substrate measure `ResolveCtx`) — but
+  `scripts/measure.mjs` deliberately does **not** depend on that fix: it derives `lessonId` IN-SCRIPT from
+  `<run>/.pi/run.json`'s recorded artifact paths (`nodes['w2c-sound-design'].artifacts[].path`), which is
+  populated for every run regardless of whether that run persisted `args` — confirmed against a real historical
+  run (`ctt-2`, whose `run.json` has `args: null`) where the script still correctly discovered
+  `lessonId: "kptest-count-to-two"` and, in doing so, caught a REAL, previously-invisible density violation
+  in that shipped lesson (2 cues each carrying 2 sfx rows). Fail-closed throughout: a missing/unparseable
+  `audio-cues.json`, an undiscoverable `lessonId`, or an unreadable registry/product-import degrades every
+  affected metric to `null` (never a false `0`/pass) plus a recorded `skipped` reason — see `memory.md`
+  "Open threads" (now resolved) and `scripts/measure.mjs`'s header for the full design + validation.

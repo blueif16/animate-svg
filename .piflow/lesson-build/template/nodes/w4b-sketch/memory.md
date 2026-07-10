@@ -5,10 +5,18 @@
      skill (MODE B). Code-map twin: [[sketch-overlay-marks]] (the TeacherMark primitive this node's
      spec targets — resolve there for the component signature/props, never duplicate it here). -->
 
-_status: new — no runs recorded yet_
+_status: active — 1 genuine completed run traced (`kptest-count-to-two`, via run dir `ctt-2`); every
+other sampled run dir left this node `pending`/`dry`/`reused` (no execution). recurrence: 0 for every
+check below — no failure trace exists yet, so no lesson is recorded (never invent one; memory-slices
+MODE A/B law). Corrected from the prior `new` (stale — a genuine run already existed)._
 
 ## Current behavior
 <!-- what w4b-sketch reliably does now (1–3 lines), updated from traces. -->
+On the one genuine traced run (`kptest-count-to-two`, tier-2 log + `sketch-overlay.md`), the node
+produced a well-formed 4-section artifact within budget: 4 cues, 1 mark (underline, C4 only; budget
+`floor(4×0.6)=2`), zero vocabulary/cue-relative violations under the hardened `optimize.measure` script.
+n=1, success-only — too small a sample to name a failure lesson from; this is evidenced behavior, not a
+generalized claim.
 
 ## Known failure modes
 <!-- the generalized LESSON + WHY (not the diff). Reflect on failures, not successes.

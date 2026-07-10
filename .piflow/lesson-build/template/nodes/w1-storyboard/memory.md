@@ -7,13 +7,16 @@
      `[[okf-slice]]` link, per the okf-slices convention for a node with nothing in `.agents/okf/topics/`
      to point at. -->
 
-_status: 3 lessons seeded from real evidence at runway-authoring time (2026-07-09), before any triage
-pass has run. Sources: the documented PRE-W1FIX regression on kptest-fenyuhe-six (preserved at
+_status: 4 lessons on file (2026-07-09) — 3 seeded from real evidence at runway-authoring time, before
+any triage pass had run, plus 1 added same-day from an adversarial hardening pass over the runway itself.
+Sources: the documented PRE-W1FIX regression on kptest-fenyuhe-six (preserved at
 `_prior-runs/kptest-fenyuhe-six/storyboard.PRE-W1FIX.md`, diffed against the fix in
-`remotion-svg-primitives/lesson-data/kptest-fenyuhe-six/_logs/w1-storyboard.md`), and the legacy
-`kp1-fen-yu-he-intro/storyboard.md` artifact (predates the current lesson-storyboard SKILL contract).
-No node.json/prompt.md edit has landed yet — these are OPEN lessons the runway's hard measures
-(`tools/storyboard-lint.mjs`) now catch mechanically; they are recorded here so triage doesn't
+`remotion-svg-primitives/lesson-data/kptest-fenyuhe-six/_logs/w1-storyboard.md`), the legacy
+`kp1-fen-yu-he-intro/storyboard.md` artifact (predates the current lesson-storyboard SKILL contract), and
+the adversarial pass's own proof that `parsePedagogyCues` silently no-op'd on `kptest-count-to-two`'s
+`cue-id:` pedagogy variant (now fixed — see the `runway|pedagogy-cue-id-variant-blind` lesson below). No
+node.json/prompt.md edit has landed yet — these are OPEN content-quality lessons the runway's hard
+measures (`tools/storyboard-lint.mjs`) now catch mechanically; they are recorded here so triage doesn't
 re-diagnose them as new the first time they recur.
 
 ## Current behavior
@@ -30,6 +33,27 @@ Update this section after the first real optimize pass.
        prose — no code anchor
        **Root:** <why it happens>
        **Prevention:** <the generalized guard> -->
+
+### The measure itself silently no-op'd on a real pedagogy.md variant (a RUNWAY defect, not a content one)
+sig: w1-storyboard::runway|pedagogy-cue-id-variant-blind
+recurrence: 1
+prose — no code anchor
+**Root:** an adversarial pass (2026-07-09) proved `tools/storyboard-lint.mjs`'s `parsePedagogyCues`
+returned `[]` on `kptest-count-to-two/pedagogy.md` — the SAME fixture criteria.md §5 cited as evidence
+the hard measure was validated. That fixture's pedagogy uses a bare fenced ` ```\ncue-id: cue-1-count\n…```
+` block (a 5th real corpus variant); the fenced-fallback regex matched only the literal `cue:` token, so
+`cue-id:` silently produced zero pedagogy cues. `discovery-coverage-floor` and `stage-ceiling-exceeded`
+are both gated `if (pedagogyCount > 0)`, so BOTH degraded to no-ops on this run while the tool reported
+only a non-blocking `pedagogy-unparseable` ADVISORY (invisible to `ok`) — a fail-OPEN on a hard measure
+that could not evaluate its own input, exactly the class of defect `measurement-runway.md`'s VALIDITY
+check exists to catch, and it was missed at authoring time because nobody re-ran the tool against the
+fixture's own real pedagogy.md (only its storyboard.md side was checked).
+**Prevention:** `parsePedagogyCues` now accepts `cue:` and `cue-id:` as the same label; a genuinely
+unparseable pedagogy.md now surfaces `pedagogy-unparseable` as a BLOCKING issue (never an advisory-only
+pass) so a future 6th variant fails loud instead of degrading its cross-reference checks silently. Test-
+the-measure DISCIPLINE going forward: validating a hard measure means running it against BOTH sides of
+every cited fixture pair (pedagogy.md AND storyboard.md), not just the artifact under test — a clean
+`ok:true` can hide a `pedagogyDiscoveryCount: 0` no-op if only the top-level verdict is read.
 
 ### A same cue-COUNT hides a silently dropped or re-decided discovery
 sig: w1-storyboard::design|discovery-drop-same-count

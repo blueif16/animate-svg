@@ -2,8 +2,19 @@
 
 > Authored via the method in `piflow-overlord/references/building-measures.md`. This is the reasoning + wiring
 > record; the operational judge-facing fixture it produces is `criteria.md` (pointed to from `node.json`
-> `optimize.judge`), and the operational hard gates it produces are already wired into `node.json`
-> `optimize.measure`. Read `criteria.md` for the soft rubric itself — it is not repeated here.
+> `optimize.criteria`, the canonical key — `optimize.judge` is a back-compat read alias only), and the
+> operational hard gates it produces are already wired into `node.json` `optimize.measure`. Read `criteria.md`
+> for the soft rubric itself — it is not repeated here.
+>
+> **2026-07-09 hardening (adversarial pass closed):** the 5 `regex-present "<field>:\s*\S"` ops described in
+> §2b below (2a–2b, pre-2026-07-09) were PROVEN gameable — a header with an empty/TODO/placeholder value
+> satisfies `\s*\S` — and, independently, were ALWAYS silently dropped (`ops.rejected`, never evaluated) on
+> every run sampled in this repo because their `path` resolved `{{arg.lessonId}}`, which no sampled run.json
+> (including the most recent, 2026-07-07) persists. Both are fixed by ONE new op,
+> `pedagogy-field-content-valid` (`scripts/measure/check-field-content.mjs`), which derives the artifact path
+> from `<run>/.pi/run.json`'s persisted `artifacts[].path` (needs no `{{arg.*}}` token) and validates REAL
+> content per field, not header-token presence. §2b below is kept as the historical record of what was replaced
+> and why; the "not proven to FIRE on a real bad case" caveat it raised is now closed (see §4).
 
 ## 1. What w0-pedagogy is, and its LEVERAGE on the eventual lesson
 
@@ -54,24 +65,50 @@ into `<runDir>/optimize/substrate/measure.w0-pedagogy.json`, which the judge/tri
 Agent-facing reads of the same data (no new code): `piflowctl telemetry <run> w0-pedagogy` (tokens · ctx% · call
 counts · anomalies · per-turn table) and `piflowctl trace <run> w0-pedagogy` (element tree + blind-spot rollup).
 
-### 2b. THIN NEW WRAPPERS — 6 ops WIRED into `node.json` `optimize.measure` (config, not SDK code)
-`pedagogy.md` is markdown prose, not JSON, so the only usable `CHECK_KINDS` (`packages/core/src/checks.ts`) are
-`regex-present`/`regex-absent` — a single-argument `new RegExp(String(param))`, **no flags**: every pattern
-below is written without `^`/`$`/`(?i)`/`(?m)` (none of which the real predicate can honor), matching the exact
-lowercase field vocabulary SKILL.md's Wave-0 output template mandates.
+### 2b. THIN NEW WRAPPERS — WIRED into `node.json` `optimize.measure` (config/a thin script, not new SDK code)
 
-1. **`lesson-kind-header-present`** (`regex-present`, `"lesson kind:\\s*\\S"`) — the mandatory header exists at
-   all. Presence only; correctness is soft (`criteria.md` C1).
-2–4. **`discovery-field-present` / `stage-field-present` / `focal-field-present` / `reinforcement-field-present`**
-   (`regex-present`, one per field name) — the four-line cue vocabulary appears at all somewhere in the doc.
-   **Honest gap:** these prove existence, NOT that every cue carries all four in 1:1 balance — no `CHECK_KINDS`
-   entry can count/compare occurrences today (would need a new `regex-count`/`balanced-count` kind — FOLLOW-ON,
-   not built here per the "propose, don't invent a function" law).
-5. **`no-self-audit-leakage`** (`regex-absent`, `"[Aa]udit checklist|[Ss]elf-check|[Ss]elf-audit|✓|\\[[ xX]\\]"`)
-   — catches prompt.md's own named anti-pattern (self-audit prose belongs in the structured return + tier-2
-   log, never inside the artifact). **VALIDATED against a real known-bad file**: fires true on
-   `_prior-runs/kptest-fenyuhe-six/pedagogy.PRE-FIX.md` (a literal `## Audit checklist`, 9 numbered items) and
-   false (passes) on the real fixed gold — a genuine FIRE + DISCRIMINATE proof, not a theoretical claim.
+**HISTORICAL (pre-2026-07-09, REPLACED — kept as the record of what changed and why).** `pedagogy.md` is
+markdown prose, not JSON, so the original wrapper reached for the only usable `CHECK_KINDS`
+(`packages/core/src/checks.ts`): `regex-present`/`regex-absent` — a single-argument `new RegExp(String(param))`,
+**no flags** (no `^`/`$`/`(?i)`/`(?m)`). Five ops keyed on `"<field>:\s*\S"` per field (`lesson kind`,
+`discovery`, `stage`, `focal`, `reinforcement`). **This was PROVEN gameable** (an adversarial pass, closed
+2026-07-09): with no per-line anchor, `\s*\S` is satisfied by ANY non-whitespace one character after the
+colon — a placeholder value ("TODO", "TBD") or even a blank field whose `\s*` bled across the newline into the
+NEXT field's label both read as "present". It was also, independently, silently INERT: the op's `path` resolved
+`{{arg.lessonId}}`, which the substrate measure stage resolves against the run's *persisted* args
+(`readRunArgs`, `measure.ts`) — and no run.json sampled in this repo (oldest through the newest, 2026-07-07)
+persists an `args` block, so all five ops dropped into `ops.rejected` on every real run, never evaluated.
+
+**CURRENT — `pedagogy-field-content-valid`** (`run` body → `scripts/measure/check-field-content.mjs {{RUN}}`,
+`writes` → `{{RUN}}/optimize/substrate/w0-pedagogy-field-content.json`). One script replaces all five ops:
+- Derives the pedagogy.md path IN-SCRIPT from `<run>/.pi/run.json`'s persisted `nodes.w0-pedagogy.artifacts[]`
+  (always written — the runner stats every declared artifact at verdict time) instead of `{{arg.lessonId}}` —
+  robust across every run in this repo's history, not just future arg-persisted ones. The op's own `args` is
+  just `{{RUN}}`, which always resolves, so the op itself is never dropped.
+- Validates REAL content per occurrence: non-empty, not a placeholder-token match (`TODO`/`TBD`/`N/A`/…), and a
+  minimum length/word-count floor for free-text fields (`lesson kind`/`discovery`/`focal`/`reinforcement`);
+  `stage` is validated against its closed `concrete|represent|symbolize` enum (its leading token, so a
+  legitimate trailing parenthetical annotation is not penalized) — a check no length floor could safely apply
+  (SKILL-legit `stage` values are single short words).
+- Line-anchored (the script's own regex uses the `m` flag) — a value-less field can no longer read as its
+  neighbor's presence.
+- Fails CLOSED: a missing run.json/node-record/artifact/unreadable file, or any field carrying non-content, is
+  a nonzero exit + `ok:false` in the written report — never a silent pass.
+- **Honest gap, unchanged from before:** this still proves per-occurrence VALIDITY, not 1:1 balance across
+  discovery/stage/focal/reinforcement within one cue — that would need counting+comparing occurrences per cue
+  block, a sharper structural check than "every occurrence found is individually valid". FOLLOW-ON, not built
+  here (still no `CHECK_KINDS` primitive needed — the script already has the file in hand and COULD be extended
+  to group by cue block; deferred to keep this pass scoped to the named hole).
+
+**`no-self-audit-leakage`** (`regex-absent`, `"[Aa]udit checklist|[Ss]elf-check|[Ss]elf-audit|✓|\\[[ xX]\\]"`,
+UNCHANGED) — catches prompt.md's own named anti-pattern (self-audit prose belongs in the structured return +
+tier-2 log, never inside the artifact). **VALIDATED against a real known-bad file**: fires true on
+`_prior-runs/kptest-fenyuhe-six/pedagogy.PRE-FIX.md` (a literal `## Audit checklist`, 9 numbered items) and
+false (passes) on the real fixed gold — a genuine FIRE + DISCRIMINATE proof, not a theoretical claim. **Residual
+gap named, not fixed here:** this op's `path` still resolves `{{arg.lessonId}}` and is therefore ALSO silently
+dropped on every run in this repo, for the identical reason the five field-presence ops were — out of this
+pass's named scope (it is a `regex-absent`, not one of the named gameable `regex-present` ops), but a real gap;
+a follow-up should fold it into `check-field-content.mjs` the same way.
 
 **Honestly NOT hard (leave to the soft judge, `criteria.md`):** whether the DECLARED lesson kind is the RIGHT
 one for the brief (C1); whether a discovery is real teaching vs. restated narration (C2); stage-ceiling
@@ -90,7 +127,8 @@ of these is a schema/count/format check — all require reading the prose's MEAN
 ## 3. SOFT measures (the CEILING) — see `criteria.md`
 
 The checklist (9 dims) + 8 graded criteria (C1–C8, Required/Aspirational tagged, quote-anchored) + gold + red-
-flag exemplars live in `criteria.md`, wired via `node.json` `optimize.judge`. Not restated here. Summary of the
+flag exemplars live in `criteria.md`, wired via `node.json` `optimize.criteria` (the canonical key). Not
+restated here. Summary of the
 provenance: every criterion is grounded in a named section of `.agents/skills/lesson-pedagogy/SKILL.md`; the
 gold and red-flag exemplars are REAL project artifacts (`kptest-fenyuhe-six`'s post-fix `pedagogy.md` and its
 `PRE-FIX` predecessor), not invented — including a real, git-documented root→fix→verify record
@@ -100,17 +138,22 @@ gold and red-flag exemplars are REAL project artifacts (`kptest-fenyuhe-six`'s p
 
 ## 4. Wiring + readiness (how these plug into triage, per the runway)
 
-- **HARD** → `optimize/substrate/measure.w0-pedagogy.json` (§2): the 6 wired regex ops + reused trace
-  detectors + digest anomalies — the axes triage cites as "detector + evidence line".
+- **HARD** → `optimize/substrate/measure.w0-pedagogy.json` (§2): `pedagogy-field-content-valid` +
+  `no-self-audit-leakage` + reused trace detectors + digest anomalies — the axes triage cites as "detector +
+  evidence line".
 - **SOFT** → `criteria.md`'s checklist + rubric + gold + red-flag as the blind judge's references — JUDGING
   only, never injected into w0-pedagogy's prompt.
-- **VALIDITY confirmed (do NOT re-skip this check on a future edit):** `no-self-audit-leakage` FIRES on the real
-  `PRE-FIX` file and PASSES on the real fixed gold (§2b#5) — a genuine known-bad replay, not a theoretical claim.
-  The four field-presence checks and the header check are un-replayed against a genuinely malformed artifact
-  (none exists in this repo's history yet — every sampled real run, pre- and post-fix, used the correct cue
-  vocabulary); they are LOW-bar structural floors by construction (presence of a mandated literal string), so
-  their risk of silently passing a wrong artifact is small but not zero — the honest caveat is that they have
-  not been proven to FIRE on a real bad case the way `no-self-audit-leakage` has.
+- **VALIDITY confirmed (2026-07-09, do NOT re-skip this check on a future edit):** `no-self-audit-leakage` FIRES
+  on the real `PRE-FIX` file and PASSES on the real fixed gold (§2b) — a genuine known-bad replay, not a
+  theoretical claim. `pedagogy-field-content-valid` is now ALSO replay-proven (the prior caveat here — "not
+  proven to FIRE on a real bad case" — is CLOSED): (a) `CHECK_KINDS['regex-present']` called directly against a
+  constructed `discovery: TODO` / `focal:` (blank) / `reinforcement: TBD` artifact showed the OLD regex passing
+  every one of the five fields (the exact adversarial-pass evasion); (b) `runSubstrateMeasure` called directly
+  against a real run (`kp3-tens-and-ones-place-r3`) showed all six OLD ops dropping into `ops.rejected`
+  (`{{arg.lessonId}}` unresolved) — never evaluated at all; (c) the NEW script, run against the same constructed
+  gamed artifact (wired through a scratch run dir), FAILS closed (`fieldsInvalid: 5`, nonzero exit) and, run
+  against the real good artifact (`kptest-count-to-two/pedagogy.md`), PASSES (`fieldsInvalid: 0`) — a genuine
+  FIRE + DISCRIMINATE proof on both fronts, not a theoretical claim.
 - **Recurrence grounding** — the C1/C5/C7 cluster's real-world failure + fix is recorded in `memory.md`
   (`w0-pedagogy::lesson-kind|acquisition-mislabeled-as-insight`, recurrence 1, already fixed at the SKILL level
   in `a3b38fe`); kept as a standing lesson so a regression is recognized as this pattern recurring.

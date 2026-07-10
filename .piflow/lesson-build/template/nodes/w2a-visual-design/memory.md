@@ -3,7 +3,8 @@
      NEVER injected into w2a-visual-design's runtime prompt — a node must not see its own failure history.
      Capped (~40 lines, top-loaded: the bottom truncates first). Maintenance contract = the optimizer skill. -->
 
-_status: 3 lessons (lean-artifact overflow · zone-disjoint asserted-not-computed · identity-break in comparison)_
+_status: 4 lessons (lean-artifact overflow · zone-disjoint asserted-not-computed · identity-break in
+comparison · measure itself was fail-open) — memory.md is over its ~40-line cap; a compaction pass is owed._
 
 ## Current behavior
 w2a-visual-design reliably produces a schema-valid, non-empty Visual Contract (measurement block, zones,
@@ -65,6 +66,21 @@ reason... forbidden") and visual-discipline SS6. The REDO fixed it correctly (sa
 **Prevention:** C1/C2 in `criteria.md` grade exactly this (metaphor singularity + identity-invariant); a
 future comparison/contrast cue that substitutes color or shape instead of scale/opacity should be flagged as
 a REGRESSION of this same signature, not a fresh defect.
+
+### The hard measure itself was fail-open — severe/parse-fail/skip could still report ok:true
+sig: w2a-visual-design::measure-fail-open-hardened
+recurrence: 1
+prose — no code anchor (the runway is `measure/visual-design-lint.mjs`, not a code slice).
+**Root:** an adversarial pass proved `visual-design-lint.mjs`'s own `ok` field ignored `charCheck.status
+==='severe'` entirely; silently downgraded an unboxed declared zone (real kp2's `zone-tally-*` wildcard) to
+an advisory while still computing `pass`; and reported `cueCoverage.status:'skipped'` (no/unreadable
+`--storyboard`) as `ok:true` with zero issues — three fail-open false-greens, plus a bare `.includes()`
+cue-match a producer could satisfy by just listing cue names with no real content.
+**Prevention:** `ok` now folds `severe`/zone-`parse-fail`/cue-`fail` (2026-07-09); a declared zone box that
+never parses is a hard fail unless it resolves as a same-prefix wildcard shorthand or is marked
+`(unused)`; a cue only counts as covered if a mention carries real content (not glued to another cue name
+with nothing between). If a HISTORICAL run that used to show `ok:true` now shows `parse-fail`/`fail`, that
+is the runway getting stricter, not this node regressing — check `issues[]` before assuming a regression.
 
 ## Active invariants
 - Writes ONLY `visual-design.md` + its own `_logs/w2a-visual-design.md` (per `contract.owns`) — never another

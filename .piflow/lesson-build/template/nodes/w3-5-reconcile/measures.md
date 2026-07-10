@@ -161,3 +161,34 @@ job at first real use, not something this pass can execute without spawning that
   directories (checked kptest-count-to-two only). Confirm the table's `| cue | discovery ref | visualMotionSeconds
   | motion intent |` shape (or an equivalent) is the actual convention w2a-visual-design's own criteria/prompt
   enforces, so `criteria.md`'s C1 anchors on a format that will not itself drift.
+
+## 6. POST-HARDENING ADDENDUM (2026-07-09 — an adversarial verification pass proved 3 holes; closed here)
+
+1. **Gate-evasion regexes broadened.** `no-silent-cue-fallback` (`checks.post` + `optimize.measure`) only
+   matched a literal `?? 0` — evadable by `?? -1` (proven: the old pattern does not match it) or other numeric
+   fallbacks. `motion-budget-not-index-signature` only matched `Record<string, number>` — evadable by the
+   equivalent TS index-signature form `{[k: string]: number}` (proven: erases the cue-id keys identically but
+   never spells `Record<`) or by extra whitespace. Both patterns are now whitespace-tolerant and cover the
+   broader evasion class (any signed numeric `??` fallback; both the `Record<>` and index-signature spellings).
+2. **A new `timeline-artifact-guard` `optimize.measure` op (`scripts/measure.mjs`) closes a WIRING gap the
+   original §2b table did not anticipate:** every existing check's `path` keys on the `camelLessonId` state
+   channel, which `resolveTokens` THROWS for whenever a run's `.pi/state.json` lacks that key —
+   `runSubstrateMeasure` catches this per-op (never crashes) but the effect is that ALL 13 existing checks land
+   in `ops.rejected` and the entire hard floor goes dark. Confirmed REAL (not hypothetical) in this repo:
+   `.pi/state.json` is literally `{}` in 11 of the 15 run dirs under `.piflow/lesson-build/runs/`. The new op
+   takes only `{{RUN}}`/`{{WORKSPACE}}` (tokens that never throw) and derives the artifact path itself from
+   `<RUN>/.pi/run.json`'s own already-resolved `nodes['w3-5-reconcile'].artifacts[].path` — the same
+   `discoverLessonId`-off-run.json move `w2b-audio-captions/scripts/measure.mjs` already uses for the identical
+   class of gap — falling back to `state.json` when run.json's own artifact entry is itself empty. Verified
+   live: against a synthetic run with `state.json:{}` + the REAL `ctt-2` artifact, the 13 token-keyed checks all
+   reject as expected, but the new guard resolves via `run.json` and reports 13/13 pass; against a synthetic
+   evasion artifact (`?? -1` + `{[k: string]: number}`), the guard correctly fails 3/13; against a run with
+   neither `run.json` nor `state.json` data (mirrors `prognode-validate2`/`3`), the guard reports
+   `resolved:false` + an honest skip, never a false pass.
+3. **`criteria.md`'s gold exemplar was self-contradictory** (its quoted tier-2-log INPUTS-READ line, a 4-cue
+   vocabulary @ 2.0/2.5/3.0/3.5s, did not match its own quoted 3-cue TS artifact @ 2.2/5.0/6.0s) — traced to the
+   underlying `_logs/w3-5-reconcile.md` for `kptest-count-to-two` being STALE (a product/data defect, not fixed
+   here — see `memory.md` Open threads). Re-annotated to quote ONLY the verified-matching TS-artifact +
+   visual-design.md pair, replaced the C4 illustration with the real current SKIP case (storyboard.md's
+   `exposures` ledger is now `{}`), and replaced the C5 illustration with a table RECOMPUTED from the verified
+   current inputs rather than the stale log.

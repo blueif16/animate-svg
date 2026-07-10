@@ -211,10 +211,29 @@ earned pacing, neither farmable by padding, keyword-stuffing, or reformatting. N
 ## Runway pre-flight (measurement-runway.md — confirm before any optimize loop touches this node)
 - [x] **COVERAGE** — both a hard set (Part A) and a soft rubric+checklist+gold (Part B) exist.
 - [x] **WIRING** — hard: `checks.post` (blocking, live) + `optimize.measure` (substrate `graded`, offline);
-  soft: this file is the criteria fixture `piflow-triage`'s judge turn reads (per the shipped convention,
-  `.piflow/lesson-build/template/nodes/w2b-audio-captions/criteria.md`).
+  soft: `node.json`'s `optimize.criteria` key now points at `nodes/w2b-audio-captions/criteria.md` (the
+  canonical key `buildJudgePrompt` reads, `optimize/substrate/judge.ts:128`) — **this key was ABSENT
+  until an adversarial verification pass caught it**: `optimize` carried `measure` only, so
+  `buildJudgePrompt` threw `has no "optimize.criteria" (or the legacy "optimize.judge") configured` and the
+  whole `piflowctl optimize triage --node w2b-audio-captions` command died before any measure ran — a prior
+  version of this checklist wrongly marked WIRING `[x]` on "the shipped convention" (a file existing at the
+  conventional path) without confirming the key that actually resolves it. **The convention is NOT the
+  wiring — the `node.json` key is.** Fixed; re-verify with `piflowctl extract` (compiles) and a live
+  `optimize triage` invocation (must not throw the above).
 - [x] **VALIDITY** — the thin wrapper was test-fired against a real shipped lesson (fired a genuine, non-zero
   finding) AND a deliberately corrupted fixture (all four per-cue signals discriminated correctly) — see Part
-  A "Validity" above. The soft rubric was self-checked against Part E for every row.
+  A "Validity" above. The soft rubric was self-checked against Part E for every row. **Extended validity
+  (this pass):** `parseMotionBudget` only recognized the `motion-budget:` prose-block format; running it
+  against every real lesson under `remotion-svg-primitives/lesson-data/*` with BOTH `visual-design.md` and
+  `script-cues.json` present showed **12 of 17 silently returned `budgetFitCuesChecked:0`** (a markdown-TABLE
+  budget format — `kp2-counting-by-tens`, `kptest-compare-more-fewer`, `kptest-count-to-two`,
+  `kptest-first-second-third` — plus a handful of genuinely non-fixed-seconds formats the script rightly still
+  can't parse), and on every one of those the old code left `budgetFitWorstAbsPct` at its zero-initialized
+  default — a **false-green 0% ("perfectly on budget")** for a cue that was never measured. Fixed: `measure.mjs`
+  now ALSO parses a markdown pipe-table whose header names (or whose bare `s`/`sec` column sits under a nearby
+  heading naming) `visualMotionSeconds`; and the report now fails CLOSED — `budgetFitWorstAbsPct` stays `null`
+  (never folds as a numeric leaf) and a new `budgetFitSkipped:1` graded flag fires whenever the invariant could
+  not be evaluated, so triage sees an explicit "couldn't check this run's core targeting rule" signal instead
+  of a silent pass. See `scripts/measure.mjs`'s updated header comment for the before/after counts.
 - [x] **GROUNDING** — every hard signal reads artifact bytes; every soft criterion is anchored to quotable
   narration text, never an adjective or unstated intent.

@@ -24,13 +24,29 @@ now runs `measure-render.mjs`, which independently re-measures the DELIVERABLE m
 `render-stream-sanity-gate` if it's outside tolerance. See `criteria.md` "Wiring" for the validity proof (fires
 on this exact historical case, 5/6 → correctly flags `lufsWithinTolerance`).
 
+### stale-contact-sheet-no-freshness-bridge
+recurrence: 1 (found by an adversarial verification pass over this node's runway itself, not a live run defect —
+`w5-render` has no run-ledger history yet under this template, so this is a runway-authoring finding)
+[[render-pipeline]]
+**Root:** `make-contact-sheet.mjs`'s call site in `render-complete-lesson.mjs` (the "Contact sheet" step, wrapped
+in a non-fatal try/catch by design) can fail or be skipped silently, leaving whichever `<lessonId>-contact.png`
+was already on disk — a PRIOR run's, possibly a different/shorter cut — untouched. The soft judge in
+`criteria.md` only ever reads this PNG as a still image; it has no way to know it's stale. `checks.post` only
+ever asserted the PNG is non-empty, never fresh or corresponding to THIS run's mp4 — so a stale-but-visually-
+clean PNG could false-green a broken/changed render exactly as the adversarial pass named.
+**Prevention:** landed as CODE — `measure-render.mjs` now takes `--contact-png`/`--contact-json` and adds two
+hard checks: `contactFreshness` (the PNG's mtime must not be older than the mp4's, within a 5s tolerance — a
+stale prior-run PNG left behind by a swallowed regen failure fails this) and `contactDurationMatch` (the sidecar
+legend JSON's own `totalDuration`/`fps` must match the mp4's ffprobe-measured duration within 2s — a CONTENT
+correspondence check, so it also catches a PNG copied/touched forward from a different render, which a
+mtime-only check would miss). `render-stream-sanity-gate`'s count-floor raised 6→8. See `criteria.md` "Wiring"
+for the validity proof (fires on a constructed touched-mtime evasion; still passes the real fen-yu-he artifact).
+
 ## Open threads (known runway gaps, not yet observed failures — see `criteria.md` "Open items")
 - **No expected-duration cross-check.** `durationFloorMet` (≥2s) is a sanity floor, not a correctness oracle for
-  "matches the reconciled timeline's length." Closing it needs a cross-node read of `w3-5-reconcile`'s output —
-  deliberately deferred, not forgotten.
-- **Stale contact-sheet risk.** `make-contact-sheet.mjs`'s call site swallows its own errors; `checks.post` only
-  asserts non-empty, not fresh, so a failed regen could in principle hide behind a prior run's PNG. Would need a
-  freshness/mtime check kind that doesn't exist in `CHECK_KINDS` today.
+  "matches the reconciled timeline's length"; `contactDurationMatch` (above) only ties the contact PNG to THIS
+  mp4's own duration, not to the RECONCILED timeline's expected duration. Closing it needs a cross-node read of
+  `w3-5-reconcile`'s output — deliberately deferred, not forgotten.
 - **Step-label coupling.** `render-loudnorm-completed`'s regex gate keys on the LITERAL string
   `"Loudnorm verify (re-measure)"` in `render-timing.json` — re-sync this gate if `render-complete-lesson.mjs`'s
   loudnorm section is ever relabeled (a prior script version used a single `"Loudnorm (-16 LUFS / -1 dBTP)"`
