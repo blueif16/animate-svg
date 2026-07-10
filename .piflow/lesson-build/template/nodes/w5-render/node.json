@@ -53,5 +53,44 @@
   },
   "policy": {
     "fail": "block"
+  },
+  "optimize": {
+    "measure": [
+      {
+        "id": "render-stream-sanity",
+        "when": "post",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w5-render/measure-render.mjs",
+            "--mp4", "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4",
+            "--out", "{{RUN}}/optimize/substrate/w5-render-stream-sanity.json"
+          ],
+          "note": "MEASURE (post-run, report-only): checks.post only asserts the mp4 is non-empty, never that it is a well-formed container with both tracks above a sane duration floor AND actually normalized. ffprobes the DELIVERABLE + independently re-measures its loudness (ffmpeg loudnorm, same I=-16/TP=-1 target render-complete-lesson.mjs itself aims for) and writes a pass/fail-per-check report — fires on a corrupt, silent, truncated, or un-normalized render that checks.post alone would miss."
+        },
+        "writes": ["{{RUN}}/optimize/substrate/w5-render-stream-sanity.json"]
+      },
+      {
+        "id": "render-stream-sanity-gate",
+        "gate": {
+          "kind": "count-floor",
+          "path": "{{RUN}}/optimize/substrate/w5-render-stream-sanity.json",
+          "param": { "path": "passingChecks", "min": 6 }
+        },
+        "reads": ["{{RUN}}/optimize/substrate/w5-render-stream-sanity.json"],
+        "note": "All 6 measure-render.mjs checks (exists/ffprobe-ran/has-video/has-audio/duration-floor/lufs-within-tolerance) must pass; `failedChecks` in the report names which one didn't."
+      },
+      {
+        "id": "render-loudnorm-completed",
+        "gate": {
+          "kind": "regex-present",
+          "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/render-timing.json",
+          "param": "Loudnorm verify \\(re-measure\\)"
+        },
+        "reads": ["{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/render-timing.json"],
+        "note": "render-complete-lesson.mjs's 2-pass loudnorm block is wrapped in a try/catch that WARNS and continues on failure (never fails the node) — the mp4 then ships un-normalized with no artifact-level signal. The 'Loudnorm verify (re-measure)' step timing entry is only ever recorded after pass 1 + pass 2 + the file rename all succeeded, so its presence in render-timing.json is a reliable proxy that the deliverable was actually normalized. Coupled to the script's literal step labels (see memory.md) — re-sync if render-complete-lesson.mjs's loudnorm section is edited."
+      }
+    ],
+    "criteria": "nodes/w5-render/criteria.md"
   }
 }

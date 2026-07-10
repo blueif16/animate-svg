@@ -15,6 +15,7 @@
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"
     ],
+    "schema": "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w2c-sound-design/audio-cues.schema.json",
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w2c-sound-design.md"
@@ -34,6 +35,9 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "judge": "nodes/w2c-sound-design/criteria.md"
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

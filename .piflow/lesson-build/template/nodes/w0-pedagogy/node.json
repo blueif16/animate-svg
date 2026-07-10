@@ -29,6 +29,41 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "lesson-kind-header-present",
+        "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md", "param": "lesson kind:\\s*\\S" },
+        "note": "MEASURE (post-run, out-of-band, non-blocking; folds into optimize/substrate/measure.w0-pedagogy.json for TRIAGE, parallel to the run's own checks.post). Asserts the Wave-0 output contract's mandatory header line exists at all (SKILL.md Wave-0 output, the `lesson kind:` declaration every downstream wave keys off). Presence only — whether the DECLARED kind is honest for the brief's content is a soft-judge call (criteria.md C1)."
+      },
+      {
+        "id": "discovery-field-present",
+        "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md", "param": "discovery:\\s*\\S" },
+        "note": "Structural floor: at least one `discovery:` line exists anywhere in the artifact (the per-cue vocabulary SKILL.md's Wave-0 output mandates, in order, per cue). A run that abandoned the cue-block shape entirely fails here. NOT sufficient to prove every cue carries one — see the FOLLOW-ON note below (no regex-count CHECK_KIND exists yet to assert 1:1 balance across discovery/stage/focal/reinforcement)."
+      },
+      {
+        "id": "stage-field-present",
+        "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md", "param": "stage:\\s*\\S" },
+        "note": "Same structural floor as discovery-field-present, for the `stage:` line (concrete|represent|symbolize per SKILL.md §3)."
+      },
+      {
+        "id": "focal-field-present",
+        "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md", "param": "focal:\\s*\\S" },
+        "note": "Same structural floor, for the `focal:` line (the one changing element per SKILL.md §6)."
+      },
+      {
+        "id": "reinforcement-field-present",
+        "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md", "param": "reinforcement:\\s*\\S" },
+        "note": "Same structural floor, for the `reinforcement:` line (SKILL.md §8 — REASONED per cue, never templated; presence only, reasoning quality is criteria.md C5)."
+      },
+      {
+        "id": "no-self-audit-leakage",
+        "gate": { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pedagogy.md", "param": "[Aa]udit checklist|[Ss]elf-check|[Ss]elf-audit|✓|\\[[ xX]\\]" },
+        "note": "VALIDATED against a real known-bad artifact: `_prior-runs/kptest-fenyuhe-six/pedagogy.PRE-FIX.md` carries a literal '## Audit checklist' section (9 numbered self-audit items) baked into the artifact — this check FIRES on that file and PASSES on the real fixed gold (lesson-data/kptest-fenyuhe-six/pedagogy.md). Catches prompt.md's own named anti-pattern: 'Put ALL self-audit / self-check / ✓-checklist ... in your structured return ... NEVER as prose sections inside the artifact.' A verbose self-audit stalls the downstream model reading pedagogy.md as a spec."
+      }
+    ],
+    "judge": "nodes/w0-pedagogy/criteria.md"
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

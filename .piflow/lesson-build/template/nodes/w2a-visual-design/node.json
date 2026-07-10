@@ -29,6 +29,23 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "criteria": "nodes/w2a-visual-design/criteria.md",
+    "verifyDefault": "full",
+    "measure": [
+      {
+        "id": "visual-design-lint",
+        "note": "The three node-specific deterministic invariants a JSON schema can't express (building-measures.md Part D thin wrapper): (1) char-ceiling — the LEAN ARTIFACT rule (prompt.md, target <=13k chars), evidenced by the real ten-ones-make-one-ten run shipping at 30305 chars; (2) zone-disjointness COMPUTED not asserted (kids-eye SKILL.md S1.5) — this script re-ran against that SAME real artifact and caught a genuine, previously-undetected overlap between zone-tally and both zone-objects/zone-labels, despite the artifact's own S6 self-check claiming every zone pairwise-disjoint; (3) cue-coverage — every storyboard cue must be addressed, catching a silently dropped cue. Report-only (always exits 0 on a successful read); QUALITY judgment stays with criteria.md. The other floor signals are REUSED FOR FREE: the non-empty checks.post gate above, deriveStatus existence/fill, the return schema, the trace detectors (thinkingStalls/toolLoops/tokenWaste) and digest anomalies (mega-think/slow/cost-spike/retries), and piflowctl trace's blind-spot + re-read rollup (did it actually read storyboard.md/pedagogy.md?).",
+        "run": {
+          "cmd": "sh",
+          "args": [
+            "-c",
+            "mkdir -p \"{{RUN}}/optimize/substrate\" && node \"{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w2a-visual-design/measure/visual-design-lint.mjs\" --file \"{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/visual-design.md\" --storyboard \"{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/storyboard.md\" --report-out \"{{RUN}}/optimize/substrate/w2a-visual-design.lint.json\""
+          ]
+        }
+      }
+    ]
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

@@ -65,6 +65,24 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      { "id": "reconcile-call-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "reconcileClipTimeline\\s*\\(" } },
+      { "id": "cue-accessors-call-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "makeCueAccessors\\s*\\(" } },
+      { "id": "no-legacy-timing-mechanisms", "gate": { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "PADDED_CUE_DURATIONS_FRAMES|detectSilenc|Silences|ASR_CORRECTIONS" } },
+      { "id": "no-silent-cue-fallback", "gate": { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "\\?\\?\\s*0" } },
+      { "id": "timeline-non-empty", "gate": { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts" } },
+      { "id": "motion-budget-not-index-signature", "gate": { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "Record<string,\\s*number>" }, "note": "prompt.md line 22 bans Record<string, number> for VISUAL_MOTION_SECONDS — an index-signature type erases the literal cue-id keys, so keyof typeof degrades to bare `string` and the whole cue-id-union compile-time safety net silently stops working. REAL historical drift: _prior-runs/kptest-fenyuhe-six/pre-suffix-20260612/kptestFenyuheSixLessonTimeline.ts used exactly this pattern pre-c487c5e." },
+      { "id": "motion-budget-as-const", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "\\}\\s*as const" } },
+      { "id": "frozen-clip-crosscheck-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "FROZEN_CLIP_IDS" }, "note": "prompt.md line 16/25: the OTHER-direction cross-check (a stale/renamed budget id throws) — reconcileClipTimeline only throws when a CLIP has no budget, not the reverse." },
+      { "id": "export-cues-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "export const {{state.camelLessonId}}Cues\\b" } },
+      { "id": "export-duration-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "export const {{state.camelLessonId}}Duration\\b" } },
+      { "id": "export-voiceclips-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "export const {{state.camelLessonId}}VoiceClips\\b" } },
+      { "id": "export-captioncues-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "export const {{state.camelLessonId}}LessonCaptionCues\\b" } },
+      { "id": "export-cueaccessors-present", "gate": { "kind": "regex-present", "path": "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonTimeline.ts", "param": "export const {{state.camelLessonId}}CueAccessors\\b" }, "note": "the ONE symbol scene/wrapper code resolves every cue id through (prompt.md line 16) — missing it is a downstream compile break at w4a/w4b, caught here first." }
+    ],
+    "criteria": "nodes/w3-5-reconcile/criteria.md"
+  },
   "return": { "type": "object", "additionalProperties": false,
     "properties": {
       "node": { "type": "string" },

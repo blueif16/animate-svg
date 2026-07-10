@@ -54,6 +54,35 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "lesson-registry-liveness",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "scripts/registry/check-lesson-primitives.mjs",
+            "lesson-data/{{arg.lessonId}}/primitive-gap-scan.md"
+          ],
+          "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
+          "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — reuses the op/check grammar but is NOT a workflow gate: the optimize substrate folds this via runs[] into optimize/substrate/measure.w3b-primitive-build.json for the TRIAGE agent, entirely parallel to the run's own checks.post (which only asserts non-empty). THE REAL FLOOR GAP this closes: nothing at the workflow level re-verifies that every REUSE/GAP row actually names a real, LIVE registry component — today that oracle (registry:check-lesson) is a step the MODEL is merely instructed to run on itself inside its own turn (prompt.md \"VERIFY:\"); if it skips or fudges that step, a phantom REUSE or a stale deprecated citation ships silently and the composer (W4a) burns its own timeout hunting a component that doesn't exist (the documented kptest-fenyuhe-six RecapSpotlight incident the gate itself cites). Re-running the SAME immutable oracle out-of-band, independent of whether the node's own turn actually invoked it, makes this measure fire even when the in-run verify was skipped. Invokes the script DIRECTLY via node (never `npm run`) — real run evidence (mig-e2e-1, e10e11-accept-1 io/run.json issues[]) shows `npm run` under `--sandbox local` hits a node_modules read-EPERM the direct `node scripts/...` invocation does not; see memory.md. Exit 0 = every cited component is a live registry member (non-deprecated) and the citation format resolved at least one component (the anti-vacuous guard); exit 1 = a phantom REUSE, a deprecated reuse, or a vacuous zero-citation gap-scan — each a real, evidence-backed defect class, never a rubber-stamp."
+        }
+      },
+      {
+        "id": "registry-structural-drift",
+        "run": {
+          "cmd": "sh",
+          "args": [
+            "-c",
+            "node scripts/registry/build-icon-assets.mjs --check && node scripts/registry/build-registry.mjs --check && node scripts/registry/catalog-digest.mjs --check && node --no-warnings=ExperimentalWarning scripts/registry/export-schema.mjs --check && node scripts/registry/check-gallery.mjs && node scripts/registry/check-deprecated-refs.mjs && node scripts/build-lesson-registry.mjs --check"
+          ],
+          "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
+          "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the SAME chain `npm run registry:check` runs, invoked as direct `node scripts/...` calls (bypassing `npm run`, per the sandbox-EPERM lesson above) so it fires reliably regardless of the node's own sandbox. Fires every run, zero-gap or not: catches a hand-edited generated file (primitive-registry.json / catalog-digest.md are OWNED-but-generated — w3b must never hand-edit their structural fields), a stranded barrel export, or a gallery/demo drift — none of which the per-lesson check above can see. Non-zero exit = the WHOLE catalog (every future lesson's REUSE menu) drifted, a strictly higher-severity signal than a single lesson's phantom citation."
+        }
+      }
+    ],
+    "criteria": "nodes/w3b-primitive-build/criteria.md"
+  },
   "return": { "type": "object", "additionalProperties": false,
     "properties": {
       "node": { "type": "string" },

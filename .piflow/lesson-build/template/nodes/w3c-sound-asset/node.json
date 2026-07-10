@@ -35,9 +35,30 @@
     "returnMode": "optional"
   },
   "checks": {
+    "pre": [
+      { "kind": "json-parses", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json" }
+    ],
     "post": []
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "sound-asset-gap-scan",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3c-sound-asset/scripts/gap-scan-lint.mjs",
+            "--run", "{{RUN}}",
+            "--workspace", "{{WORKSPACE}}"
+          ]
+        },
+        "writes": ["optimize/substrate/w3c-sound-asset.gap-scan.json"],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) -- runSubstrateMeasure folds this run op's writes[] numeric leaves (totalKeys/resolvedKeys/unresolvedKeys) into optimize/substrate/measure.w3c-sound-asset.json `graded` for TRIAGE, parallel to the run's own checks. Closes the exact gap a real historical run of THIS node flagged in its own pipelineFindings (lesson-data/kptest-compare-more-fewer/_logs/sound-asset.md): 'W3c has no machine gate that asserts every audio-cues.json key ∈ library _index.json.' The script cross-checks every bed / intro.sting / sfx[].sound key against the shared-sound _beds|_sfx|_stings _index.json PLUS the vlog_test pipeline manifest + generated sidecars (a key legitimately minted THIS run), and separately records whether the node's own output log ever mentions each key (logMissingKeys) -- the format-inconsistency pattern visible across historical runs (some cite byte sizes + a .license.txt check per key; kptest-fenyuhe-five is a bare one-line prose assertion with zero verifiable table). REGISTRY-MEMBERSHIP across THREE external, out-of-repo index files has no existing CHECK_KINDS predicate (checks.ts is single-file-only) -- exactly the class building-measures.md Part D calls a thin run+writes wrapper: config, not new SDK code. ENGINE GAP WORKED AROUND: runSubstrateMeasure's ResolveCtx (packages/core/src/optimize/substrate/measure.ts) carries {run, workspace, state} but NOT `args`, so `{{arg.lessonId}}` cannot resolve inside an optimize.measure op today -- the script instead recovers lessonId from THIS node's own declared artifact path already in <run>/.pi/run.json (nodes['w3c-sound-asset'].artifacts[0].path always embeds .../lesson-data/<lessonId>/_logs/sound-asset.md), needing no new token or SDK change. VALIDITY: exits 1 (surfaces as ops.runs[].failed) on any unresolved key or a schema-violating (non-string) bed/sting/sfx value, or an outro.resolve that is present but non-boolean (the exact shape of the kptest-classroom-objects defect); exits 0 otherwise. logMissingKeys stays advisory data in the report -- it never fails the op, since log format is a SOFT (criteria.md C1/C4) concern, not a hard floor."
+      }
+    ],
+    "criteria": "nodes/w3c-sound-asset/criteria.md"
+  },
   "return": { "type": "object", "additionalProperties": false,
     "properties": {
       "node": { "type": "string" },

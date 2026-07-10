@@ -1,0 +1,206 @@
+#!/usr/bin/env node
+// w2b-audio-captions optimize.measure wrapper (piflow-overlord "building-measures.md" Part D — the thin
+// op[] wrapper for the node-specific deterministic invariants a JSON schema can't express). Read by the
+// out-of-band optimize substrate ONLY (`runSubstrateMeasure` fires this as a `run` op); it never touches
+// the live node run and never blocks anything on its own. Best-effort throughout: a missing file, an
+// unresolvable lessonId, or a malformed input degrades to a `skipped` note, never a thrown error — the run
+// op's own exit code stays 0 so a measure-script bug can never wedge the substrate stage.
+//
+// What this checks (each is a per-cue / cross-file invariant the CHECK_KINDS registry can't express —
+// count-floor/field-present/regex-* all operate on ONE fixed path, not "for every cue in the array"):
+//   emptyNarrationCount        — cue-plan-author: "a cue with empty narration throws" downstream.
+//   captionMismatchCount       — lesson-audio-captions (THIS product, stricter than the generic cue-plan-
+//                                author skill): caption must be the narration VERBATIM, never shortened.
+//   phrasePunctuationViolations— cue-plan-author's narration≠phrase rule: `phrase` must be punctuation-
+//                                stripped (residual ，。！？、 defeats the ASR aligner's token match).
+//   ellipsisCount              — the held-vowel DRONE precursor (also reused as a blocking `regex-absent`
+//                                check in node.json; recomputed here per-cue so triage gets the cue id).
+//   budgetFit*                 — the node's CORE targeting rule (lesson-audio-captions "targeting rule"):
+//                                per-cue narration length at the calibrated rate (~0.30s/CJK-char + an
+//                                embedded-Latin-word allowance) must land within ±20% of visual-design.md's
+//                                declared `visualMotionSeconds` for that cue id.
+//
+// Usage: node measure.mjs --run <RUN> --workspace <WORKSPACE> --out <reportPath> [--lessonId <id>]
+// (`--lessonId` is a TEST/override hook; production discovers it from `<RUN>/.pi/run.json`'s recorded
+// artifact paths, since `optimize.measure` ops have no `{{arg.*}}` token — see this node's criteria.md
+// "Wiring" section for why.)
+
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+
+const NODE_ID = 'w2b-audio-captions';
+const CJK_PUNCT = /[，。！？、]/;
+const ELLIPSIS = /(…|\.\.\.)/; // the literal "…" or a 3-dot run — the held-vowel drone precursor
+const CJK_CHAR = /[㐀-鿿]/g;
+const LATIN_WORD = /[A-Za-z']+/g;
+const CJK_RATE_SEC = 0.30; // lesson-audio-captions "targeting rule" — Aoede Mandarin slow, mid-calibration
+const LATIN_WORD_SEC = 0.55; // mid-point of the skill's "0.4-0.7s per 1-2 syllable English word"
+const BUDGET_TOLERANCE_PCT = 20; // the skill's own ±20% bar
+
+function parseArgs(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i].startsWith('--')) {
+      out[argv[i].slice(2)] = argv[i + 1];
+      i += 1;
+    }
+  }
+  return out;
+}
+
+async function readJson(p) {
+  try {
+    return JSON.parse(await fs.readFile(p, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+async function readText(p) {
+  try {
+    return await fs.readFile(p, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+/** Recover the run's lessonId from `.pi/run.json`'s recorded artifact paths for THIS node — no `{{arg.*}}`
+ *  token is available inside an `optimize.measure` op (see ResolveCtx in workflow/resolver.ts), but every
+ *  artifact path the runner already stat()'d literally embeds `lesson-data/<lessonId>/...`. */
+function discoverLessonId(runJson) {
+  const node = runJson?.nodes?.[NODE_ID];
+  for (const a of node?.artifacts ?? []) {
+    const m = /lesson-data\/([^/]+)\//.exec(a?.path || '');
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function estimateSeconds(narration) {
+  const cjk = (narration.match(CJK_CHAR) || []).length;
+  const latin = (narration.match(LATIN_WORD) || []).length;
+  return cjk * CJK_RATE_SEC + latin * LATIN_WORD_SEC;
+}
+
+/** Parse visual-design.md's `motion-budget:` fenced block into `{ cueId: seconds }`. Tolerant of the prose
+ *  wrapper (skill-mandated shape, `visual-discipline/SKILL.md` §motion-budget) — a line that doesn't match
+ *  `<id>: <N>s` is silently skipped, never a parse error. */
+function parseMotionBudget(md) {
+  const budgets = {};
+  let inBlock = false;
+  for (const line of md.split('\n')) {
+    if (/^motion-budget:/.test(line.trim())) {
+      inBlock = true;
+      continue;
+    }
+    if (inBlock && /^```/.test(line.trim())) break;
+    if (inBlock) {
+      const m = /^\s*([\w-]+):\s+([\d.]+)s\b/.exec(line);
+      if (m) budgets[m[1]] = parseFloat(m[2]);
+    }
+  }
+  return budgets;
+}
+
+async function writeReport(outPath, report) {
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(report));
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const runDir = args.run;
+  const workspace = args.workspace;
+  const outPath = args.out;
+  if (!runDir || !workspace || !outPath) {
+    console.error('measure.mjs: --run, --workspace, and --out are required');
+    return; // best-effort: exit 0, no report — the substrate degrades gracefully on a missing report.
+  }
+
+  const report = {
+    node: NODE_ID,
+    generatedAt: new Date().toISOString(),
+    lessonId: null,
+    cueCount: 0,
+    emptyNarrationCount: 0,
+    captionMismatchCount: 0,
+    phrasePunctuationViolations: 0,
+    ellipsisCount: 0,
+    budgetFitCuesChecked: 0,
+    budgetFitWorstAbsPct: 0,
+    budgetFitWorstCue: null,
+    skipped: [],
+  };
+
+  let lessonId = args.lessonId || null;
+  if (!lessonId) {
+    const runJson = await readJson(path.join(runDir, '.pi', 'run.json'));
+    lessonId = discoverLessonId(runJson);
+  }
+  report.lessonId = lessonId;
+  if (!lessonId) {
+    report.skipped.push('no lessonId discoverable (no --lessonId override and none found in .pi/run.json)');
+    await writeReport(outPath, report);
+    return;
+  }
+
+  const lessonDir = path.join(workspace, 'remotion-svg-primitives', 'lesson-data', lessonId);
+  const cuePlan = await readJson(path.join(lessonDir, 'script-cues.json'));
+  if (!Array.isArray(cuePlan?.cues) || cuePlan.cues.length === 0) {
+    report.skipped.push('no script-cues.json / empty cues array');
+    await writeReport(outPath, report);
+    return;
+  }
+  report.cueCount = cuePlan.cues.length;
+
+  for (const cue of cuePlan.cues) {
+    if (typeof cue.narration !== 'string' || cue.narration.trim() === '') report.emptyNarrationCount += 1;
+    if (typeof cue.caption === 'string' && typeof cue.narration === 'string' && cue.caption !== cue.narration) {
+      report.captionMismatchCount += 1;
+    }
+    if (typeof cue.phrase === 'string' && CJK_PUNCT.test(cue.phrase)) report.phrasePunctuationViolations += 1;
+    if (typeof cue.narration === 'string' && ELLIPSIS.test(cue.narration)) report.ellipsisCount += 1;
+  }
+
+  const visualDesignMd = await readText(path.join(lessonDir, 'visual-design.md'));
+  if (!visualDesignMd) {
+    report.skipped.push('no visual-design.md — budget-fit skipped');
+  } else {
+    const budgets = parseMotionBudget(visualDesignMd);
+    let worst = 0;
+    let worstCue = null;
+    let checked = 0;
+    for (const cue of cuePlan.cues) {
+      const budget = budgets[cue.id];
+      if (budget == null || typeof cue.narration !== 'string') continue;
+      const est = estimateSeconds(cue.narration);
+      const pct = ((est - budget) / budget) * 100;
+      checked += 1;
+      if (Math.abs(pct) > Math.abs(worst)) {
+        worst = pct;
+        worstCue = cue.id;
+      }
+    }
+    report.budgetFitCuesChecked = checked;
+    report.budgetFitWorstAbsPct = Math.round(Math.abs(worst) * 10) / 10;
+    report.budgetFitWorstCue = worstCue;
+    if (checked === 0) report.skipped.push('no motion-budget cue ids matched script-cues.json ids');
+  }
+
+  // A quick discriminating summary line for a human glancing at stdout (the JSON report is the real output).
+  const overBudget = report.budgetFitWorstAbsPct > BUDGET_TOLERANCE_PCT;
+  console.error(
+    `w2b measure: ${report.cueCount} cues · empty=${report.emptyNarrationCount} · ` +
+      `captionMismatch=${report.captionMismatchCount} · phrasePunct=${report.phrasePunctuationViolations} · ` +
+      `ellipsis=${report.ellipsisCount} · worstBudgetFit=${report.budgetFitWorstAbsPct}%` +
+      `${overBudget ? ` (OVER ±${BUDGET_TOLERANCE_PCT}% on ${report.budgetFitWorstCue})` : ''}`,
+  );
+
+  await writeReport(outPath, report);
+}
+
+main().catch((e) => {
+  console.error(`measure.mjs: best-effort failure — ${e?.message || e}`);
+  // never a non-zero exit: this is a substrate measure op, not a live gate.
+});

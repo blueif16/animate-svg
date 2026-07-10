@@ -73,6 +73,47 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "judge": "nodes/w3a-voice-asr/criteria.md",
+    "measure": [
+      {
+        "id": "audio-gate-pass-floor",
+        "when": "post",
+        "gate": {
+          "kind": "regex-present",
+          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/audio-gate.json",
+          "param": "\"pass\":\\s*true"
+        },
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING -- reused for triage, parallel to the run's own gates). REUSE: the node's own checks.post only asserts audio-gate.json is non-empty + valid JSON -- it never asserts the gate's own verdict. A clean exit with a well-formed but pass:false report (an unresolved drone/empty-short/dead-air) would still read `ok` at the driver's contract level; this is the floor the schema can't encode (a JSON shape check can't see a boolean's VALUE). Zero new script -- reads the report the node's own STEP1 audio-gate run already wrote."
+      },
+      {
+        "id": "audio-gate-truncation-never-blocks-silently",
+        "when": "post",
+        "gate": {
+          "kind": "regex-present",
+          "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/audio-gate.json",
+          "param": "\"truncationFails\":\\s*0"
+        },
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) -- asserts the design promise the prompt states verbatim (STEP1: 'truncation NEVER sets pass:false'): truncationFails stays 0 even though truncationAdvisories may be non-zero. A non-zero truncationFails would mean the advisory/hard split silently regressed (a truncation defect started gating pass without the node or a future edit noticing). Reuse of the same on-disk report; zero new script."
+      },
+      {
+        "id": "onset-augmentation-coverage",
+        "when": "post",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "-e",
+            "const fs=require(\"fs\"),path=require(\"path\");const a=process.argv.slice(1);const asrPath=a[0],clipsPath=a[1],out=a[2];const rd=p=>{try{return JSON.parse(fs.readFileSync(p,\"utf8\"))}catch(e){return null}};const asr=rd(asrPath);let clipsSrc=\"\";try{clipsSrc=fs.readFileSync(clipsPath,\"utf8\")}catch(e){}const lines=clipsSrc.split(\"\\n\");const cueIds=(asr&&Array.isArray(asr.cues)?asr.cues:[]).map(c=>c.id);const withOnsets=cueIds.filter(id=>{const line=lines.find(l=>l.includes(\"id: \\\"\"+id+\"\\\"\"));return line&&line.includes(\"tokenOnsets\")});const report={totalCues:cueIds.length,cuesWithOnsets:withOnsets.length,cueIdsWithOnsets:withOnsets};try{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(report,null,2))}catch(e){}console.log(\"onset-augmentation-coverage: \"+withOnsets.length+\"/\"+cueIds.length+\" cues carry tokenOnsets\")",
+            "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/asr-alignment.json",
+            "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/generated/{{state.camelLessonId}}Clips.ts",
+            "{{RUN}}/optimize/substrate/onset-coverage.json"
+          ]
+        },
+        "writes": ["optimize/substrate/onset-coverage.json"],
+        "note": "MEASURE -- a GRADED count, deliberately NOT a gate (Part D thin wrapper; zero new SDK code). The prompt's own STEP1 names a real regression class ('ONSET CLOBBER': a cue with a scored ASR window -- asr-alignment.json tokenStartIndex non-null -- but no tokenOnsets in the frozen <camel>Clips.ts, because a later bare voice roll without --align clobbered the augmented module). A first pass keyed this on tokenStartIndex!=null as the 'needs onsets' predicate, but every cue gets ASR-aligned regardless of whether it is spoken-enumeration content (verified: kptest-count-to-two's asr-alignment.json has tokenStartIndex set on ALL 3 cues, only one of which -- cue-1-count, role count-on -- is actually enumeration content; script-cues.json's `role` field is NOT populated on any other lesson in this repo, so it is not a reliable general 'is this an enumeration cue' signal). Asserting a floor on that predicate would over-fire on every lesson -- worse than not measuring. So this stays a pure COUNT (totalCues, cuesWithOnsets folding into graded[] for triage), never a pass/fail: is-this-lesson's-onset-coverage-RIGHT is a judgment call for criteria.md R4 (which CAN read the storyboard's teaching actions), not this script. VALIDATED against the real artifact: kptest-count-to-two reports {totalCues:3, cuesWithOnsets:0} -- correctly counts the current gap (see memory.md) without wrongly asserting all 3 needed it."
+      }
+    ]
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

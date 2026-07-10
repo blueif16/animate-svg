@@ -41,6 +41,21 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "brief-not-authored-by-node",
+        "when": "post",
+        "gate": {
+          "kind": "regex-absent",
+          "path": ".pi/nodes/setup-scaffold/events.jsonl",
+          "param": "\"toolName\":\\s*\"(write|edit)\"[^\\n]{0,300}?\"path\":\\s*\"[^\"]*brief\\.md\""
+        },
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the node's single highest-leverage law (prompt.md STEP 1) is 'brief.md is the ONLY human input; if missing, status=blocked — never author it'. No schema/count-floor check can see a violation of this (brief.md exists either way, hand-written or not), so this greps the node's OWN behavior trace for a write/edit tool call whose path contains brief.md — a hit means the node fabricated or altered the human input instead of blocking. The gate `path` is bare run-relative (matches measure.ts's readBytes: path.resolve(runDir, rel)) and deliberately carries NO templating tokens of any kind — CAUTION (live-verified this session): runSubstrateMeasure's ResolveCtx only carries run/workspace/state, never the run's args, and resolveDeep walks EVERY string in this whole op tree including this note field itself — a token naming the run's lesson-id arg anywhere in here, even inside descriptive prose, throws an uncaught missing-arg error and crashes measurement for the WHOLE node (confirmed by an actual `piflowctl optimize triage --dry-run` run against this exact file, before this note was reworded to remove the literal token it was originally describing). That crash risk is exactly why the pipeline.json field-consistency checks this node's real leverage also calls for (lessonId fidelity, no-leftover-template-tokens, return-vs-file promote fidelity) are NOT wired as measure ops here — see criteria.md's 'Substrate gap' section for the full finding and what covers them instead (the soft rubric)."
+      }
+    ],
+    "criteria": "nodes/setup-scaffold/criteria.md"
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

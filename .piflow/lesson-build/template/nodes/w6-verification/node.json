@@ -58,5 +58,53 @@
       "pipelineFindings": { "type": "array", "items": { "type": "string" } }
     },
     "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
+  },
+  "optimize": {
+    "measure": [
+      {
+        "id": "bbox-overlay-produced",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w6-verification/gen/check-bbox-overlay-produced.mjs",
+            "--workspace", "{{WORKSPACE}}",
+            "--run", "{{RUN}}",
+            "--report-out", "{{RUN}}/optimize/substrate/bbox-overlay-produced.json"
+          ],
+          "note": "MEASURE (post-run, report-only): the prompt's REVIEW SURFACE law requires running `npm run lesson:bbox` before judging any collision/size question — this checks the side effect (out/<id>/bbox-overlay/*.png) actually exists, i.e. the command actually ran."
+        },
+        "writes": ["{{RUN}}/optimize/substrate/bbox-overlay-produced.json"]
+      },
+      {
+        "id": "cue-coverage",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w6-verification/gen/check-cue-coverage.mjs",
+            "--workspace", "{{WORKSPACE}}",
+            "--run", "{{RUN}}",
+            "--report-out", "{{RUN}}/optimize/substrate/cue-coverage.json"
+          ],
+          "note": "MEASURE (post-run, report-only): every cue script-cues.json declares must get an independently-addressed verdict row in verification.md — catches a silently-dropped cue. Report-only; never blocks (see gen/check-cue-coverage.mjs)."
+        },
+        "writes": ["{{RUN}}/optimize/substrate/cue-coverage.json"]
+      },
+      {
+        "id": "gate-citations",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w6-verification/gen/check-gate-citations.mjs",
+            "--workspace", "{{WORKSPACE}}",
+            "--run", "{{RUN}}",
+            "--report-out", "{{RUN}}/optimize/substrate/gate-citations.json"
+          ],
+          "note": "MEASURE (post-run, report-only): every non-clean bbox-manifest.json summary signal (gatesFailed[]/measuredCollisionCount/captionIntrusionCount) must be at least MENTIONED in verification.md — the lesson-verification SKILL forbids silent acceptance. Mechanical completeness only; whether the justification is GOOD is criteria.md R2/R4's job."
+        },
+        "writes": ["{{RUN}}/optimize/substrate/gate-citations.json"]
+      }
+    ],
+    "criteria": "nodes/w6-verification/criteria.md",
+    "verifyDefault": "full"
   }
 }
