@@ -8,18 +8,22 @@ owns) — seeded 2026-07-09 consolidating the concurrent per-node memory.md hard
 
 ## Known failure modes (cross-node)
 
-### npm run EPERMs under --sandbox local (node_modules read-EPERM)
+### npm run EPERMs under --sandbox local (uv_cwd — project subtree ungranted)
 sig: system::sandbox-npm-run-eperm
 recurrence: 2 confirmed (w3b-primitive-build: `mig-e2e-1`, `e10e11-accept-1`) + corroborating friction in
 w3a-voice-asr (`npm run lesson:voice`/`lesson:audio-gate` needed `execCwd`/`execReads`) and setup-scaffold
 (`sandbox-write-permission-friction`, `kp3-tens-and-ones-place-r1`/`-r3`)
 [[lesson-pipeline-scaffold]] (closest slice — the seatbelt/sandbox layer itself has no OKF-mapped code slice)
-**Root:** the seatbelt sandbox denies `node_modules/**` read access to the subprocess `npm run` spawns to
-resolve itself, so `npm run <script>` can EPERM outright inside a sandboxed node; `node scripts/<x>.mjs`
-(bypassing npm's own resolution) is unaffected.
-**Prevention:** wire every node's `optimize.measure`/hooks/scripts via `node scripts/...mjs` directly, never
-`npm run`, under `--sandbox local` — w3b-primitive-build's `lesson-registry-liveness`/`registry-structural-drift`
-measures are the pattern to copy for any new cross-node script wiring.
+**Root (corrected 2026-07-09, live-probed in the SDK):** the seatbelt read-jail grants only declared roots;
+when the node's project dir isn't one of them, npm's `process.cwd()` fails FIRST (`EPERM: uv_cwd`) before any
+node_modules read. Enumerating leaf entries (node_modules, .env.local) in readScope does NOT fix it — the cwd
+dir entry itself is ungranted. The earlier "node_modules read-EPERM" framing was imprecise, and the
+direct-`node scripts/x.mjs` workaround only masked the symptom (measure/op[] `run` cmds are additionally
+UNSANDBOXED today — raw spawnSync — so they never hit the jail at all).
+**Prevention (USER LAW — npm run is the system contract, never route around it):** declare
+`contract.execCwd: "{{WORKSPACE}}/remotion-svg-primitives"` on any node whose in-prompt bash runs npm scripts
+(E10 mechanism; recursive read grant on the tree + getcwd, covers node_modules AND `.env.local`). w3a is the
+reference; applied to w3b + w6 2026-07-09. Add `execReads` only for imports OUTSIDE the tree (w3a's ASR venv).
 
 ### image-blind review — a text-only judge cannot see a PNG
 sig: system::image-blind-review
@@ -57,7 +61,8 @@ node's `owns`. Until fixed, waivers must cite THIS lesson's specific evidence, n
 - Route w6-verification (and any visual-judging node) to a vision-capable tier — closes image-blind-review by
   capability, not disclosure.
 - Fix `lesson-measured.mjs`'s `captionRedundancy`/`contrast` gate definitions at the source.
-- Confirm the direct-`node`-invoke workaround is the standing convention for any NEW cross-node script wiring.
+- op[] `run`/measure cmds execute UNSANDBOXED in the SDK today (raw spawnSync, `merge.ts:212`); if the SDK ever
+  routes them through the jail, w5-render + every measure op will need `execCwd` declared too — latent, watch it.
 
 ## History
 git log --grep '^skillsys('

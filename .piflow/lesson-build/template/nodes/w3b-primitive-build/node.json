@@ -46,6 +46,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
+    "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
     "returnMode": "optional"
   },
   "checks": {
