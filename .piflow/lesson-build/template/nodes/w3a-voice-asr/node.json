@@ -18,6 +18,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/public/audio/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/generated/{{state.camelLessonId}}Clips.ts",
       "{{WORKSPACE}}/remotion-svg-primitives/public/audio/{{arg.lessonId}}-voice.wav",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/voice-clips.json",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/gemini-voice.json",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/asr-alignment.json",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/audio-gate.json",
