@@ -24,8 +24,11 @@ attempts:
       ceiling (same signature as game-omni's guidance node), not a wording problem. Enforcement preserved:
       promote-of-nothing throws (node → error) + hard-checks promote-fidelity measures state-vs-file.
     verify: >-
-      PENDING — next live run must show state.json carrying both channels verbatim from pipeline.json with
-      setup-scaffold exiting ok. Template-level: piflowctl extract green post-edit.
+      VERIFIED LIVE 2026-07-10, twice, two providers: run count-three-e2e-1 (mmgw/MiniMax-M3) and run
+      count-three-glm-1 (nebius/GLM-5.2) both show state.json carrying camelLessonId=kptestCountThree +
+      composition=CompleteKptestCountThreeLesson byte-equal to pipeline.json, setup-scaffold ok. The GLM
+      run completed the FULL 14-node pipeline on this state (every downstream token resolved). Awaiting
+      `optimize adopt` to land resolved.
 ---
 
 **What happened (run `kp3-tens-and-ones-place-r3`).** The node correctly read `pipeline.json`, correctly
