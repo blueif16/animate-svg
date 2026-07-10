@@ -12,7 +12,9 @@
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/brief.md",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json",
-      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs"
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/public/audio/{{arg.lessonId}}"
     ],
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/src",

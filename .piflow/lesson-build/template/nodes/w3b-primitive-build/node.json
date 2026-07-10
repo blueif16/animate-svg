@@ -31,7 +31,6 @@
       "{{WORKSPACE}}/remotion-svg-primitives/src/capabilities/catalog-digest.schema.json",
       "{{WORKSPACE}}/remotion-svg-primitives/src/component-gallery/demoProps.tsx",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/primitive-gap-scan.md",
-      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/primitive-checks",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w3b-primitive-build.md"
     ],
