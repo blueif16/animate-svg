@@ -39,6 +39,9 @@
       "{{WORKSPACE}}/.agents"
     ],
     "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
+    "execReads": [
+      "{{WORKSPACE}}/../shared-narration"
+    ],
     "returnMode": "optional"
   },
   "op": [
