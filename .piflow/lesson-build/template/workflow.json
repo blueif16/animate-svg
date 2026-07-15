@@ -35,9 +35,6 @@
     ],
     [
       "w5-render"
-    ],
-    [
-      "w6-verification"
     ]
   ],
   "nodes": {
@@ -121,12 +118,6 @@
       "deps": [
         "w4a-composer",
         "w4b-sketch"
-      ]
-    },
-    "w6-verification": {
-      "phase": "verify",
-      "deps": [
-        "w5-render"
       ]
     }
   }

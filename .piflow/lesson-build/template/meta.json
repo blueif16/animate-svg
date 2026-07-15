@@ -10,7 +10,6 @@
     "assets",
     "reconcile",
     "compose",
-    "render",
-    "verify"
+    "render"
   ]
 }
