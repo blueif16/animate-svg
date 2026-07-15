@@ -9,7 +9,6 @@
     "design",
     "assets",
     "reconcile",
-    "compose",
-    "render"
+    "compose"
   ]
 }

@@ -32,9 +32,6 @@
     [
       "w4a-composer",
       "w4b-sketch"
-    ],
-    [
-      "w5-render"
     ]
   ],
   "nodes": {
@@ -111,13 +108,6 @@
       "phase": "compose",
       "deps": [
         "w3-5-reconcile"
-      ]
-    },
-    "w5-render": {
-      "phase": "render",
-      "deps": [
-        "w4a-composer",
-        "w4b-sketch"
       ]
     }
   }

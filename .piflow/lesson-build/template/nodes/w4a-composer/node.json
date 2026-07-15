@@ -24,14 +24,17 @@
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx",
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/layout.ts",
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/manifest.ts",
-      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json"
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png"
     ],
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.composition}}.tsx",
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}LessonScene.tsx",
       "{{WORKSPACE}}/remotion-svg-primitives/src/lessons/{{state.camelLessonId}}/*",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/*",
-      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w4a-composer.md"
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w4a-composer.md",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/render-timing.json"
     ],
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/src",
@@ -60,6 +63,15 @@
       "run": {
         "cmd": "node",
         "args": ["scripts/lesson-measured.mjs", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json"],
+        "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
+      },
+      "onFailure": "block"
+    },
+    {
+      "when": "post",
+      "run": {
+        "cmd": "npm",
+        "args": ["run", "lesson:render", "--", "--config", "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json", "--skip-voice"],
         "cwd": "{{WORKSPACE}}/remotion-svg-primitives"
       },
       "onFailure": "block"
@@ -104,6 +116,14 @@
         "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/bbox-manifest.json",
         "param": "\"captionIntrusionCount\"\\s*:\\s*0\\b",
         "severity": "fail"
+      },
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}.mp4"
+      },
+      {
+        "kind": "non-empty",
+        "path": "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}/{{arg.lessonId}}-contact.png"
       }
     ]
   },
@@ -125,6 +145,31 @@
         },
         "writes": ["{{RUN}}/optimize/substrate/w4a-composer.measure.json"],
         "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — replaces the old per-argument and per-state templated-token gate array (fragile: an old argless run record or an empty state channel silently REJECTS those ops, both proven conditions in this repo) with an in-script, run-record-discovered lessonId plus a single deterministic pass. It (1) asserts bbox-manifest.json FRESHNESS against THIS run's own node window — closing the stale-manifest false-green where lesson-measured.mjs's main().catch swallows a render/extract crash to exit 0 without ever regenerating the file; (2) re-derives the method/collision/caption floor straight off the artifact; (3) asserts the bboxBinding measure-id-equals-manifest-id bijection (a broken bijection silently exempts an element by falling to zone \"decoration\" — the f1258 vacuous-green class); (4) guards manifest.ts's own allowedOverlaps exemption list against a phantom/dead id. See scripts/measure.mjs (full rationale) and memory.md."
+      },
+      {
+        "id": "render-stream-sanity",
+        "when": "post",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w4a-composer/measure-render.mjs",
+            "--run", "{{RUN}}",
+            "--workspace", "{{WORKSPACE}}",
+            "--out", "{{RUN}}/optimize/substrate/w5-render-stream-sanity.json"
+          ],
+          "note": "MEASURE (post-run, report-only): the full render now runs as w4a's post-op, so the deterministic render sanity moved here from the former w5-render node. ffprobes the mp4 deliverable, independently re-measures loudness (loudnorm I=-16 LUFS/TP=-1), and cross-checks the contact PNG's freshness + its -contact.json legend duration against the mp4 — catches a corrupt/silent/truncated/un-normalized/stale-contact render that checks.post's non-empty alone misses. Full rationale in measure-render.mjs."
+        },
+        "writes": ["{{RUN}}/optimize/substrate/w5-render-stream-sanity.json"]
+      },
+      {
+        "id": "render-stream-sanity-gate",
+        "gate": {
+          "kind": "count-floor",
+          "path": "{{RUN}}/optimize/substrate/w5-render-stream-sanity.json",
+          "param": { "path": "passingChecks", "min": 9 }
+        },
+        "reads": ["{{RUN}}/optimize/substrate/w5-render-stream-sanity.json"],
+        "note": "All 9 measure-render.mjs checks (exists/ffprobe-ran/has-video/has-audio/duration-floor/lufs-within-tolerance/contact-freshness/contact-duration-match/loudnorm-completed) must pass; failedChecks in the report names which one didn't. Moved from the former w5-render node when the render folded into w4a's post-op."
       }
     ],
     "criteria": "nodes/w4a-composer/criteria.md"
