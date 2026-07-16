@@ -29,15 +29,36 @@
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents",
-      "/Users/tk/Desktop/shared-sound/public/audio",
-      "/Users/tk/Desktop/vlog_test/pipeline"
+      "{{WORKSPACE}}/../shared-sound/public/audio",
+      "{{WORKSPACE}}/../vlog_test/pipeline"
     ],
     "returnMode": "optional"
   },
   "checks": {
+    "pre": [
+      { "kind": "json-parses", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json" }
+    ],
     "post": []
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "sound-asset-gap-scan",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3c-sound-asset/scripts/gap-scan-lint.mjs",
+            "--run", "{{RUN}}",
+            "--workspace", "{{WORKSPACE}}"
+          ]
+        },
+        "writes": ["optimize/substrate/w3c-sound-asset.gap-scan.json"],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) -- runSubstrateMeasure folds this run op's writes[] numeric leaves (totalKeys/resolvedKeys/unresolvedKeys/missingFileCount/logByteMismatchCount/schemaViolationCount) into optimize/substrate/measure.w3c-sound-asset.json `graded` for TRIAGE, parallel to the run's own checks. Closes the exact gap a real historical run of THIS node flagged in its own pipelineFindings (lesson-data/kptest-compare-more-fewer/_logs/sound-asset.md): 'W3c has no machine gate that asserts every audio-cues.json key ∈ library _index.json.' The script cross-checks every bed / intro.sting / sfx[].sound key against the shared-sound _beds|_sfx|_stings _index.json PLUS the vlog_test pipeline's GENERATED sidecar (a key legitimately minted THIS run), and now additionally (adversarial-pass hardening, on top of the original membership check): (a) `statSync`s the REAL .wav + a sibling .license.txt before counting ANY key resolved -- an index/sidecar ENTRY is metadata, not proof a file exists, so a planned-but-never-produced mint now lands in missingFileList (a hard fail), never resolvedEvidence; the PLANNED manifest (sound-assets.manifest.json) is no longer consulted for resolution at all, only the GENERATED sidecar + a real on-disk file counts as minted; (b) hard-fails when audio-cues.json parses but requests ZERO bed/intro.sting/sfx keys -- every lesson's manifest carries at least a bed key by contract (lesson-sound-design SKILL: never invent a track per lesson, but never omit one either), so an empty `{}` is an upstream (w2c-sound-design) defect, not nothing-to-do, and a totalKeys:0 report no longer exits clean; (c) cross-checks the log's own cited byte count for each resolved key against the REAL stat() size (logByteMismatches) -- turning criteria.md C1's byte-count evidence from a judge-quotable prose line into a deterministic fact-check that fails on a fabricated or wrong number, independent of the soft judge's read. REGISTRY-MEMBERSHIP across THREE external, out-of-repo index/sidecar files has no existing CHECK_KINDS predicate (checks.ts is single-file-only) -- exactly the class building-measures.md Part D calls a thin run+writes wrapper: config, not new SDK code. ENGINE NOTE (why lessonId is recovered from run.json, never an arg token): runSubstrateMeasure's resolveDeep walks EVERY string field of the WHOLE op object -- id, note, run.cmd, run.args[] -- and a SINGLE unresolved arg-scoped token anywhere in that tree throws and drops the ENTIRE op into ops.rejected before the script ever runs (existing runs of this product predate arg-persistence, so run.json's own `args` block is absent today -- verified against a real run dir). So this note is deliberately written without an arg-style reference to lessonId anywhere in it, and the script instead recovers lessonId from THIS node's own declared artifact path already in <run>/.pi/run.json (nodes['w3c-sound-asset'].artifacts[0].path always embeds .../lesson-data/<lessonId>/_logs/sound-asset.md), needing no new token, no SDK change, and no dependency on arg-persistence ever landing. VALIDITY: exits 1 on any unresolved key, a key whose registry/sidecar entry has no real backing file on disk, zero requested keys, a schema-violating (non-string) bed/sting/sfx value, an outro.resolve present but non-boolean, or a real log byte-count mismatch (surfaces as ops.runs[].failed); exits 0 otherwise. logMissingKeys (does the log mention a key at all) stays advisory -- log format/density is a SOFT (criteria.md C1/C4) concern -- but a cited-and-WRONG number is a different kind of defect (a fact-check, not a formatting nicety) and DOES fail via logByteMismatches."
+      }
+    ],
+    "criteria": "nodes/w3c-sound-asset/criteria.md"
+  },
   "return": { "type": "object", "additionalProperties": false,
     "properties": {
       "node": { "type": "string" },

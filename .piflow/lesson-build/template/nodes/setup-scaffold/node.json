@@ -12,7 +12,9 @@
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/brief.md",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json",
-      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/setup-scaffold.md"
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs",
+      "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/public/audio/{{arg.lessonId}}"
     ],
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/src",
@@ -22,15 +24,17 @@
       "{{WORKSPACE}}/remotion-svg-primitives/tsconfig.json",
       "{{WORKSPACE}}/remotion-svg-primitives/eslint.config.mjs",
       "{{WORKSPACE}}/remotion-svg-primitives/remotion.config.ts",
+      "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/_template",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
+    "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
     "returnMode": "required"
   },
   "op": [
-    { "when": "post", "transform": { "kind": "promote", "from": "@return:camelLessonId", "to": "camelLessonId" } },
-    { "when": "post", "transform": { "kind": "promote", "from": "@return:composition", "to": "composition" } }
+    { "when": "post", "transform": { "kind": "promote", "from": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json:voice.constPrefix", "to": "camelLessonId" } },
+    { "when": "post", "transform": { "kind": "promote", "from": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/pipeline.json:composition", "to": "composition" } }
   ],
   "checks": {
     "post": [
@@ -40,6 +44,59 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "brief-not-authored-by-node",
+        "when": "post",
+        "gate": {
+          "kind": "regex-absent",
+          "path": ".pi/nodes/setup-scaffold/events.jsonl",
+          "param": "\"toolName\":\\s*\"(write|edit)\"[^\\n]{0,300}?\"path\":\\s*\"[^\"]*brief\\.md\""
+        },
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the node's single highest-leverage law (prompt.md STEP 1) is 'brief.md is the ONLY human input; if missing, status=blocked — never author it'. Greps the node's OWN behavior trace for a WRITE/EDIT tool call whose path contains brief.md — a hit means the node fabricated or altered the human input instead of blocking. PROVEN HOLE (adversarial pass): this gate only keys write/edit tool events, so a `bash` redirect (`> brief.md`, tee, sed -i) — bash is this node's own step-2 scaffold tool — evades it entirely (a constructed bash-redirect trace hits this regex `false`, i.e. a vacuous PASS). See the sibling `brief-not-mutated-via-bash` gate below, which closes exactly that hole. The gate `path` is bare run-relative (matches measure.ts's readBytes: path.resolve(runDir, rel)) and deliberately carries NO templating tokens of any kind — a token naming the run's lesson-id arg anywhere in this op tree throws inside resolveDeep and crashes measurement for the WHOLE node on a run with no persisted `.pi/run.json` args block (every run sampled in this repo). `scripts/measure/hard-checks.mjs` (wired below as the `hard-checks` op) works around that by deriving the lessonId IN-SCRIPT from run.json's own recorded artifact paths, never from an `{{arg.*}}` token — that is how C2/C3 are now safely hard-wired (see that op's note)."
+      },
+      {
+        "id": "brief-not-mutated-via-bash",
+        "when": "post",
+        "gate": {
+          "kind": "regex-absent",
+          "path": ".pi/nodes/setup-scaffold/events.jsonl",
+          "param": "\"toolName\":\\s*\"bash\"[^\\n]{0,300}?\"command\":\\s*\"[^\\n]{0,600}?(?:>{1,2}|\\btee\\b|\\bsed\\b[^\\n]{0,40}-i)[^{}:\\n]{0,200}?brief\\.md"
+        },
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — closes the PROVEN evasion of `brief-not-authored-by-node`: a bash tool call whose `args.command` redirects (`>`/`>>`), `tee`s, or `sed -i`s into a path containing brief.md never has toolName write/edit, so it hit `false` on the sibling gate above (verified live this session — see validityProof). This regex keys on `\"toolName\":\"bash\"` followed (within the same JSONL event line) by an `args.command` string that contains one of the three named mutation idioms ahead of the literal `brief.md` substring. TIGHTENED after a LIVE false-positive this session: an earlier draft's operator→target gap was `[^\\n]{0,400}` (any char), which matched a genuine read-only `ls -la .../ 2>/dev/null` bash call on real run kp3-tens-and-ones-place-r3 — the `2>` stderr-redirect satisfied the operator alternative, and \"brief.md\" was found 400 chars later, but OUTSIDE the command string entirely (inside the tool's OWN `partialResult.content[].text` echo of an `ls` listing that happens to include a `brief.md` line). Fixed by excluding JSON-structural chars `{}:` from the gap class (`[^{}:\\n]{0,200}`) so the match can never cross into a subsequent JSON key/field, while still comfortably covering a full absolute-path redirect (~100-150 chars) for the 3 real evasions. Re-verified clean (no false hit) against every real trace in this repo's runs/ (kp3-r1/r2/r3, ctt-1/2) after the fix. Residual, honestly scoped: does NOT catch every possible mutation idiom (e.g. `cp`/`mv` onto brief.md) — those three (redirect/tee/sed-i) are the ones the adversarial pass actually proved; a wider idiom set is a follow-on, not claimed here. Paired with `hard-checks.mjs`'s `traceFound`/`traceTruncated` fields (this gate's own vacuous-pass-on-a-missing-file failure mode) and only examines the CURRENT `.pi` layout — see that op's note for the `_pi`-layout caveat."
+      },
+      {
+        "id": "no-item-tag-leak-in-return",
+        "when": "post",
+        "gate": {
+          "kind": "regex-absent",
+          "path": ".pi/nodes/setup-scaffold/events.jsonl",
+          "param": "\"toolName\":\\s*\"submit_result\"[^\\n]*?</item>"
+        },
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the real zesty-caramel issue (issues/zesty-caramel.md): every string in the node's returned `issues[]`/`pipelineFindings[]` on run kp3-tens-and-ones-place-r3 carried a stray, unexplained `</item>` tag (an XML/HTML-list-authoring convention bleeding into what should be a plain JSON string array). Low severity (does not break JSON validity or trip the return-schema gate) but degrades the one surface downstream humans + the Hermes fixer loop read to triage findings, and was previously named only in a judge-facing issue file, never measured. Keys on the literal `</item>` substring occurring anywhere within the SAME JSONL event line as the node's own `submit_result` tool call (never a different tool's read-dump of unrelated file content)."
+      },
+      {
+        "id": "hard-checks",
+        "when": "post",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/setup-scaffold/scripts/measure/hard-checks.mjs",
+            "--run",
+            "{{RUN}}",
+            "--workspace",
+            "{{WORKSPACE}}",
+            "--out",
+            "{{RUN}}/optimize/substrate/setup-scaffold-hard-checks.json"
+          ]
+        },
+        "writes": ["{{RUN}}/optimize/substrate/setup-scaffold-hard-checks.json"],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the thin op[] wrapper (building-measures.md Part D) for what CHECK_KINDS genuinely cannot express: (a) a POSITIVE trace-liveness assertion checked across BOTH the current `.pi/nodes/<id>/events.jsonl` layout AND the legacy flat `_pi/<id>.events.jsonl` layout (no CHECK_KINDS gate can OR across two paths), pairing with the two regex-absent gates above so a missing/`_pi`-layout/truncated trace reports an explicit `traceFound:0`/`traceTruncated:1` instead of letting those gates' 'pattern absent from an empty/missing file' vacuously read as clean; (b) criteria.md's C2 (`lessonIdMatches`) and C3 (`noLeftoverTemplateTokens`) plus the promote-fidelity half of C2 (`constPrefixPromoteFidelity`/`compositionPromoteFidelity` — does what state.json says got promoted match pipeline.json's own fields VERBATIM), now safely promoted to a hard measure. Its top-level fields are all flat numbers (0/1/null) so the substrate's graded-leaf fold surfaces every one of them to triage; `null` means 'not applicable/not measured' (e.g. no state channel populated this run — the criteria.md 'Substrate gap' section's ORIGINAL blocking finding, a ResolveCtx-never-loads-args crash risk, is superseded by this script deriving lessonId from run.json artifact paths instead of an `{{arg.*}}` token — see that section's update). Deliberately does NOT hard-gate 'constPrefix is the mechanically-correct camelCase transform of lessonId': 3 of 21 real lesson-data/*/pipeline.json files in this repo use a deliberately simplified constPrefix that is not a literal transform, so that stronger check would false-fail on legitimate lessons — promote-fidelity (state vs. file) has no such trap."
+      }
+    ],
+    "criteria": "nodes/setup-scaffold/criteria.md"
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,
@@ -53,6 +110,6 @@
       "issues": { "type": "array", "items": { "type": "string" } },
       "pipelineFindings": { "type": "array", "items": { "type": "string" } }
     },
-    "required": ["node", "status", "camelLessonId", "composition", "outputArtifacts", "summary", "pipelineFindings"]
+    "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
   }
 }

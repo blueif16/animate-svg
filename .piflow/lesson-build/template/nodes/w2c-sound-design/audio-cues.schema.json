@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://piflow.local/lesson-build/w2c-sound-design/audio-cues.schema.json",
+  "title": "AudioCues — w2c-sound-design output contract",
+  "description": "Mirrors AudioCues/AudioCueSfx (@studio/sound-kit audioCuesTypes.ts, re-exported at remotion-svg-primitives/src/lesson-media/audioCuesTypes.ts). SEMANTIC only: bed/sting/sfx are library KEYS (plain strings), event is the composer's FIXED vocabulary, and there is no frame field anywhere. additionalProperties:false at every level is deliberate — it is what turns a nested {key:\"...\"} wrapper (the wrong shape a weak executor reaches for) into a hard type failure instead of a silently-accepted extra field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lessonId", "bed", "sfx"],
+  "properties": {
+    "lessonId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Copied verbatim from {{arg.lessonId}} — the provenance every downstream node trusts."
+    },
+    "bed": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A bed KEY (a plain string), never an object. Live membership in shared-sound's _beds/_index.json is NOT checkable by a static schema — see criteria.md 'registry-membership follow-on'."
+    },
+    "toneSafe": {
+      "type": "boolean",
+      "description": "true only for pinyin/lexical-tone-discrimination lessons (SKILL bed table)."
+    },
+    "intro": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sting": { "type": "string", "minLength": 1, "description": "A sting KEY, plain string." }
+      }
+    },
+    "outro": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resolve": {
+          "type": "boolean",
+          "description": "A boolean ENVELOPE FLAG (the bed rises to full) — never an asset key string."
+        }
+      }
+    },
+    "sfx": {
+      "type": "array",
+      "description": "Zero or more motivated beats (a sparse lesson may legitimately sonify nothing).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cue", "event", "sound"],
+        "properties": {
+          "cue": { "type": "string", "minLength": 1, "description": "Cue id into the reconciled timeline." },
+          "event": {
+            "type": "string",
+            "enum": ["popin", "count", "transition", "reward"],
+            "description": "The composer's CLOSED vocabulary (SfxEventType). Any other value — however descriptive of the motion (e.g. 'objectLift', 'title-settle') — is off-contract: the composer has no frame mapping for it and it will silently fail to sonify."
+          },
+          "sound": { "type": "string", "minLength": 1, "description": "A sound KEY, plain string, from the fixed SFX vocabulary or the shared library." },
+          "perStep": { "type": "boolean", "description": "count beats only: one tick per counted item." },
+          "risingPitch": { "type": "boolean", "description": "count beats only: ascend pitch per step [ASSUMED]." }
+        }
+      }
+    }
+  }
+}

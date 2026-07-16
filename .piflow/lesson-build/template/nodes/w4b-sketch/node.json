@@ -58,5 +58,47 @@
       "pipelineFindings": { "type": "array", "items": { "type": "string" } }
     },
     "required": ["node", "status", "outputArtifacts", "summary", "pipelineFindings"]
+  },
+  "optimize": {
+    "criteria": "nodes/w4b-sketch/criteria.md",
+    "verifyDefault": "full",
+    "measure": [
+      {
+        "id": "w4b-sketch-hard-measure",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w4b-sketch/scripts/measure.mjs",
+            "{{RUN}}"
+          ]
+        },
+        "writes": ["{{RUN}}/optimize/substrate/w4b-sketch.measure.json"],
+        "note": "HARDENED (adversarial pass, 2026-07-09; RE-REWIRED 2026-07-09b — the first hardening pass left the arg-templated lessonId placeholder spelled out literally, in backtick prose, inside THIS note field, and the substrate measure stage resolveDeeps EVERY string field of an op, note included — so the literal placeholder text kept tripping the same MissingArgError and the run op stayed dropped into ops.rejected even after the script itself was fixed; this note is now reworded to describe that placeholder in plain words, with no template-bracket token anywhere in the string). The OLD version of every check in this array, both this run op and every companion gate below, templated the per-run lessonId argument into its own path/args; the substrate measure stage resolves those tokens against the FINISHED run's PERSISTED args, and no run sampled in this product repo carries a persisted args block, so EVERY one of those ops was silently dropped into ops.rejected and NEVER evaluated — the entire hard floor was hollow on every real run, exactly as the adversarial pass proved. This op's only arg is the RUN directory, which always resolves; the script derives the lessonId + the sketch-overlay.md path itself from the run's own run.json persisted per-node artifacts list (mirrors the w0-pedagogy/w2b-audio-captions/w3a-voice-asr precedent). ONE script now computes all FOUR hard invariants (section completeness, cue-relative discipline, restraint budget, mark vocabulary) into ONE report under the run's optimize/substrate directory (never the live product's lesson-data dir — the OLD writes[] pointed there, missing even a workspace-root prefix, so it could never fold into graded and risked a STALE prior run's report reading as this run's verdict). Verified against the real fen-yu-he/sketch-overlay.md (reproduces its own stated ledger: 9 cues, 3 marks, budget 5, all 4 sections present, no violations) and constructed evasion fixtures for each of the four proven holes (see measure.mjs's header + this node's validityProof)."
+      },
+      {
+        "gate": { "kind": "exists", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json" },
+        "note": "FAIL-CLOSE (adversarial hole d): an absent report must be a HARD FAIL, never a vacuous `regex-absent` pass. Before this gate, a report that never got written (op rejected, script crashed, wrong path) read as an EMPTY file to every downstream `regex-absent` check below — which all vacuously PASS on empty content. This gate makes 'the measure never ran' visible as its own failure."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"ungradable\":\\s*true" },
+        "note": "FAIL-CLOSE (adversarial hole b, the \"prose-table\" evasion): a sketch-overlay.md that mentions the per-cue-mark-table heading but never writes a parseable pipe table (or the artifact is otherwise unreadable) used to degrade to cueCount:0/markCount:0/budget:0/overBudget:false — a SILENT VACUOUS PASS on the exact surface this node exists to grade. measure.mjs now sets `ungradable:true` in that state; this gate turns it into a hard fail instead of a pass."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"hasMissingSection\":\\s*true" },
+        "note": "FLOOR: the artifact covers all FOUR sections the skill requires (sketch language, per-cue mark table, climax sketch, composer hand-off) as REAL headings, not a substring match anywhere in the file. Replaces the old node.json `regex-present` lookahead gate, which was missing a lookahead for 'Sketch language' entirely (only 3 of 4 sections were ever checked) AND, like every op here, was silently rejected on every real run for templating the per-run lessonId argument directly into its path (a value never persisted on any sampled run). NOTE reworded 2026-07-09b to drop that arg-placeholder spelled out in template-bracket form — the substrate measure stage resolveDeeps this note field too, so writing the literal placeholder here re-tripped the same rejection this gate exists to stop being dropped by."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"hasCueRelativeViolation\":\\s*true" },
+        "note": "FLOOR (hard fail) — the node's raison-d'être invariant, BROADENED + RELOCATED (adversarial hole c): the OLD standalone `regex-absent` matched only ONE exact shape (three consecutive bare-numeric pipe-columns, the skill's literal '| 891 | 24 | 1057 |' example) over the WHOLE FILE. measure.mjs now scans each row's three semantically-identified timing cells for a bare, unqualified (no `cueLength`/`cue.`/`Math.` reference) integer >= 500 frames (~16-20s, past any plausible single-cue length) — column-position-agnostic and formatting-agnostic, never keyed to one shape. Verified: fires on a constructed absolute-frame fixture (891/1057 in the timing cells), does not false-fire on the real fen-yu-he row (all real values 12-66, or qualified by `cueLength`) or on the anchor column's own pixel coordinates (out of scope — only the 3 timing columns are checked)."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"overBudget\":\\s*true" },
+        "note": "FLOOR (hard fail): the restraint budget was exceeded — the single most load-bearing numeric rule the sketch-explainer-layer skill states (\"Restraint is the rule\"). HARDENED (adversarial hole a): markedness is now NEGATIVE-token-gated (a row counts as marked unless its cell is an explicit n/no/-/–/— token), so a row gamed with `✓`/`Yes`/any other token can no longer be silently excluded from this count."
+      },
+      {
+        "gate": { "kind": "regex-absent", "path": "{{RUN}}/optimize/substrate/w4b-sketch.measure.json", "param": "\"hasVocabViolation\":\\s*true" },
+        "note": "FLOOR (hard fail): a marked row named a mark type outside {underline, wrap-arc, label-arrow, vs-mark} — the skill's closed vocabulary (\"NOT in this vocabulary (don't invent)\"). HARDENED (adversarial hole a): the same negative-token markedness fix means a row gamed with a non-\"y\" mark token can no longer dodge this check either (the old `/^y/i` filter silently excluded such rows from BOTH the budget count and this vocabulary check at once)."
+      }
+    ]
   }
 }

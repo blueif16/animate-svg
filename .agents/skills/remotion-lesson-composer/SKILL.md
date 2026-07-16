@@ -95,21 +95,22 @@ export const myLessonDuration = reconciled.durationFrames;
 
 **Audio wiring:** pass `<X>VoiceClips` straight into `<LessonAudioLayer voiceClips={...}>` (the kit mounts one `<Sequence from={clip.fromFrame}>` per clip). NEVER wire a single `teacherAudioSrc`/continuous WAV. Derive the bed-duck windows from the clip spans (`spansToWindows(voiceClips.map(c => [c.fromFrame, c.fromFrame + c.durationInFrames]))`).
 
-**The kit import is `@studio/narration-kit` — copy this block, do NOT go looking for it.** Every audio layer + reconcile/window helper the composer mounts is a NAMED export of the SAME package:
+**The audio/caption/SFX layers are LOCAL wrappers under `src/lesson-media/` — copy this block, do NOT go looking for it.** The four `Lesson*Layer` components and `spansToWindows` are **NOT** exports of `@studio/narration-kit` — they are local `src/lesson-media/*` wrappers (thin shims over the shared kits). Only the cue/timeline helpers + types (`reconcileClipTimeline`, `tokenOnsetFrame`, `VoiceClip`, `CaptionCue`, `PlacedCue`) come directly from the kit. Copy exactly:
 
 ```ts
-import {
-  LessonAudioLayer,    // per-cue voice clips → one <Sequence from={clip.fromFrame}> each
-  LessonBgmLayer,      // mechanical music bed (key + duck windows)
-  LessonSfxLayer,      // composer-owned SFX events at motion frames
-  spansToWindows,      // clip spans → bed-duck windows
-  reconcileClipTimeline, // Wave 3.5 reconcile (already used in the timeline module)
-} from "@studio/narration-kit";
+// audio / caption / SFX layers — LOCAL wrappers (NEVER @studio/*):
+import { LessonAudioLayer, LessonBgmLayer, LessonCaptionLayer, LessonSfxLayer } from "../lesson-media/components";
+import { spansToWindows } from "../lesson-media/audioMix";
+import type { SfxEvent } from "../lesson-media/LessonSfxLayer";
+import type { CaptionCue } from "../lesson-media/LessonCaptionLayer";
+// cue / timeline helpers + types — DIRECTLY from the kit:
+import { reconcileClipTimeline, tokenOnsetFrame } from "@studio/narration-kit";
+import type { VoiceClip, PlacedCue } from "@studio/narration-kit";
 ```
 
-(`LessonCaptionLayer` is also from this package. Music keys from `audio-cues.json` pass through verbatim — the kit resolves them; you NEVER touch the `.wav`.)
+The **authoritative, code-generated inventory of every audio/caption/SFX/timeline symbol + its exact import path + props** is `src/capabilities/lesson-media-digest.md` (the twin of `catalog-digest.md`, for the media surface). Consult THAT for anything not in this block — never `find`/`grep`/`node_modules`/`@studio/*`. (`LessonCaptionLayer`'s prop is `cues`, NOT `captions`. Music keys from `audio-cues.json` pass through verbatim — the kit resolves them; you NEVER touch the `.wav`.)
 
-**LAW — a path you need is GIVEN, never hunted.** Every import path, package name, primitive location, and asset key the composer needs is stated in THIS skill or in `src/capabilities/catalog-digest.md`. You MUST NOT `cat`/`grep`/`ls`/`find`/explore the disk (and NEVER `node_modules` or `@studio/*`) to DISCOVER where something lives — the answer is here, and disk-scanning for it is wasted effort that under `--sandbox` also EPERMs. If a path you genuinely need is named NOWHERE in this skill or the catalog-digest, that is a SKILL GAP: record it as a `pipelineFinding` (name the missing path), proceed from the best in-skill default, and do NOT spelunk for it.
+**LAW — a path you need is GIVEN, never hunted.** Every import path, package name, primitive location, and asset key the composer needs is stated in THIS skill, in `src/capabilities/catalog-digest.md` (teaching PRIMITIVES), or in `src/capabilities/lesson-media-digest.md` (audio/caption/SFX/timeline IMPORT PATHS + props — the authoritative media surface). You MUST NOT `cat`/`grep`/`ls`/`find`/explore the disk (and NEVER `node_modules` or `@studio/*`) to DISCOVER where a symbol lives — the answer is in the lesson-media-digest, and disk-scanning for it is wasted effort that under `--sandbox` also EPERMs (this is the exact failure a prior run hit: told the wrong `@studio/narration-kit` import, it burned the run `find`-ing `node_modules`). If a path you genuinely need is named NOWHERE in this skill or either digest, that is a SKILL/DIGEST GAP: record it as a `pipelineFinding` (name the missing symbol), proceed from the best in-skill default, and do NOT spelunk for it.
 
 ### Honor intentional silence — the gap reason
 
@@ -123,7 +124,7 @@ A cue may carry a `gap` ({seconds, reason}) — a stretch where the voice is del
 
 The mechanically-generated `<camelId>LessonCaptionCues` (Wave 3.5, via the kit's `cueToCaption`) sets every caption's `toFrame` to `cue.endFrame` UNCONDITIONALLY — the FULL cue window, including any typed `gap` hold. Wired straight into `<LessonCaptionLayer>`, a cue with a `learner-response` gap (e.g. 4s / `gapFrames: 120`) keeps its ribbon on screen through the entire silent wait — the child reads words nobody is currently saying. **Caption presence must track actual speech, never the cue boundary:**
 
-- Whenever `cues[id].gapFrames > 0` (read off the reconciled `<camelId>Cues` — every `PlacedCue` carries `narrationEndFrame`/`gapFrames`/`holdFrames`), build your OWN captions array for `<LessonCaptionLayer captions={...}>` that clamps THAT cue's `toFrame` to `cues[id].narrationEndFrame` — never pass the mechanical `<camelId>LessonCaptionCues` straight through when any cue has a gap. This is a composer-owned derived array over an already-generated timeline, not a Wave 3.5 or kit edit.
+- Whenever `cues[id].gapFrames > 0` (read off the reconciled `<camelId>Cues` — every `PlacedCue` carries `narrationEndFrame`/`gapFrames`/`holdFrames`), build your OWN captions array for `<LessonCaptionLayer cues={...}>` (the prop is `cues`, not `captions`) that clamps THAT cue's `toFrame` to `cues[id].narrationEndFrame` — never pass the mechanical `<camelId>LessonCaptionCues` straight through when any cue has a gap. This is a composer-owned derived array over an already-generated timeline, not a Wave 3.5 or kit edit.
 - **End-anchor the entrance fade at the speech onset.** `@studio/narration-kit`'s `CaptionLayer` cross-fades each cue over a fixed window CENTERED on `fromFrame` (`FADE_FRAMES = 6`) — full opacity lands `FADE_FRAMES/2` frames AFTER the nominal start, so the ribbon is still visibly fading in while the child already hears the word. Feed the caption's `fromFrame` as `cues[id].narrationStartFrame - FADE_FRAMES/2` (3 frames early at 30fps) instead of the raw onset frame, so the crossfade COMPLETES exactly when speech begins rather than trailing behind it — the same "anchor the fade's END at the onset" discipline the field applies to per-token karaoke highlights (`research/remotion-vendor-best-practices-2026-07-03.md` §3 S4).
 
 Both derivations sit at the composer's own wiring site in `Complete<PascalId>Lesson.tsx`, over arrays the generated timeline already exports — the timeline module itself stays untouched (Wave 3.5 is mechanical, never yours to hand-edit).
@@ -205,7 +206,7 @@ export const Complete<PascalId>Lesson: React.FC = () => (
   <AbsoluteFill>
     <<PascalId>LessonScene cues={<camelId>Cues} />
     <LessonAudioLayer voiceClips={<camelId>VoiceClips} />
-    <LessonCaptionLayer captions={<camelId>Captions} />
+    <LessonCaptionLayer cues={<camelId>Captions} />
     <LessonBgmLayer bed={audioCues.bed} windows={spansToWindows(voiceoverSpans)} totalFrames={<camelId>Duration} />
     <LessonSfxLayer events={sfxEvents} />
   </AbsoluteFill>

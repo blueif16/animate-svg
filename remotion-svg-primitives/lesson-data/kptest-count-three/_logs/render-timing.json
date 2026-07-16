@@ -1,0 +1,43 @@
+{
+  "lessonId": "kptest-count-three",
+  "generatedAt": "2026-07-10T12:25:45.618Z",
+  "totalMs": 23437,
+  "steps": [
+    {
+      "step": "Audio gate",
+      "ms": 2437
+    },
+    {
+      "step": "Lesson registry",
+      "ms": 107
+    },
+    {
+      "step": "Typecheck + lint",
+      "ms": 4685
+    },
+    {
+      "step": "Bundle",
+      "ms": 2914
+    },
+    {
+      "step": "Render MP4",
+      "ms": 7357
+    },
+    {
+      "step": "Loudnorm pass 1 (measure)",
+      "ms": 906
+    },
+    {
+      "step": "Loudnorm pass 2 (-16 LUFS / -1 dBTP, linear)",
+      "ms": 542
+    },
+    {
+      "step": "Loudnorm verify (re-measure)",
+      "ms": 934
+    },
+    {
+      "step": "Contact sheet",
+      "ms": 3555
+    }
+  ]
+}

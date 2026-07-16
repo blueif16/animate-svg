@@ -10,7 +10,7 @@ description: >-
   "monitor / follow / poll a run", "diagnose a stalled / never-wrote / blocked node", or the words
   "piflow" / "pi-runner" / "pi fleet" / "pi run" appearing at all. The run is ALWAYS: pull the next prompt
   from the bank → dry-run (free) → live background → poll. To CREATE or PORT the template first use
-  piflow-init; to IMPROVE a node/the chain use piflow-enhance.
+  piflow-init.
 ---
 
 # Pi Flow · START — run & monitor a workflow on the pi fleet
@@ -80,6 +80,24 @@ below (`run` · `inspect` · `extract` · `status` · `watch` · `logs`) is a `p
    tail a node's `events.jsonl`. Confirm liveness by the **artifact on disk + the VCS/file evidence**, never a
    self-report.
 
+## Monitor & diagnose live
+**NEVER hand-roll polling with `sleep` + `cat`/`tail -f` on a node's `events.jsonl` — the SDK ships live
+views; a `sleep` loop burns turns, misses the terminal event, and re-improvises a tested surface.** Use the
+`piflowctl` bin (never `node …/dist/cli.js`):
+- `piflowctl watch <rundir> [--notify]` — the wake-on-event SENTINEL: it blocks on the live stream and prints
+  ONE line when the run finishes / a node fails / it dead-stalls. Reach for this to await a background run.
+- `piflowctl status <rundir> --every <s>` — the per-node table, refreshed in place every `<s>` seconds (omit
+  `--every` for a one-shot snapshot). The human dashboard.
+- `piflowctl telemetry <rundir> [nodeId] --watch` — the agent-facing digest streamed live (verdicts · cost
+  spine · loop signals · anomaly worklist · failure-onset root cause), then the final record.
+- **The optimize loop streams too:** `piflowctl optimize --fix <rundir> --binding <module> --watch` emits the
+  FIX→GATE→LAND events in order — **`triaged → candidate-prepared → fixer-started → fixer-trace* → fixer-done
+  → scored → gated → landed → stopped`** (`fixer-trace*` repeats per fixer step; `--watch-json` = JSONL). Use
+  this to follow an autonomous fix round.
+
+Confirm liveness by the artifact on disk + the VCS/file evidence, never a self-report. (Deep status/event
+contract: piflow-init's `reference/observability.md`.)
+
 ## Windowing the DAG (`--from` / `--until`)
 A needle matches a stage by substring against its **phase, node-id, or node label** (`stageMatches` in
 `@piflow/core`). Two rules that bite:
@@ -87,6 +105,18 @@ A needle matches a stage by substring against its **phase, node-id, or node labe
   `--until "W2 Scaffold"` matches NOTHING when `stage.phase` is unset → the window silently runs to the END.
 - **`--until X` runs through the LAST stage containing X; `--from X` resumes AT X** (reusing upstream artifacts
   via a stat preflight). `--only X` = both.
+
+## Fix ONE node in a failed run — `node --rerun`, NOT `--from` (verified 2026-07-10)
+- **`piflowctl node <run> <nodeId> --rerun [--sandbox local --thinking low --provider <gw>]`** re-runs EXACTLY
+  that node and **force-reuses every other node's artifact unconditionally** (bypasses the envelope-hash
+  comparison for non-targets). It does NOT continue downstream — chain
+  `piflowctl run <templateDir> --run <id> --from <next-stage> …` afterwards (the fixed stage joins the
+  unconditionally-pinned prefix, so nothing re-runs spuriously).
+- **Resume args are NOT carried forward.** `--arg` values come ONLY from the current invocation (`state.json`
+  carries forward; args do not), and each node's reuse hash bakes in its realized prompt. On ANY `--from`
+  resume, re-pass the ORIGINAL `--arg prompt="…"` **byte-identical** — read it back from the run's
+  `.pi/run.json` `args`, never retype it. A differing arg flips every windowed node REUSE→RUN — the classic
+  "why did all 7 parallel siblings re-run when only one failed" trap.
 
 ## Profiles — match the user's intent to a declared profile, then run
 A template may declare named run PROFILES in its `meta.json` (`profiles` + `defaultProfile`); each ELIDES a
@@ -101,7 +131,7 @@ whole job, and it is short:
 3. Done — the profile compiles the reduced, gateless DAG; `--from`/`--until` still window WITHIN it.
 
 When a profile elides the verify gates, **the orchestrator IS the verifier** — judge each node's artifact
-against the criteria fixture as it lands (piflow-enhance / hermes-skill-system's node-validation loop).
+against the criteria fixture as it lands (hermes-skill-system's node-validation loop).
 (Obsolete: hand-windowing gates out with `--until <last producer>` — use `--profile`; it rewires deps so a
 `--from` resume never blocks on an elided gate's missing artifact, the failure that motivated this.)
 
@@ -119,7 +149,7 @@ against the criteria fixture as it lands (piflow-enhance / hermes-skill-system's
 ## Scope fence
 - CREATE / PORT a template, or it's missing/incomplete → **piflow-init** (the LLM constructs the full
   run-ready template: prompts+DAG + hooks/policy/returnMode/state/vocab). Do NOT hand-author a template here.
-- A node produced a BAD artifact / a recurring flaw → **piflow-enhance** / **hermes-skill-system** (fix the
+- A node produced a BAD artifact / a recurring flaw → **hermes-skill-system** (fix the
   SKILL or the chain; the human is the eye). Do NOT patch a prompt mid-run.
 - The deep specs (the run-status/event contract, the `RunOptions` knobs, headless invariants) live in
   piflow-init's `reference/observability.md` + `reference/provider-and-headless.md` — read them when a run

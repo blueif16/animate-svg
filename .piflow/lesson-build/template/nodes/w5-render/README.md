@@ -1,3 +1,0 @@
-# w5-render — programmatic node (no prompt)
-
-This node is `"programmatic": true` in `node.json` and has NO `"prompt"` key: no agent runs here, so there is intentionally no `prompt.md`. Its whole job is one driver-run op declared in `node.json` → `op[]` — `npm run lesson:render -- --config <pipeline.json> --skip-voice` (cwd `remotion-svg-primitives`, `onFailure: block`; renders the frozen voice + reconciled timeline, runs the inline loudnorm pass, auto-builds the contact sheet; the mp4 + contact.png are existence-gated by `checks.post`). To change what W5 does, edit the op in `node.json`; the ground-truth authoring is the W5 RENDER node in `.claude/workflows/lesson-build.js`.

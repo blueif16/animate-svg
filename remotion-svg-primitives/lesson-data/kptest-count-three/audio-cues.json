@@ -1,13 +1,24 @@
 {
-  "lessonId": "kptest-count-three",
   "bed": "math-calm-68-cmaj",
   "toneSafe": false,
-  "intro": { "sting": "soft-rise" },
-  "outro": { "resolve": true },
+  "intro": {
+    "sting": "mandarin-accent"
+  },
+  "outro": {
+    "resolve": true
+  },
   "sfx": [
-    { "cue": "count-apple-1", "event": "count", "sound": "tick", "perStep": true, "risingPitch": true },
-    { "cue": "count-apple-2", "event": "count", "sound": "tick", "perStep": true, "risingPitch": true },
-    { "cue": "count-apple-3", "event": "count", "sound": "tick", "perStep": true, "risingPitch": true },
-    { "cue": "cardinality-three", "event": "reward", "sound": "ta-da" }
+    {
+      "cue": "count-climb",
+      "event": "count",
+      "sound": "tick",
+      "perStep": true,
+      "risingPitch": true
+    },
+    {
+      "cue": "cardinality",
+      "event": "reward",
+      "sound": "ta-da"
+    }
   ]
 }

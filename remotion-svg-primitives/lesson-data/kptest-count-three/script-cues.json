@@ -1,36 +1,31 @@
 {
   "lessonId": "kptest-count-three",
+  "voice": "aoede",
+  "lang": "zh-CN",
   "cues": [
     {
-      "id": "intro-title",
-      "narration": "来，数一数。",
-      "phrase": "来数一数",
-      "caption": "来，数一数。"
+      "id": "topic-intro",
+      "role": "teacher",
+      "narration": "跟老师一起，数一数，到三。",
+      "phrase": "跟老师一起，数一数，到三。",
+      "caption": "跟老师一起，数一数，到三。",
+      "asrRisk": "none"
     },
     {
-      "id": "count-apple-1",
-      "narration": "看，一个苹果。",
-      "phrase": "看一个苹果",
-      "caption": "看，一个苹果。"
+      "id": "count-climb",
+      "role": "teacher",
+      "narration": "一！这是一个大大的苹果。又来一个苹果，是二！再放一个。看好啦，这最后一个，是三！",
+      "phrase": "一！这是一个大大的苹果。又来一个苹果，是二！再放一个。看好啦，这最后一个，是三！",
+      "caption": "一！这是一个大大的苹果。又来一个苹果，是二！再放一个。看好啦，这最后一个，是三！",
+      "asrRisk": "low; ignored — count words are verb-carried (是二/是三) and head-anchored (一！), never bare single-char terminators; clause breaks on 。/！/—— give ASR token boundaries; no 3-item comma run-on; no fix needed"
     },
     {
-      "id": "count-apple-2",
-      "narration": "再来一个，两个。",
-      "phrase": "再来一个两个",
-      "caption": "再来一个，两个。"
-    },
-    {
-      "id": "count-apple-3",
-      "narration": "还有一个，三个。",
-      "phrase": "还有一个三个",
-      "caption": "还有一个，三个。"
-    },
-    {
-      "id": "cardinality-three",
-      "narration": "数完啦！一共三个苹果。",
-      "phrase": "数完啦一共三个苹果",
-      "caption": "数完啦！一共三个苹果。",
-      "emphasis": true
+      "id": "cardinality",
+      "role": "teacher",
+      "narration": "现在有几个苹果呢？一起看——一共——是三个！",
+      "phrase": "现在有几个苹果呢？一起看——一共——是三个！",
+      "caption": "现在有几个苹果呢？一起看——一共——是三个！",
+      "asrRisk": "low; ignored — '三个' is multi-char (量词+数) preceded by the cardinal-sense carrier '一共', so it is not a bare card '三' and disambiguates from count-climb's count-on '是三'; 一起看/—— give ASR token boundaries; no fix needed"
     }
   ]
 }

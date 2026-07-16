@@ -19,6 +19,7 @@
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/capabilities/catalog-digest.md",
       "{{WORKSPACE}}/.agents"
     ],
     "returnMode": "optional"
@@ -29,6 +30,23 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "criteria": "nodes/w1-storyboard/criteria.md",
+    "measure": [
+      {
+        "id": "storyboard-lint",
+        "note": "The node-specific deterministic invariants a schema/regex-post-check can't reach on its own (Part D thin wrapper, building-measures.md). Runs tools/storyboard-lint.mjs out-of-band over the FROZEN storyboard.md + its pedagogy.md input and folds its report into the substrate measure report triage reads. lessonId and both file paths are derived IN-SCRIPT from the run's own recorded artifact (this op passes only the RUN and WORKSPACE roots — never a lessonId reference — because the substrate rejects the whole op if any field carries an unresolvable token, and a run-argument-derived lessonId is unresolvable on virtually every run recorded so far). HARD issues (block ok): a cue missing one of the lesson-storyboard SKILL's 5 output fields (discovery ref/stage/teaching action(s)/narration beat intent/required visual); the discovery-coverage floor (storyboard's discovery-ref count < pedagogy's discovery count - 1, tolerating one sanctioned closing-recap merge — the coarse backstop for the documented PRE-W1FIX regression where routine-reprise was dropped entirely, see memory.md); a storyboard cue's stage exceeding the max stage pedagogy.md itself used (SKILL.md: stage is carried from pedagogy, no cue may exceed it); a duration/frame literal anywhere (the node prompt's 'NO durations, no frames, no code' law — proven against the real lesson-data/kp1-fen-yu-he-intro/storyboard.md regression, a whitelist excludes the fixed 3-5s wait-time constant + the reconcile-formula citation + a backward-looking spaced-recall interval, all real citations that are NOT a per-cue decision; the whitelist exemption is TOKEN-SCOPED — it only applies on a line that also carries a wait-time-vocabulary word (gap/silence/wait/learner-response/invite-echo/retrieve), so a per-cue duration decision that merely reuses the whitelisted numeric value out of context still fires); a required field (discovery ref/stage/teaching action(s)/narration beat/required visual) whose label is present but whose value is EMPTY or a bare placeholder (TODO/TBD/N-A/none/etc — these used to pass silently); a missing exposures ledger. A pedagogy.md that parses to ZERO cues (checked against all 5 known corpus shapes, incl. the fenced cue-id: variant) is itself a BLOCKING issue, not a silent advisory — the discovery-coverage-floor and stage-ceiling checks below cannot run without it and must never pass quietly (HARDENED 2026-07-09 after an adversarial pass proved this exact no-op on kptest-count-to-two's own pedagogy.md; see memory.md's runway|pedagogy-cue-id-variant-blind lesson + criteria.md §5's correction). ADVISORIES (never block): an invite-echo cue with no paired learner-response-gap tag; a malformed (non-integer) exposures value. mkdir -p guarantees the report dir exists so the op ALWAYS fires and writes a parseable report (VALIDITY); the tool is report-only (exits 0), so this is a HARD signal only — QUALITY stays with criteria.md. Every rule here was test-the-measure verified against real fixtures both ways (fires clean on 5 current-contract storyboard.md's incl. kptest-fenyuhe-six/-compare-more-fewer/-greetings-verify/-first-second-third/-count-to-two — including each fixture's OWN pedagogy.md, which is what the 2026-07-09 pass had skipped; fires real issues on the PRE-W1FIX buggy storyboard + the legacy kp1-fen-yu-he-intro duration-literal regression + a constructed empty-field/gamed-whitelist evasion fixture) before being wired here. The other floor signals are REUSED FOR FREE and need no op: the non-empty post-check below, the trace detectors (thinkingStalls/toolLoops/tokenWaste — over-think + blind-spot-to-inject signal), the digest anomalies (mega-think/slow/cost-spike/retries), deriveStatus existence/fill, and the return-schema enforcement.",
+        "run": {
+          "cmd": "sh",
+          "args": [
+            "-c",
+            "mkdir -p \"{{RUN}}/optimize/substrate\" && node \"{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w1-storyboard/tools/storyboard-lint.mjs\" lint --run \"{{RUN}}\" --workspace \"{{WORKSPACE}}\" --report-out \"{{RUN}}/optimize/substrate/w1-storyboard.storyboard-lint.json\""
+          ]
+        },
+        "writes": ["optimize/substrate/w1-storyboard.storyboard-lint.json"]
+      }
+    ]
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

@@ -46,6 +46,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents"
     ],
+    "execCwd": "{{WORKSPACE}}/remotion-svg-primitives",
     "returnMode": "optional"
   },
   "checks": {
@@ -54,6 +55,50 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "measure": [
+      {
+        "id": "lesson-registry-liveness",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3b-primitive-build/scripts/measure/check-lesson-registry-liveness.mjs",
+            "{{RUN}}",
+            "{{WORKSPACE}}"
+          ],
+          "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — reuses the op/check grammar but is NOT a workflow gate: the optimize substrate folds this via runs[] into optimize/substrate/measure.w3b-primitive-build.json for the TRIAGE agent, entirely parallel to the run's own checks.post (which only asserts non-empty). THE REAL FLOOR GAP this closes: nothing at the workflow level re-verifies that every REUSE/GAP row actually names a real, LIVE registry component — today that oracle (registry:check-lesson) is a step the MODEL is merely instructed to run on itself inside its own turn (prompt.md \"VERIFY:\"); if it skips or fudges that step, a phantom REUSE or a stale deprecated citation ships silently and the composer (W4a) burns its own timeout hunting a component that doesn't exist (the documented kptest-fenyuhe-six RecapSpotlight incident the gate itself cites). Re-running the SAME immutable oracle out-of-band, independent of whether the node's own turn actually invoked it, makes this measure fire even when the in-run verify was skipped. REWIRED 2026-07-09 (chore/lesson-build-standards-runway): a literal arg-lessonId marker token in this op's own args made `runSubstrateMeasure` DROP the whole op into `ops.rejected` on every real (argless) run — see measurement-runway.md \"the runway node-dir layout\" §1 (NEVER write that marker token, in its brace form, ANYWHERE in a measure op, including this very note — resolveDeep resolves the whole op tree, note included). Now passes ONLY `{{RUN}}`/`{{WORKSPACE}}` to a node-dir wrapper (`scripts/measure/check-lesson-registry-liveness.mjs`, same idiom as the `aesthetic-stills-floor` op below) that derives the lessonId IN-SCRIPT from the run's own `.pi/run.json` artifact paths, then invokes the real product gate directly via `node` (never `npm run`) — real run evidence (mig-e2e-1, e10e11-accept-1 io/run.json issues[]) shows `npm run` under `--sandbox local` hits a node_modules read-EPERM the direct `node scripts/...` invocation does not; see memory.md. Exit 0 = every cited component is a live registry member (non-deprecated) and the citation format resolved at least one component (the anti-vacuous guard); exit 1 = a phantom REUSE, a deprecated reuse, or a vacuous zero-citation gap-scan — each a real, evidence-backed defect class, never a rubber-stamp."
+        }
+      },
+      {
+        "id": "registry-structural-drift",
+        "run": {
+          "cmd": "sh",
+          "args": [
+            "-c",
+            "node scripts/registry/build-icon-assets.mjs --check && node scripts/registry/build-registry.mjs --check && node scripts/registry/catalog-digest.mjs --check && node --no-warnings=ExperimentalWarning scripts/registry/export-schema.mjs --check && node scripts/registry/check-gallery.mjs && node scripts/registry/check-deprecated-refs.mjs && node scripts/build-lesson-registry.mjs --check"
+          ],
+          "cwd": "{{WORKSPACE}}/remotion-svg-primitives",
+          "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the SAME chain `npm run registry:check` runs, invoked as direct `node scripts/...` calls (bypassing `npm run`, per the sandbox-EPERM lesson above) so it fires reliably regardless of the node's own sandbox. Fires every run, zero-gap or not: catches a hand-edited generated file (primitive-registry.json / catalog-digest.md are OWNED-but-generated — w3b must never hand-edit their structural fields), a stranded barrel export, or a gallery/demo drift — none of which the per-lesson check above can see. Non-zero exit = the WHOLE catalog (every future lesson's REUSE menu) drifted, a strictly higher-severity signal than a single lesson's phantom citation."
+        }
+      },
+      {
+        "id": "aesthetic-stills-floor",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w3b-primitive-build/scripts/measure/check-aesthetic-stills.mjs",
+            "{{RUN}}",
+            "{{WORKSPACE}}"
+          ]
+        },
+        "writes": [
+          "{{RUN}}/optimize/substrate/w3b-primitive-build-stills.json"
+        ],
+        "note": "MEASURE (post-run, out-of-band, NON-BLOCKING) — the hard floor for criteria.md C5 (2026-07-09 hardening; closes a proven adversarial-pass hole). C5 was SOFT-ONLY: a text-only blind judge cannot see a PNG, so a fabricated 'stills rendered; finger-cover passed' claim passed on the highest-stakes gap-shipping path (a bad/unverified new primitive becomes a PERMANENT catalog defect every future lesson inherits). This script FAILS, unconditionally, when a primitive was registered this run (STRUCTURALLY detected — registry ids now vs the git HEAD revision of primitive-registry.json, never a prose regex over the artifact's English, unlike check-lesson-primitives.mjs's own 5-alternative REUSE_VERDICT anti-vacuous guard) but out/<lessonId>/primitive-checks/ holds zero rendered stills. Declares `writes` (unlike the two ops above) so its numeric leaves fold into the substrate report's `graded` map — the axis triage's own harness is told to read, which was structurally EMPTY for this node before this op existed. Fail-closed: an unresolvable lessonId, unreadable registry, or git failure reports stillsFloorPass:0 + stillsFloorSkipped:1 (a visible skip, never a silent ok:true) and exits 1, same as a genuine floor breach; see the script's own header for the full rationale + memory.md."
+      }
+    ],
+    "criteria": "nodes/w3b-primitive-build/criteria.md"
+  },
   "return": { "type": "object", "additionalProperties": false,
     "properties": {
       "node": { "type": "string" },

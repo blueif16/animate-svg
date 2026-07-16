@@ -15,6 +15,7 @@
     "artifacts": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json"
     ],
+    "schema": "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w2c-sound-design/audio-cues.schema.json",
     "owns": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-cues.json",
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/_logs/w2c-sound-design.md"
@@ -23,7 +24,7 @@
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
       "{{WORKSPACE}}/.agents",
-      "/Users/tk/Desktop/shared-sound/public/audio"
+      "{{WORKSPACE}}/../shared-sound/public/audio"
     ],
     "returnMode": "optional"
   },
@@ -34,6 +35,30 @@
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "criteria": "nodes/w2c-sound-design/criteria.md",
+    "measure": [
+      {
+        "id": "w2c-hard-checks",
+        "run": {
+          "cmd": "{{WORKSPACE}}/remotion-svg-primitives/node_modules/.bin/tsx",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w2c-sound-design/scripts/measure.mjs",
+            "--run",
+            "{{RUN}}",
+            "--workspace",
+            "{{WORKSPACE}}",
+            "--out",
+            "{{RUN}}/optimize/substrate/w2c-sound-design.measure.json"
+          ]
+        },
+        "writes": [
+          "{{RUN}}/optimize/substrate/w2c-sound-design.measure.json"
+        ],
+        "note": "registry-membership (C5) + density ceilings (≤1 sfx/cue, ≤1 ta-da) + the ALREADY-EXISTING assertConcurrentAudioBudget()/MAX_CONCURRENT_AUDIO (invoked directly, never reimplemented; see scripts/measure.mjs header + [[sound-design-sfx]]) — the three deterministic invariants criteria.md's 'Wiring + readiness' documented but that no CHECK_KINDS predicate can express (cross-registry membership; per-cue grouping). lessonId is derived IN-SCRIPT from <run>/.pi/run.json's recorded artifact paths (robust across runs that predate run-argument persistence in optimize.measure's ResolveCtx) — this op passes only the RUN and WORKSPACE roots above, never a run-argument-derived lesson id."
+      }
+    ]
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,

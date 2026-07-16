@@ -24,7 +24,8 @@
     "readScope": [
       "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}",
       "{{WORKSPACE}}/remotion-svg-primitives/out/{{arg.lessonId}}",
-      "{{WORKSPACE}}/.agents"
+      "{{WORKSPACE}}/.agents",
+      "{{WORKSPACE}}/remotion-svg-primitives/src/capabilities"
     ],
     "returnMode": "optional"
   },
@@ -32,10 +33,29 @@
     "post": [
       { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/audio-captions.md" },
       { "kind": "non-empty", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json" },
-      { "kind": "json-parses", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json" }
+      { "kind": "json-parses", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json" },
+      { "kind": "regex-absent", "path": "{{WORKSPACE}}/remotion-svg-primitives/lesson-data/{{arg.lessonId}}/script-cues.json", "param": "\\.\\.\\.|…" }
     ]
   },
   "policy": { "fail": "block" },
+  "optimize": {
+    "criteria": "nodes/w2b-audio-captions/criteria.md",
+    "measure": [
+      {
+        "id": "w2b-content-invariants",
+        "run": {
+          "cmd": "node",
+          "args": [
+            "{{WORKSPACE}}/.piflow/lesson-build/template/nodes/w2b-audio-captions/scripts/measure.mjs",
+            "--run", "{{RUN}}",
+            "--workspace", "{{WORKSPACE}}",
+            "--out", "{{RUN}}/optimize/substrate/w2b-audio-captions.measure.json"
+          ]
+        },
+        "writes": ["{{RUN}}/optimize/substrate/w2b-audio-captions.measure.json"]
+      }
+    ]
+  },
   "return": {
     "type": "object",
     "additionalProperties": false,
